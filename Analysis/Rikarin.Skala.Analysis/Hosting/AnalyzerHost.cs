@@ -6,6 +6,7 @@ using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules;
 using Rikarin.Skala.Rules.Metadata;
+using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Globalization;
 
@@ -83,12 +84,10 @@ public static class AnalyzerHost {
         }
 
         var builder = ImmutableArray.CreateBuilder<SkippedRule>();
-        builder.Add(
-            new(
-                RoslynCodeStyle.NamingDiagnosticId,
-                "requires a semantic model; --load=loose has no project (docs/plan/07 § loose)"
-            )
-        );
+        foreach (var id in RoslynCodeStyle.HostedIds.Order(StringComparer.Ordinal)) {
+            builder.Add(new(id, "requires a semantic model; --load=loose has no project (docs/plan/07 § loose)"));
+        }
+
         foreach (var rule in RuleCatalog.All) {
             if (rule is { Retired: false, RequiresSemantics: true }) {
                 builder.Add(
@@ -270,8 +269,9 @@ public static class AnalyzerHost {
             return true;
         }
 
+        var silenced = RoslynCodeStyle.Load().SilencedIds;
         foreach (var descriptor in analyzer.SupportedDiagnostics) {
-            if (string.Equals(descriptor.Id, RoslynCodeStyle.NamingDiagnosticId, StringComparison.Ordinal)) {
+            if (PerFileRoslynIds.Contains(descriptor.Id) || silenced.Contains(descriptor.Id)) {
                 continue;
             }
 
@@ -282,6 +282,24 @@ public static class AnalyzerHost {
 
         return true;
     }
+
+    /// <summary>
+    ///     The hosted Roslyn ids whose answer for a file is decided by that file alone.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>IDE1006</c> decides each symbol by its declaration. <c>IDE0059</c> decides each value by
+    ///     the data flow of the one member body it is in, and a body is never split across files.
+    ///     <c>IDE0051</c> and <c>IDE0052</c> are <em>not</em> here: whether a private member is read is
+    ///     a question about every part of a <c>partial</c> type, which can be in any file, and a
+    ///     per-file run would report a member as unused because the file that uses it was not shown.
+    ///     <c>IDE0290</c> is not here for the same reason — the constructor and the members it assigns
+    ///     can be in different parts. A silenced id is dropped whatever it answers, so it does not
+    ///     decide the bucket.
+    /// </remarks>
+    static readonly FrozenSet<string> PerFileRoslynIds =
+        new[] { RoslynCodeStyle.NamingDiagnosticId, RoslynCodeStyle.UnusedValueId }.ToFrozenSet(
+            StringComparer.Ordinal
+        );
 
     static AnalysisOutcome Execute(
         CompilationUnit unit,
@@ -360,6 +378,7 @@ public static class AnalyzerHost {
         }
 
         var findings = ImmutableArray.CreateBuilder<Finding>();
+        var silenced = RoslynCodeStyle.Load().SilencedIds;
 
         // ⚠ One semantic model per tree, reused. The enclosing symbol is the fingerprint's third
         // term and needs a model; building a fresh one per finding turns a file with forty findings
@@ -381,6 +400,13 @@ public static class AnalyzerHost {
             // reports both semantic and syntactic rules runs, and the semantic ones are dropped
             // here — so what a loose run reports is exactly what `SkippedFor` says it reports.
             if (mode == LoadMode.Loose && RuleCatalog.Find(diagnostic.Id) is { RequiresSemantics: true }) {
+                continue;
+            }
+
+            // ⚠ An id a selected Roslyn analyzer carries and Skala does not host (`IDE0058`,
+            // `IDE0060`): defaulted to `none`, and dropped here when a project switched it on, so
+            // that hosting one analyzer for one id never hosts its siblings (RoslynCodeStyle).
+            if (silenced.Contains(diagnostic.Id)) {
                 continue;
             }
 

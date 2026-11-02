@@ -1061,17 +1061,47 @@ public static class CheckCommand {
 ///     analyzer had an opinion.
 /// </remarks>
 public static class Supersession {
-    static readonly Dictionary<string, string> SupersededBy = Build();
+    static readonly Dictionary<string, List<string>> SupersededBy = Build();
 
-    static Dictionary<string, string> Build() {
-        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    /// <summary>
+    ///     The compiler warnings that state the same fact as a hosted Roslyn id, on the same span.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured, not assumed: on one field that is never used, <c>CS0169</c> and <c>IDE0051</c>
+    ///     both report at the field's name; on <c>int constant = 5;</c>, <c>CS0219</c> and <c>IDE0059</c>
+    ///     both report at the local's name; a field written with a constant and never read draws
+    ///     <c>CS0414</c> and <c>IDE0052</c>. The compiler's warning is on at stock settings, so it is the
+    ///     one kept. A catalogue rule cannot say this through <c>supersedes</c>, because the winner is not
+    ///     a catalogue rule.
+    /// </remarks>
+    static readonly (string Superseded, string Winner)[] CompilerWins = [
+        (Hosting.RoslynCodeStyle.UnusedMemberId, "CS0169"),
+        (Hosting.RoslynCodeStyle.UnreadMemberId, "CS0414"),
+        (Hosting.RoslynCodeStyle.UnusedValueId, "CS0219")
+    ];
+
+    static Dictionary<string, List<string>> Build() {
+        var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var rule in RuleCatalog.All) {
             foreach (var superseded in rule.Supersedes) {
-                map[superseded] = rule.Id;
+                Add(map, superseded, rule.Id);
             }
         }
 
+        foreach (var (superseded, winner) in CompilerWins) {
+            Add(map, superseded, winner);
+        }
+
         return map;
+    }
+
+    static void Add(Dictionary<string, List<string>> map, string superseded, string winner) {
+        if (!map.TryGetValue(superseded, out var winners)) {
+            winners = [];
+            map[superseded] = winners;
+        }
+
+        winners.Add(winner);
     }
 
     public static ImmutableArray<Finding> Apply(ImmutableArray<Finding> findings) {
@@ -1079,17 +1109,21 @@ public static class Supersession {
             return findings;
         }
 
+        var winnerIds = SupersededBy.Values.SelectMany(static ids => ids).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var winners = new HashSet<(string, string, int, int)>();
         foreach (var finding in findings) {
-            if (SupersededBy.ContainsValue(finding.RuleId)) {
-                winners.Add((finding.RuleId, finding.Path, finding.Line, finding.Column));
+            if (winnerIds.Contains(finding.RuleId)) {
+                winners.Add((finding.RuleId.ToUpperInvariant(), finding.Path, finding.Line, finding.Column));
             }
         }
 
         var builder = ImmutableArray.CreateBuilder<Finding>(findings.Length);
         foreach (var finding in findings) {
-            if (SupersededBy.TryGetValue(finding.RuleId, out var winner)
-                && winners.Contains((winner, finding.Path, finding.Line, finding.Column))) {
+            if (SupersededBy.TryGetValue(finding.RuleId, out var candidates)
+                && candidates.Exists(winner => winners.Contains(
+                        (winner.ToUpperInvariant(), finding.Path, finding.Line, finding.Column)
+                    )
+                )) {
                 builder.Add(finding with { Suppression = SuppressionKind.Superseded });
                 continue;
             }

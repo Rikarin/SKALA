@@ -101,7 +101,14 @@ public static class NamingFixCommand {
                     request,
                     target,
                     reportablePaths,
-                    codeStyle.Analyzers,
+                    // ⚠ Only the naming analyzer. The selection also carries the unused-code and
+                    // primary-constructor analyzers, and this loop runs its analyzers once per rename.
+                    [
+                        ..codeStyle.Analyzers.Where(static analyzer => analyzer.SupportedDiagnostics.Any(
+                                static descriptor => descriptor.Id == RoslynCodeStyle.NamingDiagnosticId
+                            )
+                        )
+                    ],
                     codeStyle.NamingFixer,
                     cancellation
                 )
