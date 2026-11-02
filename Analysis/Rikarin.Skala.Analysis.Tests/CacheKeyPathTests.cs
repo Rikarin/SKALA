@@ -23,8 +23,6 @@ namespace Rikarin.Skala.Analysis.Tests;
 ///     </para>
 /// </remarks>
 public sealed class CacheKeyPathTests {
-    const string Content = "class C { }\n";
-
     static string Key(string path) => CacheKey.For(path, "class C { }\n"u8, "compilation", "rules", "editorconfig");
 
     /// <summary>

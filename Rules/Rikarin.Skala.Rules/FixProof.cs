@@ -291,7 +291,7 @@ public static class FixRebind {
         placed = annotated;
 
         for (var container = original.Parent; container is not null; container = container.Parent) {
-            SemanticModel? result = null;
+            SemanticModel? result;
             SyntaxNode rewritten;
             var position = container.SpanStart;
             switch (container) {

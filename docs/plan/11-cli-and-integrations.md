@@ -35,7 +35,14 @@ skala hooks    install
 Global: `--format`, `--output`, `--no-color`, `--verbose`, `--config <file>`, `--option k=v`,
 `--jobs n`, `--no-cache`.
 
-`IDE1006` is the one hosted Roslyn code-style diagnostic with a Skala fix path. It is deliberately
+`IDE0051`, `IDE0059` and `IDE0290` take Roslyn's own fixers through `skala fix --include <id>`, never
+`--safe`, in any mode with a compilation: the fixer runs over an ad-hoc workspace built from the
+loaded compilation, a fix that changes any file but the finding's own is dropped, and the fix's
+changes are joined into one edit so that the ordinary overlap and revert-on-regression rules drop or
+keep it whole. `IDE0052` has no Roslyn fixer. Why none is safe is in [08](08-rule-catalogue.md) §
+"Roslyn's unused-code and primary-constructor analyzers".
+
+`IDE1006` is the one hosted Roslyn code-style diagnostic with a cross-file fix path. It is deliberately
 outside `--safe`: `skala fix --include IDE1006` infers workspace mode and opens the MSBuild solution,
 while an explicitly incompatible `--load=loose|binlog` is rejected. The command
 applies Roslyn's own rename action one symbol at a time, so references in other files and projects

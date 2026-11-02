@@ -68,7 +68,21 @@ public static class EditorConfigOptions {
             }
         }
 
-        if (configs.Count == 0) {
+        // ⚠ The hosted Roslyn ids' defaults are part of what the options say, so they are part of the
+        // key: a release that changes one must not be served findings cached under the other.
+        fingerprint.Append(HostedSeverityDefaults.Fingerprint);
+
+        var set = configs.Count == 0 ? null : AnalyzerConfigSet.Create(configs.ToImmutable());
+
+        // ⚠ Always a severity provider now, even with no `.editorconfig` anywhere: it is the one
+        // channel by which a hosted Roslyn id's default severity reaches the driver, and a repository
+        // with no configuration is exactly the one those defaults are for.
+        var severities = new SeverityProvider(
+            set,
+            new(unit.Compilation.Options.SpecificDiagnosticOptions)
+        );
+
+        if (set is null) {
             // ⚠ Still a provider when the project multi-targets: the sibling compilations are the
             // only thing on it then, and a repository with no .editorconfig anywhere is exactly as
             // able to break its `netstandard2.1` leg as one with a full export in it (#343).
@@ -78,15 +92,14 @@ public static class EditorConfigOptions {
                     ? new AnalyzerOptions([])
                     : new AnalyzerOptions([], new SetProvider(null, unit.Siblings, unit.CompilerPath)),
                 fingerprint.ToString(),
-                null
+                severities
             );
         }
 
-        var set = AnalyzerConfigSet.Create(configs.ToImmutable());
         return (
             new AnalyzerOptions([], new SetProvider(set, unit.Siblings, unit.CompilerPath)),
             fingerprint.ToString(),
-            new SeverityProvider(set)
+            severities
         );
     }
 
@@ -102,7 +115,8 @@ public static class EditorConfigOptions {
     ///     this. That is the failure where a repository turns a rule off, the IDE agrees, and CI keeps
     ///     reporting it.
     /// </remarks>
-    sealed class SeverityProvider(AnalyzerConfigSet set) : SyntaxTreeOptionsProvider {
+    sealed class SeverityProvider(AnalyzerConfigSet? set, HostedSeverityDefaults defaults)
+        : SyntaxTreeOptionsProvider {
         public override GeneratedKind IsGenerated(SyntaxTree tree, CancellationToken cancellationToken) =>
             GeneratedKind.Unknown;
 
@@ -115,7 +129,26 @@ public static class EditorConfigOptions {
             // ⚠ `dotnet_diagnostic.SK1010.severity` is the only spelling, because it names the Skala
             // rule and therefore cannot mean anything else. There used to be a second, opt-in axis
             // here reading `resharper_*_highlighting`; it is gone, and doc 16 § Q5 records why.
-            return set.GetOptionsForSourcePath(tree.FilePath).TreeOptions.TryGetValue(diagnosticId, out severity);
+            if (set is null) {
+                return defaults.TryGet(diagnosticId, null, null, out severity);
+            }
+
+            var options = set.GetOptionsForSourcePath(tree.FilePath);
+            if (options.TreeOptions.TryGetValue(diagnosticId, out severity)) {
+                return true;
+            }
+
+            // ⚠ The global config is asked here too, before the hosted default. Roslyn asks for the
+            // tree's value first and the global one only when that answers false, so a default
+            // returned from this method would otherwise outrank a `.globalconfig` that turned the
+            // id off.
+            return set.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity)
+                || defaults.TryGet(
+                    diagnosticId,
+                    options.AnalyzerOptions,
+                    set.GlobalConfigOptions.AnalyzerOptions,
+                    out severity
+                );
         }
 
         public override bool TryGetGlobalDiagnosticValue(
@@ -123,7 +156,10 @@ public static class EditorConfigOptions {
             CancellationToken cancellationToken,
             out ReportDiagnostic severity
         ) =>
-            set.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity);
+            set is null
+                ? defaults.TryGet(diagnosticId, null, null, out severity)
+                : set.GlobalConfigOptions.TreeOptions.TryGetValue(diagnosticId, out severity)
+                || defaults.TryGet(diagnosticId, null, set.GlobalConfigOptions.AnalyzerOptions, out severity);
     }
 
     /// <summary>

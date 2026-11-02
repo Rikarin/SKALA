@@ -105,7 +105,7 @@ public sealed class ConcurrentDictionaryMemberAnalyzer : DiagnosticAnalyzer {
         var kind = (SyntaxKind)comparison.RawKind;
 
         ExpressionSyntax? receiver;
-        var bound = 0;
+        int bound;
         if ((receiver = Counted(context, comparison.Left, dictionary)) is not null
             && IsConstant(comparison.Right, out bound)) {
             // The written order is already `count OP constant`.

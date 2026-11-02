@@ -47,7 +47,7 @@ public sealed class ConstantForwardingOverloadAnalyzer : DiagnosticAnalyzer {
 
     static void Analyze(SyntaxNodeAnalysisContext context) {
         var declaration = (MethodDeclarationSyntax)context.Node;
-        if (declaration.Parent is not TypeDeclarationSyntax type
+        if (declaration.Parent is not TypeDeclarationSyntax
             || !IsPlainCandidate(declaration)
             || declaration.ContainsDirectives) {
             return;

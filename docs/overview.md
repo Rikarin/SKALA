@@ -49,9 +49,9 @@ daemon behind it ([`plan/11`](plan/11-cli-and-integrations.md) § "The daemon, a
 |---|---|---|
 | `format <paths>` | Spaces, blank lines, braces, indentation, break presence and position, and wrapping. Writes, checks, diffs, or formats the git index | ✅ |
 | `arrange <paths>` | Rewrites the tree: body styles, `var`, target-typed `new`, qualifiers, usings. Needs a project for the semantic half | ✅ |
-| `check <paths>` | Loads a compilation three ways, runs Skala's analyzers plus Roslyn's IDE1006 naming analyzer, writes SARIF, evaluates a named gate | ✅ |
+| `check <paths>` | Loads a compilation three ways, runs Skala's analyzers plus five hosted Roslyn code-style ids (`IDE1006` naming; `IDE0290` on by default as a suggestion; `IDE0051`, `IDE0052`, `IDE0059` opt-in), writes SARIF, evaluates a named gate | ✅ |
 | `verify <paths>` | `format --check` + `arrange --check` + `check --gate=local`, shaped for an agent. Exit 0 means nothing to do | ✅ |
-| `fix <paths>` | Applies finding edits; explicit `IDE1006` uses Roslyn's solution-wide rename action; verifies and re-formats what it touched | ✅ |
+| `fix <paths>` | Applies finding edits; explicit `IDE1006` uses Roslyn's solution-wide rename action; `--include` of `IDE0051`, `IDE0059` or `IDE0290` applies Roslyn's own fixer as a single-file edit; verifies and re-formats what it touched | ✅ |
 | `explain <rule>` | A rule's rationale, examples and known false positives | ✅ |
 | `rules list` · `rules docs` | The catalogue as a table; regenerates `docs/rules/` from `rules.json` | ✅ |
 | `docs site` | Regenerates `docs/site/` from `rules.json` **and** `options.json` — **143 files**: 108 option pages, 32 rule pages, two indexes and a stylesheet | ✅ |
