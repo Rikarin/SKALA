@@ -179,6 +179,18 @@ public static class FixCommand {
             }
         }
 
+        // ⚠ Roslyn's own fixers for the hosted unused-code and primary-constructor ids, computed only
+        // for the ids `--include` names: none is safe, and computing one costs a workspace over the
+        // compilation (HostedCodeFixes). After the naming pass, so the offsets are the final text's.
+        var hostedFixes = request.Include
+            .Where(static id => Hosting.RoslynCodeStyle.EditFixableIds.Contains(id.ToUpperInvariant()))
+            .ToArray();
+        if (hostedFixes.Length > 0) {
+            report = report with {
+                Findings = HostedCodeFixes.Attach(report.Findings, loaded, root, hostedFixes, cancellation)
+            };
+        }
+
         var applicable = report.Reportable.Where(finding => IsApplicable(finding, request)).ToList();
         if (applicable.Count == 0 && naming.Applied == 0) {
             var nothing = new StringBuilder();

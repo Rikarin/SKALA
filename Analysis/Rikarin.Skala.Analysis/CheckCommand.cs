@@ -1061,8 +1061,6 @@ public static class CheckCommand {
 ///     analyzer had an opinion.
 /// </remarks>
 public static class Supersession {
-    static readonly Dictionary<string, List<string>> SupersededBy = Build();
-
     /// <summary>
     ///     The compiler warnings that state the same fact as a hosted Roslyn id, on the same span.
     /// </summary>
@@ -1079,6 +1077,9 @@ public static class Supersession {
         (Hosting.RoslynCodeStyle.UnreadMemberId, "CS0414"),
         (Hosting.RoslynCodeStyle.UnusedValueId, "CS0219")
     ];
+
+    // ⚠ After `CompilerWins`, which `Build` reads: static initializers run in textual order.
+    static readonly Dictionary<string, List<string>> SupersededBy = Build();
 
     static Dictionary<string, List<string>> Build() {
         var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
