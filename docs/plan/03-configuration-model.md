@@ -589,7 +589,9 @@ the IDE code-style diagnostic `IDE1006`; it is not a C# compiler diagnostic.
 
 Skala does **not** reimplement naming. `Microsoft.CodeAnalysis.CSharp.CodeStyle` is pinned to the
 same version as the rest of Roslyn, its four implementation assemblies ship under
-`RoslynCodeStyle/`, and the analysis host selects only the analyzer that owns `IDE1006`. It runs in
+`RoslynCodeStyle/`, and the analysis host selects the analyzer that owns `IDE1006` (and, by id, the
+three that own `IDE0051`/`IDE0052`, `IDE0059` and `IDE0290` — [08](08-rule-catalogue.md) § "Roslyn's
+unused-code and primary-constructor analyzers", whose defaults any `.editorconfig` line overrides). It runs in
 `binlog` and `workspace` modes and is listed as skipped in `loose`, where there is no semantic model.
 Consequently `dotnet_naming_rule.private_instance_fields_rule.*` means exactly what it means in the
 Roslyn IDE. The analyzer's own specificity ordering resolves overlapping rules; Skala neither uses

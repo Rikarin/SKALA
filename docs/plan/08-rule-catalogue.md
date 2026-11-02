@@ -9932,3 +9932,115 @@ applied with `skala fix --include SK1133`; `Skala.slnx` rebuilt Release with `Tr
 failed**. #512's 41 at a forced `LangVersion=14.0` is these 28 plus **13 in `Rikarin.Skala.Rules`**,
 re-measured by rebuilding the fixed tree at 14: that project is `netstandard2.0`, whose `latest` proves
 nothing, so they stay.
+
+## Roslyn's unused-code and primary-constructor analyzers — four ids hosted, one on by default
+
+The request was that a plain `skala check` on a repository with **no configuration at all** — no
+`skala config init`, no canonical `.editorconfig` — report `IDE0051` (unused private member), `IDE0052`
+(private member written, never read) and `IDE0059` (value assigned, never read) as warnings and
+`IDE0290` (use a primary constructor) as a suggestion, with Roslyn's own fixers behind `skala fix`, and
+with the hard requirement that the defaults produce no false positive. #121 and #122 had closed these
+concepts as hosted and named "a severity decision, not a rule" as the follow-up; #73 had measured that
+**the severity line, not the style option, is what makes an `IDE*` id report**. This section is that
+decision, and the measurement it rests on.
+
+**What shipped.** `RoslynCodeStyle` selects, by id, the analyzers owning `IDE0051`/`IDE0052`
+(`CSharpRemoveUnusedMembersDiagnosticAnalyzer`), `IDE0059` (`CSharpRemoveUnusedParametersAndValuesDiagnosticAnalyzer`)
+and `IDE0290` (`CSharpUsePrimaryConstructorDiagnosticAnalyzer`) beside the naming one. The defaults are
+answered by the severity provider at the **lowest precedence there is** (`HostedSeverityDefaults`): an
+`.editorconfig` section or global config naming the id, the build's own `NoWarn`/rule set, a
+`:severity` suffix on the id's style option and a bulk `dotnet_analyzer_diagnostic[.category-*]` key
+each win, `none` included. ⚠ A synthetic `is_global` config at a low `global_level` was the first design
+and was rejected: its value is still a *specific* severity, so the last two of those would have lost to
+it.
+
+| Id | Default | Fix through `skala fix --include` | Per-file cache |
+|---|---|---|---|
+| `IDE0290` | **suggestion** | Roslyn's fixer; unsafe | no — the constructor and the members it assigns can be in two parts of a `partial` type |
+| `IDE0051` | `none` (opt-in) | Roslyn's fixer; unsafe | no — a private member's readers can be in another part |
+| `IDE0052` | `none` (opt-in) | ⚠ **none exists**: the 5.9.0 `CSharpRemoveUnusedMembersCodeFixProvider` declares `IDE0051` alone | no |
+| `IDE0059` | `none` (opt-in) | Roslyn's fixer; unsafe | yes — one member body's data flow |
+| `IDE0058`, `IDE0060` | silenced | never | — |
+
+⚠ **`IDE0058` and `IDE0060` are carried by the unused-value analyzer and are never reported**, whatever
+a project configures: they default to `none` and `AnalyzerHost` drops them. `IDE0060` reports every
+parameter a delegate- or event-shaped signature is obliged to declare; hosting one analyzer for one id
+does not host its siblings.
+
+**Why every fix is unsafe.** Removing a member (`IDE0051`) cannot see reflection, serialization or an
+`[UnsafeAccessor]`, and the re-bind cannot either. Removing or discarding an assignment (`IDE0059`)
+cannot see a read in an inactive `#if` branch, and the re-bind checks only the active configuration.
+The primary-constructor fix keeps the field (`int x = x;`, as #73 measured) but was measured doing two
+more things: it **drops a comment** written between the constructor's statements, and it moves each
+assignment into a field initializer, which runs in **field declaration order** and **before the base
+constructor** — so a base constructor that calls a virtual member the derived type overrides now sees
+the field set where it used to see it unset. The fixer runs over an ad-hoc workspace rebuilt from the
+loaded compilation; a fix that touches any other document is dropped, and its changes are joined into
+one edit so that `FixCommand`'s overlap and revert rules keep or drop a fix whole.
+
+**Deduplication.** On one span the compiler and the hosted id state one fact, so the compiler's
+warning — on at stock settings — is kept and the other is recorded as superseded: `CS0169` and
+`CS0414` over `IDE0051`/`IDE0052`, `CS0219` over `IDE0059`. ⚠ `SK1053` (*use a discard*, safe fix) now
+declares `supersedes: ["IDE0059"]`: on `var x = Call();` the two report the same span, and the Skala
+rule carries the fix `--safe` applies.
+
+### The measurement, per rule
+
+Trees: **Skala** (Release binlog, `--no-incremental`, 980 of 982 files); **Vixen in full** (the
+author's repository at `feb856973`, copied outside it and built Release with a binlog, 5 925 of 6 014
+files, 0 build errors); and the three **`corpus/real` slices**, given a synthetic `.csproj` each.
+⚠ **The slices are weak evidence**, for the reason § "What a corpus zero is worth" gives: even with
+the Serilog slice given its global usings it reports 199 `CS0246`, Newtonsoft.Json 1 303 and the Vixen
+slice 5 298, and the unused-value analyzer declines a method that does not bind. Every finding was
+read; the full-Vixen `IDE0290` findings were screened by the one shape that can make one wrong (a
+non-`object` base class — every such base constructor was read) rather than each read in full.
+
+| Id | Skala | Vixen (full) | Serilog slice | Newtonsoft slice | Vixen slice | Verdict |
+|---|---|---|---|---|---|---|
+| `IDE0290` | 25 TP | 178 TP | 20 TP | 12 TP | 8 TP | **0 FP — on, suggestion** |
+| `IDE0051` | 1 TP | 19 TP, **4 FP**¹ | 1 artefact² | **2 FP** | 0 | **off** |
+| `IDE0052` | 0 | 21 TP³, **1 FP**, **3 FP**¹ | 0 | 0 | 0 | **off** |
+| `IDE0059` | 4 TP | 47 TP, **4 FP** (+9 superseded by `SK1053`) | 0 | 2 superseded | 1 TP | **off** |
+
+The false positives, by shape — none of them can be suppressed by an option the rule has:
+
+- **`IDE0051` — a constructor that exists for reflection.** Newtonsoft.Json's
+  `PrivateConstructorTestClass` declares two private constructors *"so the serializer doesn't know what
+  to fall back to"*; nothing calls them, and deleting them changes what the serializer does. The
+  probe tree reproduced the class, plus a private method reached only by `GetMethod("Secret", …)` and a
+  field reached only through `[UnsafeAccessor]` — all three reported.
+- **`IDE0052` — a store kept for its lifetime.** Vixen's `MeasuredTests.sink` is static *"so the JIT
+  cannot delete the allocation as non-escaping"*: written, never read, and load-bearing. The probe's
+  `System.Threading.Timer` held in a never-read field — the canonical keep-alive — is reported too.
+- **`IDE0059` — a value read while an `async` local function that overwrites it is suspended.**
+  `CoroutineTests` lines 84, 85, 599 and 670: `var finished = false;` is read by `Assert.False(finished)`
+  in a loop while the coroutine `Both()` that sets it is waiting. Roslyn's data flow runs a local
+  function's writes at its call site, so the initial value looks dead; its fix (`bool finished;`) only
+  stays correct because `false` happens to be the default.
+
+¹ `[ServerRpc]`/`[ClientRpc]` methods whose only caller is the RPC source generator's output. ⚠ That
+output was **absent from Skala's binlog load** — the same project reports `CS0103 'RpcMethods'` and
+`CS0117 'RpcMethodTable'` beside them — so these are a loader defect, not Roslyn's; a `.g.cs` caller in
+a workspace load was measured to keep `IDE0051` quiet. They are still false positives a user would see.
+² `IEnumerator.Current` read as a private property because the slice had no global usings, so
+`IEnumerator` did not bind; gone once the instrument was fixed. ³ Including two the declaration alone
+cannot settle (`EditorApplication.modeInput` and the rendering passes' `device` fields), which may be
+lifetime anchors.
+
+**What the synthetic probe found silent**, so that the residue above is not read as "everything is
+wrong": `[DllImport]`, `[StructLayout]` interop fields, `nameof`, `[DebuggerDisplay("{…}")]`,
+`[OnDeserialized]`, `ShouldSerializeX`, `[ModuleInitializer]`, a member used from the other part of a
+`partial` type or from a `.g.cs` part, and — the one the bar most needed — a local read only under an
+undefined `#if` symbol, which `IDE0059` declines.
+
+⚠ **`IDE0290`'s residue is synthetic and stated rather than measured.** A derived type whose base
+constructor calls a virtual member that reads what the derived constructor assigns cannot be
+converted without changing behaviour, and `IDE0290` reports it. None of the 243 findings is that shape:
+every finding on a type with a base class other than `object` was checked, and each base constructor
+either assigns and returns or the derived constructor is an empty forward.
+
+**Turning the three on is one line each** — `dotnet_diagnostic.IDE0059.severity = warning` — and is a
+decision for a repository whose code does not use those shapes. Skala's own tree has 5 genuine
+findings and none of the shapes; the four in `Rules/` and `Analysis.Tests/` were fixed at source, and
+the fifth — an unused pattern designation in `Formatting/…/BreakPlan.cs` — is left because a
+formatter change carries the fuzz gate.
