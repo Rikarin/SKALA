@@ -1065,15 +1065,17 @@ public static class Supersession {
     ///     The compiler warnings that state the same fact as a hosted Roslyn id, on the same span.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Measured, not assumed: on one field that is never used, <c>CS0169</c> and <c>IDE0051</c>
-    ///     both report at the field's name; on <c>int constant = 5;</c>, <c>CS0219</c> and <c>IDE0059</c>
-    ///     both report at the local's name; a field written with a constant and never read draws
-    ///     <c>CS0414</c> and <c>IDE0052</c>. The compiler's warning is on at stock settings, so it is the
-    ///     one kept. A catalogue rule cannot say this through <c>supersedes</c>, because the winner is not
-    ///     a catalogue rule.
+    ///     ⚠ Measured, not assumed: on a field that is never used, <c>CS0169</c> and <c>IDE0051</c>
+    ///     both report at the field's name; on a field initialised with a constant and never read,
+    ///     <c>CS0414</c> and <c>IDE0051</c> do; on <c>int constant = 5;</c>, <c>CS0219</c> and
+    ///     <c>IDE0059</c> both report at the local's name. The compiler's warning is on at stock
+    ///     settings, so it is the one kept. A catalogue rule cannot say this through <c>supersedes</c>,
+    ///     because the winner is not a catalogue rule.
     /// </remarks>
     static readonly (string Superseded, string Winner)[] CompilerWins = [
         (Hosting.RoslynCodeStyle.UnusedMemberId, "CS0169"),
+        (Hosting.RoslynCodeStyle.UnusedMemberId, "CS0414"),
+        (Hosting.RoslynCodeStyle.UnreadMemberId, "CS0169"),
         (Hosting.RoslynCodeStyle.UnreadMemberId, "CS0414"),
         (Hosting.RoslynCodeStyle.UnusedValueId, "CS0219")
     ];

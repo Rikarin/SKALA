@@ -258,8 +258,8 @@ public static class AnalyzerHost {
     ///         ⚠ An analyzer Skala cannot read the scope of is not per-file. A hosted third-party
     ///         analyzer declares nothing about whether its answer for <c>A.cs</c> depends on
     ///         <c>B.cs</c>, and the previous warm path (M5–M8) cached every one of them per file on no
-    ///         basis at all. The one exception is Roslyn's own naming analyzer, which Skala loads
-    ///         deliberately (<see cref="RoslynCodeStyle" />) and which decides each symbol on its own.
+    ///         basis at all. The exceptions are Roslyn's own analyzers that Skala loads deliberately
+    ///         (<see cref="RoslynCodeStyle" />) and whose ids <see cref="PerFileRoslynIds" /> names.
     ///         <see cref="ForcedCrash" /> is the harness's, throws from a syntax-tree action, and is
     ///         per-file so that a forced run takes whichever path an unforced one would (#363).
     ///     </para>

@@ -19,8 +19,8 @@ namespace Rikarin.Skala.Analysis.Hosting;
 ///     <para>
 ///         ⚠ Loading the whole package's rule set would silently turn Skala into <c>dotnet format</c>,
 ///         so the selection is by id and stays narrow. Besides naming it is the ids in
-///         <see cref="DefaultSeverities" />, each on by default at a severity Skala decides
-///         (docs/plan/08 § "Roslyn's unused-code and primary-constructor analyzers, on by default").
+///         <see cref="DefaultSeverities" />, each at a default Skala decides and any project setting
+///         overrides (docs/plan/08 § "Roslyn's unused-code and primary-constructor analyzers").
 ///         ⚠ An analyzer is selected whole, and the unused-value analyzer also carries
 ///         <c>IDE0058</c> and <c>IDE0060</c>, which are not hosted — <c>IDE0060</c> reports every
 ///         parameter a delegate- or event-shaped signature is obliged to declare. Those are
@@ -50,12 +50,24 @@ public static class RoslynCodeStyle {
     ///     see <see cref="HostedSeverityDefaults" /> for every setting that wins over them, <c>none</c>
     ///     included. <c>IDE1006</c> is absent on purpose: naming reports nothing until a project writes
     ///     <c>dotnet_naming_*</c> rules, and that is unchanged.
+    ///     <para>
+    ///         ⚠ <b>Only <c>IDE0290</c> is on by default, and the other three were measured off.</b>
+    ///         Skala's bar for a default is zero false positives on the reference trees, and each of
+    ///         the three produced one its own options cannot suppress (docs/plan/08 § "Roslyn's
+    ///         unused-code and primary-constructor analyzers"): <c>IDE0051</c> on Newtonsoft.Json's
+    ///         private constructors that exist so the serializer has no fallback, <c>IDE0052</c> on a
+    ///         static field Vixen writes so the JIT cannot elide an allocation, and <c>IDE0059</c> on
+    ///         four Vixen locals whose initial value is read while an <c>async</c> local function that
+    ///         overwrites them is suspended — Roslyn's data flow runs a local function's writes at its
+    ///         call site. They default to <c>none</c>, so the analyzers skip the work, and a project
+    ///         turns any of them on with one severity line.
+    ///     </para>
     /// </remarks>
     public static FrozenDictionary<string, ReportDiagnostic> DefaultSeverities { get; } =
         new Dictionary<string, ReportDiagnostic>(StringComparer.Ordinal) {
-            [UnusedMemberId] = ReportDiagnostic.Warn,
-            [UnreadMemberId] = ReportDiagnostic.Warn,
-            [UnusedValueId] = ReportDiagnostic.Warn,
+            [UnusedMemberId] = ReportDiagnostic.Suppress,
+            [UnreadMemberId] = ReportDiagnostic.Suppress,
+            [UnusedValueId] = ReportDiagnostic.Suppress,
             [PrimaryConstructorId] = ReportDiagnostic.Info
         }.ToFrozenDictionary(StringComparer.Ordinal);
 
