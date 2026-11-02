@@ -30,7 +30,11 @@ public sealed class HostedRoslynDefaultsTests {
                            </Project>
                            """;
 
-    /// <summary>One of every shape the five ids are about, and an event-shaped handler for IDE0060.</summary>
+    /// <summary>
+    ///     One of every shape the hosted ids are about, plus an unread parameter and a discarded call
+    ///     value — the shapes <c>IDE0060</c> and <c>IDE0058</c> report, measured to fire when a project
+    ///     asks for them, so that "they stay silent" is a claim about the filter and not about the code.
+    /// </summary>
     const string Shapes = """
                           namespace Scratch;
 
@@ -59,6 +63,12 @@ public sealed class HostedRoslynDefaultsTests {
                               static int Compute() => Environment.TickCount;
 
                               public void OnClick(object? sender, EventArgs e) => Console.WriteLine("click");
+
+                              public int Constant(int ignored) => 2;
+
+                              public void Discard() {
+                                  Compute();
+                              }
                           }
                           """;
 
@@ -201,8 +211,67 @@ public sealed class HostedRoslynDefaultsTests {
         Assert.DoesNotContain("NeverCalled", text, StringComparison.Ordinal);
         Assert.Contains("_ = Compute();", text, StringComparison.Ordinal);
 
-        // ⚠ The handler's parameters are what IDE0060 would remove; its fixer is never loaded.
-        Assert.Contains("OnClick(object? sender, EventArgs e)", text, StringComparison.Ordinal);
+        // ⚠ The unread parameter is what IDE0060 would remove, and the config asked for it; it is
+        // silenced, so it is neither reported nor fixed.
+        Assert.Contains("Constant(int ignored)", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     A warm run after another file changed reports exactly what a cold one does — including an
+    ///     <c>IDE0051</c> whose only caller was just deleted from the <em>other</em> part of a partial type.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>This does not prove the per-file partition, and it was sabotage-checked to find out.</b>
+    ///     Adding <c>IDE0051</c>/<c>IDE0052</c> to <c>AnalyzerHost.PerFileRoslynIds</c> leaves it green:
+    ///     #516 re-runs the semantic half of every unchanged file whenever anything in the compilation
+    ///     changed, and Roslyn's tree-scoped run of the unused-members analyzer sees the other part of
+    ///     the type. The partition stays conservative because nothing measured that this holds for every
+    ///     shape; this test holds the outcome, not the mechanism.
+    /// </remarks>
+    [Fact]
+    public void AWarmRun_AfterAnotherFileChanged_ReportsWhatAColdOneDoes() {
+        using var scratch = Tree(OptIn, Shapes, Project, out _, out var project);
+        scratch.Write(
+            "Split.cs",
+            "namespace Scratch;\n\npublic partial class Split {\n    void Helper() { }\n}\n"
+        );
+        var caller = scratch.Write(
+            "Caller.cs",
+            "namespace Scratch;\n\npublic partial class Split {\n    public void Go() => Helper();\n}\n"
+        );
+
+        var first = Run(scratch, project, false);
+        Assert.DoesNotContain(first, static line => line.StartsWith("IDE0051 Split.cs", StringComparison.Ordinal));
+        Assert.Contains("IDE0059 Widget.cs:20", first);
+
+        File.WriteAllText(caller, "namespace Scratch;\n\npublic partial class Split {\n    public void Go() { }\n}\n");
+        var warm = Run(scratch, project, false);
+        var cold = Run(scratch, project, true);
+
+        Assert.Equal(cold, warm);
+        Assert.Contains("IDE0051 Split.cs:4", warm);
+        Assert.Contains("IDE0059 Widget.cs:20", warm);
+    }
+
+    static string[] Run(Scratch scratch, string project, bool noCache) {
+        var (_, report) = CheckCommand.Run(
+            new() {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                Output = string.Empty,
+                NoCache = noCache,
+                IncludeFormatting = false
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        return [
+            ..report.Reportable.Where(static finding => finding.RuleId.StartsWith("IDE", StringComparison.Ordinal))
+                .Select(static finding => $"{finding.RuleId} {Path.GetFileName(finding.Path)}:{finding.Line}")
+                .Order(StringComparer.Ordinal)
+        ];
     }
 
     [Fact]
