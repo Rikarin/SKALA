@@ -153,12 +153,29 @@ public static class CloneDetector {
     ///     A result from <see cref="Detect(IReadOnlyList{DuplicationInput}, int, string?, CancellationToken)" />.
     /// </param>
     /// <param name="repositoryRoot">Only used to render the other occurrences relative in the message.</param>
-    public static ImmutableArray<Finding> ToFindings(DuplicationResult result, string repositoryRoot) {
+    /// <param name="scoped">
+    ///     ⚠ An occurrence where a section switches the rule off leaves its group, and a group left with one
+    ///     occurrence is not a finding: nothing else is duplicated. The percentage stays the whole tree's.
+    /// </param>
+    public static ImmutableArray<Finding> ToFindings(
+        DuplicationResult result,
+        string repositoryRoot,
+        ScopedSeverity? scoped = null
+    ) {
         ArgumentNullException.ThrowIfNull(result);
 
         var severity = Severity(RuleCatalog.Get(RuleIds.DuplicatedBlock).DefaultSeverity);
         var findings = ImmutableArray.CreateBuilder<Finding>(result.Groups.Length);
-        foreach (var group in result.Groups) {
+        foreach (var whole in result.Groups) {
+            var group = scoped is null
+                ? whole
+                : whole with {
+                    Occurrences = [..whole.Occurrences.Where(o => !scoped.IsOff(RuleIds.DuplicatedBlock, o.Path))]
+                };
+            if (group.Occurrences.Length < 2) {
+                continue;
+            }
+
             var first = group.Occurrences[0];
             findings.Add(
                 new() {

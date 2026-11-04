@@ -460,6 +460,36 @@ public sealed class DuplicationTests {
     }
 
     /// <summary>
+    ///     A section that switches the rule off takes its occurrences out of a group, not just the first.
+    /// </summary>
+    [Theory]
+    [InlineData("[a/**.cs]", 1)] // a's copy leaves; b and c remain
+    [InlineData("[{a,b}/**.cs]", 0)] // one is left, and nothing else is duplicated
+    public void ToFindings_LeavesOutOccurrencesWhereTheRuleIsOff(string section, int expected) {
+        var root = Path.Combine(Path.GetTempPath(), "skala-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try {
+            File.WriteAllText(
+                Path.Combine(root, ".editorconfig"),
+                $"root = true\n{section}\ndotnet_diagnostic.SK7020.severity = none\n"
+            );
+            var occurrences = "abc".Select(c => new CloneOccurrence(
+                    Path.Combine(root, c.ToString(), "F.cs"),
+                    0,
+                    10,
+                    1,
+                    9
+                )
+            );
+            var result = new DuplicationResult { Groups = [new(150, [..occurrences])] };
+
+            Assert.Equal(expected, CloneDetector.ToFindings(result, root, new()).Length);
+        } finally {
+            Directory.Delete(root, true);
+        }
+    }
+
+    /// <summary>
     ///     ⚠ Test duplication is measured and reported, never gated. See <c>CloneDetector.ToFindings</c>.
     /// </summary>
     [Fact]

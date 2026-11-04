@@ -13,6 +13,14 @@ missed it says so and by how much; three of them were, and one of those is still
 
 ## Unreleased
 
+### Fixed — `dotnet_diagnostic.<id>.severity` reaches `SK0002`, `SK0003` and `SK7020`
+
+These three are built outside the analyzer driver, so a scoped section changed nothing, whatever
+`skala explain` said, and `#pragma` could not reach them either. `check` now reads the same
+`.editorconfig` chain per path, through Roslyn's own `AnalyzerConfigSet`. An `SK7020` occurrence where
+the rule is off leaves its group, and a group left with one occurrence is not reported. The duplication
+percentage still measures the whole tree. `SK0001` is unchanged: it is the gate's `formatting` answer.
+
 ### Changed — `skala format` no longer changes what a `[CallerArgumentExpression]` argument captures (#432)
 
 A captured argument's text reaches the program as a string, so formatting `Check(a   <   b)` changed

@@ -63,6 +63,7 @@ public static class DuplicationPass {
         string repositoryRoot,
         int minTokens,
         bool useCache,
+        ScopedSeverity scoped,
         CancellationToken cancellation
     ) {
         var inputs = new List<DuplicationInput>();
@@ -113,7 +114,7 @@ public static class DuplicationPass {
             cancellation
         );
 
-        return (CloneDetector.ToFindings(result, repositoryRoot), result);
+        return (scoped.Apply(CloneDetector.ToFindings(result, repositoryRoot, scoped)), result);
     }
 
     /// <summary>Folds a detector result into the run's aggregate metrics.</summary>

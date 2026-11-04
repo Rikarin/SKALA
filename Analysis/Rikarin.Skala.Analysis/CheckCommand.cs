@@ -440,10 +440,18 @@ public static class CheckCommand {
         // asks. `null` when the run was told not to look — see `Gate.Evaluate`.
         bool? formattingClean = null;
         var formattingFailed = false;
+        var scoped = new ScopedSeverity();
         if (request.IncludeFormatting) {
             var formatting = FormattingFindings.Collect(root, reported, request, diagnostics);
             formattingClean = !formatting.Findings.Any(static finding => finding.RuleId == RuleIds.FileIsNotFormatted);
-            findings.AddRange(formatting.Findings);
+
+            // ⚠ `SK0001` stays out: it is the gate's `formatting` answer rather than a rule to tune.
+            findings.AddRange(
+                formatting.Findings.Where(static finding => finding.RuleId == RuleIds.FileIsNotFormatted)
+            );
+            findings.AddRange(
+                scoped.Apply(formatting.Findings.Where(static finding => finding.RuleId != RuleIds.FileIsNotFormatted))
+            );
             formattingFailed = formatting.Failed;
         }
 
@@ -471,6 +479,7 @@ public static class CheckCommand {
                 root,
                 Duplication.CloneDetector.DefaultMinTokens,
                 !request.NoCache,
+                scoped,
                 cancellation
             );
 
