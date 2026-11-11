@@ -85,9 +85,14 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      # ⚠ Two runtimes. global.json selects the SDK that builds both trees, but the Measure step
+      # *runs* the previous release's `skala.dll`, and that runs on the runtime it was built for. The
+      # first release after the .NET 11 move measures against a net10.0 baseline; with only the 11
+      # runtime installed it cannot start. Drop the 10.0.x line once the newest `v*` tag is net11.0.
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+          dotnet-version: 10.0.x
 
       # ⚠ **The baseline is materialised and built here, in bash, not inside the NUKE target.**
       # `./build.sh ReleasePlan --baseline-ref` can do it, and on at least one machine it cannot:

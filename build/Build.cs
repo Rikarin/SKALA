@@ -883,8 +883,30 @@ class Build : NukeBuild {
     AbsolutePath ReleaseTool =>
         RootDirectory / "build" / "Rikarin.Skala.Release" / "bin" / Configuration / "net11.0" / "skala-release.dll";
 
-    static AbsolutePath ToolAssembly(AbsolutePath root) =>
-        root / "Tools" / "Rikarin.Skala.Cli" / "bin" / "Release" / "net11.0" / "skala.dll";
+    /// <remarks>
+    ///     ⚠ The framework folder is read off disk, never written here. The baseline is the previous
+    ///     release's tree and is built for whatever that release targeted: the first release after the
+    ///     move to .NET 11 measured against a <c>net10.0</c> baseline, and naming <c>net11.0</c> for both
+    ///     sides failed every release with "No skala binary". The highest moniker present wins; with
+    ///     none, the candidate's own moniker is named so the error says where it looked.
+    /// </remarks>
+    static AbsolutePath ToolAssembly(AbsolutePath root) {
+        var bin = root / "Tools" / "Rikarin.Skala.Cli" / "bin" / "Release";
+        var built = bin.GlobFiles("net*/skala.dll")
+            .Select(static path => (Path: path, Version: MonikerVersion(path.Parent.Name)))
+            .Where(static candidate => candidate.Version is not null)
+            .OrderByDescending(static candidate => candidate.Version)
+            .Select(static candidate => candidate.Path)
+            .FirstOrDefault();
+
+        return built ?? bin / "net11.0" / "skala.dll";
+    }
+
+    static System.Version? MonikerVersion(string moniker) =>
+        moniker.StartsWith("net", System.StringComparison.Ordinal)
+        && System.Version.TryParse(moniker[3..], out var version)
+            ? version
+            : null;
 
     /// <summary>
     ///     The previous release's tree, extracted beside this one and built.
