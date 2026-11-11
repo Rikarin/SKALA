@@ -487,7 +487,19 @@ public enum IndentFlags {
     ///     receiver's operator under <c>x =</c> sits a level past the dot the receiver broke before, and the same
     ///     receiver as an argument on a line of its own takes no extra one. See <c>BreakPlan.ReceiverLiftOf</c>.
     /// </summary>
-    CountsWithItsLine = 32768
+    CountsWithItsLine = 32768,
+
+    /// <summary>
+    ///     ⚠ A delimited list in a switch arm's pattern — a parenthesised pattern, a positional clause — which a
+    ///     lift of the arm (<c>GroupFacts.LiftsThroughInnerBreaks</c>) never lifts through a construct that broke
+    ///     inside it on its own line. Measured 2026-11-11 with <c>Testing ask</c>: <c>not (0</c> / <c>or 1</c> /
+    ///     <c>or 2) when Emit(…) =&gt;</c> / body puts the <c>or</c>s one level past the arm under a kept arrow, a
+    ///     width-broken arrow and a kept break after it alike, and <c>Point(0</c> / <c>or 1, 2)</c> the same; the
+    ///     lift through inner breaks is the <c>when</c> clause's (#446). Skala lifted them a level on pass one, where
+    ///     the arrow's width break lifts through, and not on pass two, where that break read back as kept does not
+    ///     (fuzz 7817611539049315985).
+    /// </summary>
+    ArmPattern = 65536
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>

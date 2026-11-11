@@ -612,6 +612,7 @@ public sealed class LayoutWriter {
                 var path = ancestors.ToArray();
                 var around = InnermostBrokenConstruct(path);
                 liftsThrough = around >= 0
+                    && (flags & IndentFlags.ArmPattern) == 0
                     && document.FactsOf(document.Nodes[path[around].Node].Arg1).LiftsThroughInnerBreaks;
             }
         }
