@@ -287,7 +287,7 @@ public sealed class AsyncVoidShapeBatchTests {
 
         // ⚠ `TextWriter.WriteAsync(char)` has no token-taking sibling on any moniker, so it keeps its
         // argument list — and its presence does not withdraw the finding.
-        Assert.Contains("output.WriteAsync('\\n')", fixedText, StringComparison.Ordinal);
+        Assert.Contains("""output.WriteAsync('\n')""", fixedText, StringComparison.Ordinal);
 
         var after = Analyze(fixedText, "Channel.cs");
         Assert.DoesNotContain(after, static d => d.Id == RuleIds.AsyncMethodWithoutCancellation);
