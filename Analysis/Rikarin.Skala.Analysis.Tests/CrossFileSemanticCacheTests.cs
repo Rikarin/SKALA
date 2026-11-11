@@ -1,6 +1,7 @@
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Analysis.Tests;
 
@@ -26,15 +27,15 @@ public sealed class CrossFileSemanticCacheTests {
 
     const string EmptyCatch = "SK2014";
 
-    const string Project = """
-                           <Project Sdk="Microsoft.NET.Sdk">
-                             <PropertyGroup>
-                               <TargetFramework>net10.0</TargetFramework>
-                               <LangVersion>14.0</LangVersion>
-                               <Nullable>enable</Nullable>
-                             </PropertyGroup>
-                           </Project>
-                           """;
+    const string Project = $"""
+                            <Project Sdk="Microsoft.NET.Sdk">
+                              <PropertyGroup>
+                                <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                                <LangVersion>14.0</LangVersion>
+                                <Nullable>enable</Nullable>
+                              </PropertyGroup>
+                            </Project>
+                            """;
 
     /// <summary>Never changes. Its <c>SK2014</c> is a Syntax-scoped finding the warm run may serve.</summary>
     const string A = """

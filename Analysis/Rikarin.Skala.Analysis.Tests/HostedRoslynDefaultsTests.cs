@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Testing;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis.Tests;
@@ -25,15 +26,15 @@ public sealed class HostedRoslynDefaultsTests {
 
     const string UnusedValue = "IDE0059";
 
-    const string Project = """
-                           <Project Sdk="Microsoft.NET.Sdk">
-                             <PropertyGroup>
-                               <TargetFramework>net10.0</TargetFramework>
-                               <Nullable>enable</Nullable>
-                               <ImplicitUsings>enable</ImplicitUsings>
-                             </PropertyGroup>
-                           </Project>
-                           """;
+    const string Project = $"""
+                            <Project Sdk="Microsoft.NET.Sdk">
+                              <PropertyGroup>
+                                <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                                <Nullable>enable</Nullable>
+                                <ImplicitUsings>enable</ImplicitUsings>
+                              </PropertyGroup>
+                            </Project>
+                            """;
 
     /// <summary>
     ///     One of every shape the hosted ids are about, plus an unread parameter and a discarded call

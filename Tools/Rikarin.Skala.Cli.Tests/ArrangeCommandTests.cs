@@ -38,13 +38,13 @@ public sealed class ArrangeCommandTests {
         );
         scratch.Write(
             "Scratch.csproj",
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup>
-                <TargetFramework>net10.0</TargetFramework>
-              </PropertyGroup>
-            </Project>
-            """
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+               </PropertyGroup>
+             </Project>
+             """
         );
 
         var arranged = CliRunner.Run(Command, caller);
@@ -141,14 +141,14 @@ public sealed class ArrangeCommandTests {
         );
         scratch.Write(
             "App/App.csproj",
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup>
-                <TargetFramework>net10.0</TargetFramework>
-                <DefineConstants>PROJECT_BUILD</DefineConstants>
-              </PropertyGroup>
-            </Project>
-            """
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                 <DefineConstants>PROJECT_BUILD</DefineConstants>
+               </PropertyGroup>
+             </Project>
+             """
         );
         scratch.Write(
             "App/App.slnx",
@@ -258,14 +258,14 @@ public sealed class ArrangeCommandTests {
         );
         scratch.Write(
             "Scratch.csproj",
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup>
-                <TargetFramework>net10.0</TargetFramework>
-                <ImplicitUsings>disable</ImplicitUsings>
-              </PropertyGroup>
-            </Project>
-            """
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                 <ImplicitUsings>disable</ImplicitUsings>
+               </PropertyGroup>
+             </Project>
+             """
         );
 
         var arranged = RunIn(scratch.Root, "arrange", "--load=" + mode, file);
@@ -310,15 +310,15 @@ public sealed class ArrangeCommandTests {
         );
         scratch.Write(
             "Scratch.csproj",
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup>
-                <TargetFramework>net10.0</TargetFramework>
-                <ImplicitUsings>disable</ImplicitUsings>
-                <Nullable>enable</Nullable>
-              </PropertyGroup>
-            </Project>
-            """
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                 <ImplicitUsings>disable</ImplicitUsings>
+                 <Nullable>enable</Nullable>
+               </PropertyGroup>
+             </Project>
+             """
         );
         scratch.Write(
             "Types.cs",

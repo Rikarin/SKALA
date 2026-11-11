@@ -16,14 +16,14 @@ public sealed class NamingFixCommandTests {
                                 dotnet_naming_style.pascal.capitalization = pascal_case
                                 """;
 
-    const string Project = """
-                           <Project Sdk="Microsoft.NET.Sdk">
-                             <PropertyGroup>
-                               <TargetFramework>net10.0</TargetFramework>
-                               <Nullable>enable</Nullable>
-                             </PropertyGroup>
-                           </Project>
-                           """;
+    const string Project = $"""
+                            <Project Sdk="Microsoft.NET.Sdk">
+                              <PropertyGroup>
+                                <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                                <Nullable>enable</Nullable>
+                              </PropertyGroup>
+                            </Project>
+                            """;
 
     [Fact]
     public void Fix_IDE1006_LoadsTheFixerFromTheStandaloneCliPayload() {

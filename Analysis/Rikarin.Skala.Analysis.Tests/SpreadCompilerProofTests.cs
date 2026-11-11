@@ -92,6 +92,7 @@ public sealed class SpreadCompilerProofTests {
         using var scratch = new Scratch();
         var project = Project(scratch, "<TargetFramework>net10.0</TargetFramework>", "latest");
         var source = scratch.Write("Probe.cs", Source);
+        MultiTargetAvailabilityTests.Restore(project);
 
         var (_, report) = CheckCommand.Run(Check(scratch, project), TestContext.Current.CancellationToken);
         Assert.True(Assert.Single(report.Reportable, static f => f.RuleId == CollectionExpressionSpread).HasFix);

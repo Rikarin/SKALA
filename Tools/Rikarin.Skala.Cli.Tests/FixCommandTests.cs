@@ -8,13 +8,13 @@ public sealed class FixCommandTests {
     const string ProjectFile = "Scratch.csproj";
     const string RuleId = "SK4020";
 
-    const string Project = """
-                           <Project Sdk="Microsoft.NET.Sdk">
-                             <PropertyGroup>
-                               <TargetFramework>net10.0</TargetFramework>
-                             </PropertyGroup>
-                           </Project>
-                           """;
+    const string Project = $"""
+                            <Project Sdk="Microsoft.NET.Sdk">
+                              <PropertyGroup>
+                                <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                              </PropertyGroup>
+                            </Project>
+                            """;
 
     const string Source = """
                           public static class Factory {

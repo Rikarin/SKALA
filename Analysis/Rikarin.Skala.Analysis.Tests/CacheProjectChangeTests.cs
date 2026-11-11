@@ -1,4 +1,5 @@
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Analysis.Tests;
 
@@ -59,7 +60,7 @@ public sealed class CacheProjectChangeTests {
                 $"""
                  <Project Sdk="Microsoft.NET.Sdk">
                    <PropertyGroup>
-                     <TargetFramework>net10.0</TargetFramework>
+                     <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
                      <LangVersion>{langVersion}</LangVersion>
                      <NoWarn>{noWarn}</NoWarn>
                    </PropertyGroup>

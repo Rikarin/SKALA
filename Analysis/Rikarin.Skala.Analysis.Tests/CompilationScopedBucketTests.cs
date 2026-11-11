@@ -5,6 +5,7 @@ using Rikarin.Skala.Analysis.Hosting;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Reporting;
 using Rikarin.Skala.Rules.Metadata;
+using Rikarin.Skala.Testing;
 using System.Collections.Immutable;
 
 namespace Rikarin.Skala.Analysis.Tests;
@@ -209,14 +210,14 @@ public sealed class CompilationScopedBucketTests {
     static string WriteProject(Scratch scratch) =>
         scratch.Write(
             "Scratch.csproj",
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup>
-                <TargetFramework>net10.0</TargetFramework>
-                <Nullable>enable</Nullable>
-              </PropertyGroup>
-            </Project>
-            """
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                 <Nullable>enable</Nullable>
+               </PropertyGroup>
+             </Project>
+             """
         );
 
     static IncrementalOutcome Run(Scratch scratch, string project, bool useCache = true) {

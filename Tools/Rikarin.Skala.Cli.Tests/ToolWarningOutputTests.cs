@@ -129,13 +129,13 @@ public sealed class ToolWarningOutputTests : IClassFixture<ToolWarningOutputTest
             Write("Directory.Build.targets", "<Project />");
             Write(
                 "src/Probe.csproj",
-                """
-                <Project Sdk="Microsoft.NET.Sdk">
-                  <PropertyGroup>
-                    <TargetFramework>net10.0</TargetFramework>
-                  </PropertyGroup>
-                </Project>
-                """
+                $"""
+                 <Project Sdk="Microsoft.NET.Sdk">
+                   <PropertyGroup>
+                     <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                   </PropertyGroup>
+                 </Project>
+                 """
             );
             Write("src/Lib.cs", Clean);
             Write("build/Orphan.cs", Clean.Replace("Lib", "Orphan", StringComparison.Ordinal));

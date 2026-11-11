@@ -254,7 +254,9 @@ public static class WorkspaceLoader {
             );
         }
 
-        var degraded = !failedOutright && ReportMissingAnalyzerAssemblies(units, target, diagnostics);
+        var degraded = !failedOutright
+            && (ReportReferencelessProjects(units, target, diagnostics)
+                || ReportMissingAnalyzerAssemblies(units, target, diagnostics));
 
         return new() {
             Mode = LoadMode.Workspace,
@@ -271,6 +273,67 @@ public static class WorkspaceLoader {
             Summary =
                 $"workspace {Path.GetFileName(target)} ({units.Count.ToString(CultureInfo.InvariantCulture)} project(s), {workspace.Diagnostics.Count.ToString(CultureInfo.InvariantCulture)} workspace diagnostic(s))"
         };
+    }
+
+    /// <summary>
+    ///     ⚠
+    ///     <b>
+    ///         A project that loaded source but no core library is refused, because every semantic
+    ///         answer over it is wrong rather than missing.
+    ///     </b>
+    /// </summary>
+    /// <remarks>
+    ///     <c>MSBuildWorkspace</c>'s design-time build does not restore, and the SDK turns
+    ///     <c>GenerateErrorForMissingTargetingPacks</c> off for design-time builds. So a project whose
+    ///     targeting pack is not on disk — any framework the installed SDK does not bundle, until
+    ///     <c>dotnet restore</c> fetches <c>Microsoft.NETCore.App.Ref</c> — evaluates with no
+    ///     references at all and <b>no</b> workspace diagnostic says so.
+    ///     <para>
+    ///         ⚠ Measured when the repository moved to SDK 11.0.100 as the only SDK installed: an
+    ///         unrestored <c>net10.0</c> project loaded with <c>0 workspace diagnostic(s)</c> and
+    ///         reported <c>CS0246 The type or namespace name 'System' could not be found</c> on every
+    ///         file; the same project restored, or retargeted to <c>net11.0</c>, reported only its one
+    ///         real warning. Worse than the noise, <c>skala fix</c>'s revert of a fix that stops binding
+    ///         compares before against after, and in a reference-less compilation nothing binds on
+    ///         either side — so the revert never fires and an unsafe fix is applied.
+    ///     </para>
+    ///     <para>
+    ///         Units with no reportable source are skipped: a project <c>MSBuildWorkspace</c> could not
+    ///         evaluate comes back as a reference-less placeholder with no documents, and that case is
+    ///         already the failed-outright path above.
+    ///     </para>
+    /// </remarks>
+    static bool ReportReferencelessProjects(
+        ImmutableArray<CompilationUnit>.Builder units,
+        string target,
+        ImmutableArray<SkalaDiagnostic>.Builder diagnostics
+    ) {
+        var referenceless = units
+            .Where(static unit => unit.ReportablePaths.Count > 0
+                && unit.Compilation.GetSpecialType(SpecialType.System_Object).TypeKind == TypeKind.Error
+            )
+            .Select(static unit => unit.Name)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (referenceless.Count == 0) {
+            return false;
+        }
+
+        diagnostics.Add(
+            new(
+                ConfigDiagnosticIds.NothingToLoad,
+                SkalaSeverity.Error,
+                $"refusing to analyse '{Path.GetFileName(target)}': {string.Join(", ", referenceless)} loaded "
+                + "with no core library (System.Object does not resolve), so every semantic answer over "
+                + "this load is unsound. A design-time build does not restore and does not report a "
+                + "missing targeting pack — run `dotnet restore`, or use --load=binlog, which reads what "
+                + "a build actually compiled.",
+                target
+            )
+        );
+
+        return true;
     }
 
     /// <summary>

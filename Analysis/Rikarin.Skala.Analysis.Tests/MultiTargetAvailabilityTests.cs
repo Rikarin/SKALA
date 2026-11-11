@@ -288,6 +288,7 @@ public sealed class MultiTargetAvailabilityTests {
         using var scratch = new Scratch();
         var project = scratch.Write(ProjectFile, SingleTargeted);
         var source = scratch.Write(SourceFile, Source);
+        Restore(project);
 
         var request = new CheckRequest {
             RepositoryRoot = scratch.Root,
@@ -465,6 +466,7 @@ public sealed class MultiTargetAvailabilityTests {
         using var scratch = new Scratch();
         var project = scratch.Write(ProjectFile, SingleTargetedDefaultLanguage);
         var source = scratch.Write(SourceFile, BlockNamespaceSource);
+        Restore(project);
 
         var (_, report) = CheckCommand.Run(
             new() {
@@ -572,13 +574,22 @@ public sealed class MultiTargetAvailabilityTests {
     /// <summary>
     ///     ⚠
     ///     <b>
-    ///         The one fixture in this suite that has to restore, and skipping it would have made
-    ///         this test pass over the unfixed analyzer.
+    ///         Every fixture in this file restores, and skipping it would have made these tests pass
+    ///         over the unfixed analyzer.
     ///     </b>
     /// </summary>
     /// <remarks>
-    ///     <c>net10.0</c>'s reference assemblies come from the installed SDK's <c>packs</c> directory,
-    ///     which is why every other scratch project here loads without a restore.
+    ///     ⚠
+    ///     <b>
+    ///         Refuted: "<c>net10.0</c>'s reference assemblies come from the installed SDK's
+    ///         <c>packs</c> directory".
+    ///     </b>
+    ///     Only the SDK's <em>own</em> framework does. Once SDK 11 was the
+    ///     only SDK installed, the single-targeted <c>net10.0</c> fixtures here loaded unrestored with
+    ///     no references at all — <c>CS0518 Predefined type 'System.Object'</c> — and no workspace
+    ///     diagnostic, because a design-time build neither restores nor reports a missing targeting
+    ///     pack. They keep <c>net10.0</c>, so that each stays the multi-targeted fixture minus one
+    ///     moniker, and restore like their twins.
     ///     <c>netstandard2.1</c>'s come from the <c>NETStandard.Library.Ref</c> NuGet package and
     ///     nowhere else — measured: without this call the <c>netstandard2.1</c> compilation comes back
     ///     with <b>no references at all</b>, so <c>System.Threading.Lock</c> is absent from it for a
