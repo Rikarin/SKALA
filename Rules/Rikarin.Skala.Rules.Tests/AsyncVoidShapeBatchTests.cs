@@ -245,8 +245,9 @@ public sealed class AsyncVoidShapeBatchTests {
     ///     appended overload (<c>ReadLineAsync</c>) and an omitted optional parameter
     ///     (<c>ReadToEndAsync</c> has neither, so <c>Task.Delay</c> stands in for the second).
     ///     <para>
-    ///         ⚠ The <c>WriteAsync</c> call is deliberately one no token can reach, and the method is
-    ///         still reported. A token is a promise about the awaits that can honour it.
+    ///         ⚠ The <c>WriteAsync(char)</c> call is deliberately one no token can reach, and the method
+    ///         is still reported. A token is a promise about the awaits that can honour it. (It was
+    ///         <c>WriteAsync(string)</c> until .NET 11 gave that one a token overload.)
     ///     </para>
     /// </remarks>
     [Fact]
@@ -263,6 +264,7 @@ public sealed class AsyncVoidShapeBatchTests {
                                   public async Task PumpAsync() {
                                       var line = await input.ReadLineAsync();
                                       await output.WriteAsync(line);
+                                      await output.WriteAsync('\n');
                                       await Task.Delay(1);
                                   }
                               }
@@ -279,9 +281,13 @@ public sealed class AsyncVoidShapeBatchTests {
         Assert.Contains("input.ReadLineAsync(cancellationToken)", fixedText, StringComparison.Ordinal);
         Assert.Contains("Task.Delay(1, cancellationToken)", fixedText, StringComparison.Ordinal);
 
-        // ⚠ `TextWriter.WriteAsync(string?)` has no token-taking sibling, so it keeps its argument
-        // list — and its presence does not withdraw the finding.
-        Assert.Contains("output.WriteAsync(line)", fixedText, StringComparison.Ordinal);
+        // ⚠ .NET 11 added `TextWriter.WriteAsync(string?, CancellationToken)`, so the string write is
+        // now a third call the token reaches; through .NET 10 it was this test's unreachable one.
+        Assert.Contains("output.WriteAsync(line, cancellationToken)", fixedText, StringComparison.Ordinal);
+
+        // ⚠ `TextWriter.WriteAsync(char)` has no token-taking sibling on any moniker, so it keeps its
+        // argument list — and its presence does not withdraw the finding.
+        Assert.Contains("output.WriteAsync('\\n')", fixedText, StringComparison.Ordinal);
 
         var after = Analyze(fixedText, "Channel.cs");
         Assert.DoesNotContain(after, static d => d.Id == RuleIds.AsyncMethodWithoutCancellation);

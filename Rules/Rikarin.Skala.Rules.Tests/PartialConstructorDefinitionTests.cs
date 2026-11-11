@@ -135,8 +135,9 @@ public sealed class PartialConstructorDefinitionTests {
     ///     definition, and nothing else would say so.
     /// </summary>
     /// <remarks>
-    ///     ⚠ <b>An analyzer whose compilation-start action returns early registers nothing, and passed
-    ///     here vacuously.</b> Seven did, gated on logging, Serilog, MSTest or NUnit types an empty
+    ///     ⚠ <b>A closed gate registers nothing, and passed here vacuously.</b> An analyzer whose
+    ///     compilation-start action returns early has no node action to check. Seven did, gated on
+    ///     logging, Serilog, MSTest or NUnit types an empty
     ///     compilation lacked — and none of them went through the wrapper. .NET 11 moved
     ///     <c>Microsoft.Extensions.Logging.Abstractions</c> into <c>Microsoft.NETCore.App</c>, the four
     ///     logging gates opened, and the test went red; the Serilog and test-framework three would have

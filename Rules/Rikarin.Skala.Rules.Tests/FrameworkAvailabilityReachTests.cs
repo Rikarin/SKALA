@@ -172,7 +172,8 @@ public sealed class FrameworkAvailabilityReachTests {
             "The start-index overload looked up is the called `IndexOf`/`IndexOfAny`'s with an `int` "
             + "inserted; every overload the source can already call that has one (`char`, `string`, "
             + "`char[]`, `string`+`StringComparison`) has had it since netstandard1.0, and "
-            + "`IndexOf(char, StringComparison)` has no start-index form on any moniker, so it declines.",
+            + "`IndexOf(char, StringComparison)` has a start-index form only from net11.0, and since the "
+            + "overload is looked up in the compilation, a moniker without it declines.",
         ["Performance/SortBeforeFilterAnalyzer.cs"] = Recognition + " `Enumerable`; the fix swaps two existing spans.",
         ["Performance/WhereBeforeOperatorAnalyzer.cs"] =
             Recognition + " `Enumerable`; the fix reorders existing calls.",

@@ -124,9 +124,10 @@ public sealed class SubstringBeforeSearchAnalyzer : DiagnosticAnalyzer {
             return;
         }
 
-        // ⚠ Looked up, not assumed. `IndexOf(char, StringComparison)` exists and
+        // ⚠ Looked up, not assumed. Through .NET 10 `IndexOf(char, StringComparison)` exists and
         // `IndexOf(char, int, StringComparison)` does not, so a rule that appended `int` to any
-        // overload it saw would write a call that does not bind.
+        // overload it saw would write a call that does not bind there; .NET 11 added it, and the
+        // lookup is what makes the same source a finding on one moniker and silent on the other.
         if (!HasStartIndexOverload(text, integer, searchMethod)) {
             return;
         }
