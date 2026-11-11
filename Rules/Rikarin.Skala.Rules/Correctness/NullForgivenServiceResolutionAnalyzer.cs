@@ -19,7 +19,7 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///     into the other's ground.
 /// </remarks>
 internal static class ServiceResolution {
-    const string Extensions = "Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions";
+    const string Namespace = "global::Microsoft.Extensions.DependencyInjection.";
 
     /// <summary>
     ///     The suppressed resolution call, or <c>null</c> when this is some other <c>!</c>.
@@ -30,8 +30,8 @@ internal static class ServiceResolution {
     ///     <c>GetRequiredService(this IServiceProvider, Type)</c> — is an extension method in a
     ///     namespace the file need not have imported, since the interface call compiles without it. The
     ///     generic form cannot have that problem: it is *already* a call into
-    ///     <c>ServiceProviderServiceExtensions</c>, so renaming it lands on a sibling of a method that
-    ///     has already resolved.
+    ///     <c>ServiceProviderServiceExtensions</c> (keyed: <c>ServiceProviderKeyedServiceExtensions</c>),
+    ///     so renaming it lands on a sibling of a method that has already resolved.
     /// </remarks>
     public static (IMethodSymbol Method, SimpleNameSyntax Name)? Match(
         SemanticModel model,
@@ -51,12 +51,12 @@ internal static class ServiceResolution {
             return null;
         }
 
-        if (Replacement(method.Name) is null || method.TypeArguments.Length != 1) {
+        if (Container(method.Name) is not { } expected || method.TypeArguments.Length != 1) {
             return null;
         }
 
         var container = method.ContainingType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        if (container != "global::" + Extensions) {
+        if (container != Namespace + expected) {
             return null;
         }
 
@@ -75,6 +75,25 @@ internal static class ServiceResolution {
         name switch {
             "GetService" => "GetRequiredService",
             "GetKeyedService" => "GetRequiredKeyedService",
+            _ => null
+        };
+
+    /// <summary>The static class that really declares the resolution, or <c>null</c> for another name.</summary>
+    /// <remarks>
+    ///     ⚠ <b>The keyed pair is not in <c>ServiceProviderServiceExtensions</c> and never was.</b>
+    ///     <c>Microsoft.Extensions.DependencyInjection.Abstractions</c> has declared
+    ///     <c>GetKeyedService&lt;T&gt;</c> and <c>GetRequiredKeyedService&lt;T&gt;</c> on
+    ///     <c>ServiceProviderKeyedServiceExtensions</c> since 8.0, and the rule matched only the unkeyed
+    ///     class — so <c>GetKeyedService&lt;T&gt;(key)!</c> was reported in its fixture, whose stub put the
+    ///     method in the wrong class, and in no real project. .NET 11 moved the assembly into
+    ///     <c>Microsoft.NETCore.App</c>, the fixtures' stubs became ambiguous with it, and dropping them
+    ///     is what exposed the miss. Each counterpart lives beside the method being renamed, so the fix
+    ///     still lands on a sibling of a call that has already resolved.
+    /// </remarks>
+    static string? Container(string name) =>
+        name switch {
+            "GetService" => "ServiceProviderServiceExtensions",
+            "GetKeyedService" => "ServiceProviderKeyedServiceExtensions",
             _ => null
         };
 }

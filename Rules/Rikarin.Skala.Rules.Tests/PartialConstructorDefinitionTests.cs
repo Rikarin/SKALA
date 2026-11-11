@@ -29,6 +29,40 @@ public sealed class PartialConstructorDefinitionTests {
                           """;
 
     /// <summary>
+    ///     Every type a shipped analyzer's compilation-start gate looks up, declared in source so the
+    ///     gate opens whatever the test host's framework ships (a source type wins over a referenced one).
+    /// </summary>
+    const string GatingTypes = """
+                               namespace Microsoft.Extensions.Logging {
+                                   public interface ILogger<T> { }
+                                   public static class LoggerExtensions { }
+                               }
+
+                               namespace Serilog {
+                                   public interface ILogger { }
+                                   public static class Log { }
+                               }
+
+                               namespace Microsoft.VisualStudio.TestTools.UnitTesting {
+                                   public sealed class TestClassAttribute : System.Attribute { }
+                                   public class TestMethodAttribute : System.Attribute { }
+                               }
+
+                               namespace NUnit.Framework {
+                                   public sealed class TestFixtureAttribute : System.Attribute { }
+                               }
+
+                               class C { }
+                               """;
+
+    /// <summary>The analyzers whose node actions exist only when a gating type resolves.</summary>
+    static readonly string[] Gated = [
+        "InterpolatedLoggerMessageAnalyzer", "LogTemplateDuplicatePropertyAnalyzer",
+        "CaughtExceptionNotLoggedAnalyzer", "LoggerForAnotherTypeAnalyzer", "LogTemplateArgumentCountAnalyzer",
+        "EmptyTestClassAnalyzer", "MissingTestClassAttributeAnalyzer"
+    ];
+
+    /// <summary>
     ///     ⚠ The measurement, kept as a test: if this goes red, Roslyn has started visiting the
     ///     definition, and the guard in <see cref="PartialConstructorDefinitions" /> is what stops every
     ///     finding being reported twice — so read it before deleting anything.
@@ -100,21 +134,35 @@ public sealed class PartialConstructorDefinitionTests {
     ///     compilation-start action. A rule added without it is blind to every partial constructor
     ///     definition, and nothing else would say so.
     /// </summary>
+    /// <remarks>
+    ///     ⚠ <b>An analyzer whose compilation-start action returns early registers nothing, and passed
+    ///     here vacuously.</b> Seven did, gated on logging, Serilog, MSTest or NUnit types an empty
+    ///     compilation lacked — and none of them went through the wrapper. .NET 11 moved
+    ///     <c>Microsoft.Extensions.Logging.Abstractions</c> into <c>Microsoft.NETCore.App</c>, the four
+    ///     logging gates opened, and the test went red; the Serilog and test-framework three would have
+    ///     stayed hidden. So the compilation now declares every gating type itself, and
+    ///     <see cref="Gated" /> asserts each gate really opened.
+    /// </remarks>
     [Fact]
     public void EveryAnalyzerWithANodeAction_ReachesPartialConstructorDefinitions() {
-        var compilation = RuleFixtures.Compile("class C { }", "Empty.cs");
+        var compilation = RuleFixtures.Compile(GatingTypes, "Gates.cs");
         var missing = new List<string>();
+        var registered = new HashSet<string>(StringComparer.Ordinal);
         foreach (var analyzer in SkalaAnalyzers.All) {
             var recorder = new Recorder(compilation);
             var root = new Root(recorder);
             analyzer.Initialize(root);
             root.Start();
-            if (recorder.Nodes.Count > 0 && !recorder.Dispatched) {
-                missing.Add(analyzer.GetType().Name);
+            if (recorder.Nodes.Count > 0) {
+                registered.Add(analyzer.GetType().Name);
+                if (!recorder.Dispatched) {
+                    missing.Add(analyzer.GetType().Name);
+                }
             }
         }
 
         Assert.Empty(missing);
+        Assert.Subset(registered, Gated.ToHashSet(StringComparer.Ordinal));
     }
 
     static ImmutableArray<string> Visits(Counter counter) {
