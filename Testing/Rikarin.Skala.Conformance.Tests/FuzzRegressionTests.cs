@@ -442,6 +442,11 @@ public sealed class FuzzRegressionTests {
     // without the comment, found it fitting at 120 and kept the `=`, chopping the arguments; pass two, the value no
     // held call once broken, broke the `=`.
     [InlineData(7310017UL, "constructs/breaks/held-value-behind-a-target-call.cs")]
+    // Nightly run 42362875104: `vvvvvv = new Foo… /* f */ (firstArgument, secondArgument.Value);`. The callee's width
+    // stopped at its name, so the `(` the fitter placed sat eight columns left of the written `/* f */(`: pass one read
+    // it at 120 and kept the `=`, chopping the arguments; pass two, the chopped arguments turning the callee away, fell
+    // to the ordering rule and broke the `=`. The width now runs through the comment.
+    [InlineData(9715006458001699096UL, "constructs/breaks/equals-before-a-single-argument-call.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

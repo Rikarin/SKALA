@@ -8055,16 +8055,24 @@ public sealed class BreakPlan {
     ///     ⚠ Formatted, not the source span: a generic name's span counts the author's spacing inside its type
     ///     arguments, and the same call written with wider gaps broke its <c>=</c> where the canonical one kept it
     ///     (fuzz seed 7614614614, case 17947985453911507632: whitespace absorption).
+    ///     ⚠ Through the block comments before the <c>(</c> (Nightly run 42362875104, seed
+    ///     9715006458001699096): the fitter places the <c>(</c> at the callee's end, so
+    ///     <c>vvvvvv = new Foo… /* f */ (a, b.Value)</c> put it eight columns left of where the formatter writes it.
+    ///     Pass one read a <c>(</c> at 120 and kept the <c>=</c>; pass two, whose chopped arguments turn the callee
+    ///     away, fell to the ordering rule, saw the line at 128 and broke it.
     /// </remarks>
-    int CalleeOf(ExpressionSyntax value) =>
-        value switch {
-            InvocationExpressionSyntax invocation => FormattedWidth(invocation.Expression),
-            ObjectCreationExpressionSyntax creation => FormattedWidth(
-                creation.GetFirstToken(),
-                creation.ArgumentList!.OpenParenToken.GetPreviousToken()
-            ),
-            _ => 0
+    int CalleeOf(ExpressionSyntax value) {
+        var open = value switch {
+            InvocationExpressionSyntax invocation => invocation.ArgumentList.OpenParenToken,
+            ObjectCreationExpressionSyntax { ArgumentList: { } list } => list.OpenParenToken,
+            _ => default
         };
+
+        return open.IsKind(SyntaxKind.None)
+            ? 0
+            : FormattedWidth(value.GetFirstToken(), open.GetPreviousToken())
+            + CommentsWidth(open.GetPreviousToken(), open);
+    }
 
     /// <summary>
     ///     The token a collection-valued <c>=</c> measures its head from: the first token of the
