@@ -282,6 +282,11 @@ public sealed class FuzzRegressionTests {
     // read the break after the arrow as kept, whose lift does not go through. The oracle lifts through neither
     // (IndentFlags.ArmPattern).
     [InlineData(7817611539049315985UL)]
+    // `case bool { P146: Dictionary<…, List<…>> { P149: not null } }:` past the margin. Pass one broke after `P146:`,
+    // filled the type arguments and left `{ P149: not null }` joined on the `>>` line; pass two read the colon's break
+    // as the author's (#561) and broke the braces open. The braces now read the pattern's head off the output: they
+    // open whenever it spans lines at the `{`, as the oracle does for a filled, kept or positional head alike.
+    [InlineData(1044487512275255493UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
