@@ -1,10 +1,4 @@
 // A property keeps a logger the same way a field does.
-namespace Microsoft.Extensions.Logging {
-    interface ILogger { }
-
-    interface ILogger<out TCategoryName> : ILogger { }
-}
-
 namespace Fixtures {
     using Microsoft.Extensions.Logging;
 

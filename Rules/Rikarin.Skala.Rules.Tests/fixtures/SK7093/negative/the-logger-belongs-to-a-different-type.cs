@@ -1,8 +1,7 @@
+using Microsoft.Extensions.Logging;
 using System;
 
-namespace Microsoft.Extensions.Logging;
-
-public interface ILogger { }
+namespace Fixtures;
 
 public sealed class Service {
     readonly ILogger logger;

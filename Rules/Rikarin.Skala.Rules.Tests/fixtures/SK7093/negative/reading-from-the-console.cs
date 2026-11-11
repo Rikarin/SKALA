@@ -1,8 +1,7 @@
+using Microsoft.Extensions.Logging;
 using System;
 
-namespace Microsoft.Extensions.Logging;
-
-public interface ILogger { }
+namespace Fixtures;
 
 // Reading input is not logging, and a logger is not an answer to it.
 public sealed class Prompt {

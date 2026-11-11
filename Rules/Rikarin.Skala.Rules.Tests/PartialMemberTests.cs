@@ -259,32 +259,22 @@ public sealed class PartialMemberTests {
         Assert.Empty(Of(diagnostics, "SK6003"));
     }
 
-    const string Logging = """
-                           namespace Microsoft.Extensions.Logging {
-                               interface ILogger { }
-
-                               interface ILogger<out TCategoryName> : ILogger { }
-                           }
-                           """;
-
     [Fact]
     public void ALoggerOnAPartialConstructor_IsFixedOnBothHalves() {
         var diagnostics = Analyze(
-            Logging
-            + """
+            """
+            namespace Fixtures {
+                using Microsoft.Extensions.Logging;
 
-              namespace Fixtures {
-                  using Microsoft.Extensions.Logging;
+                sealed class PaymentService { }
 
-                  sealed class PaymentService { }
+                sealed partial class OrderService {
+                    public partial OrderService(ILogger<PaymentService> logger);
 
-                  sealed partial class OrderService {
-                      public partial OrderService(ILogger<PaymentService> logger);
-
-                      public partial OrderService(ILogger<PaymentService> logger) { }
-                  }
-              }
-              """
+                    public partial OrderService(ILogger<PaymentService> logger) { }
+                }
+            }
+            """
         );
 
         Assert.Equal(2, EditCount(Assert.Single(Of(diagnostics, "SK7110"))));
@@ -293,19 +283,17 @@ public sealed class PartialMemberTests {
     [Fact]
     public void ALoggerOnAPartialConstructor_SplitAcrossFiles_IsDeclined() {
         var diagnostics = Analyze(
-            Logging
-            + """
+            """
+            namespace Fixtures {
+                using Microsoft.Extensions.Logging;
 
-              namespace Fixtures {
-                  using Microsoft.Extensions.Logging;
+                sealed class PaymentService { }
 
-                  sealed class PaymentService { }
-
-                  sealed partial class OrderService {
-                      public partial OrderService(ILogger<PaymentService> logger);
-                  }
-              }
-              """,
+                sealed partial class OrderService {
+                    public partial OrderService(ILogger<PaymentService> logger);
+                }
+            }
+            """,
             """
             namespace Fixtures {
                 using Microsoft.Extensions.Logging;

@@ -1,8 +1,7 @@
+using Microsoft.Extensions.Logging;
 using System.IO;
 
-namespace Microsoft.Extensions.Logging;
-
-public interface ILogger { }
+namespace Fixtures;
 
 // ⚠ Routing, not the finding. `Console.Error.WriteLine` binds to `TextWriter.WriteLine` too, so the
 // rule reads the receiver rather than the method's containing type — a writer the caller chose is

@@ -1,13 +1,8 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 
-namespace Microsoft.Extensions.Logging;
-
-public interface ILogger { }
-
-public static class LoggerExtensions {
-    public static void LogError(this ILogger logger, Exception error, string message) { }
-}
+namespace Fixtures;
 
 public sealed class Importer {
     readonly ILogger logger;

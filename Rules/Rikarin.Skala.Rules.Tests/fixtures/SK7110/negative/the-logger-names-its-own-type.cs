@@ -1,10 +1,4 @@
 // The repair, which must not still be reported.
-namespace Microsoft.Extensions.Logging {
-    interface ILogger { }
-
-    interface ILogger<out TCategoryName> : ILogger { }
-}
-
 namespace Fixtures {
     using Microsoft.Extensions.Logging;
 

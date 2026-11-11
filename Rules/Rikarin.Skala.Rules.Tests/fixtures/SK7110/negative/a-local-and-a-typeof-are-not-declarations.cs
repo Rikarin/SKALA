@@ -1,11 +1,5 @@
 // ⚠ A composition root names other classes` loggers on purpose. Reporting a local, a
 // `typeof` or a factory return type would turn this into a rule against dependency injection.
-namespace Microsoft.Extensions.Logging {
-    interface ILogger { }
-
-    interface ILogger<out TCategoryName> : ILogger { }
-}
-
 namespace Fixtures {
     using Microsoft.Extensions.Logging;
 

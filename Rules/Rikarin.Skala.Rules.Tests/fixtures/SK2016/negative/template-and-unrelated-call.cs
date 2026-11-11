@@ -1,12 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace Microsoft.Extensions.Logging;
-
-interface ILogger { }
-
-static class LoggerExtensions {
-    public static void LogInformation(this ILogger logger, string message, params object[] args) { }
-}
+namespace Fixtures;
 
 static class OtherLoggerExtensions {
     public static void LogInformation(this object logger, string message) { }

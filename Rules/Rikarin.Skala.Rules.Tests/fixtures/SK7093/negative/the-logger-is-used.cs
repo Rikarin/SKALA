@@ -1,8 +1,5 @@
-namespace Microsoft.Extensions.Logging;
-
-public interface ILogger {
-    void LogInformation(string template, params object[] arguments);
-}
+using Microsoft.Extensions.Logging;
+namespace Fixtures;
 
 public sealed class Importer {
     readonly ILogger logger;

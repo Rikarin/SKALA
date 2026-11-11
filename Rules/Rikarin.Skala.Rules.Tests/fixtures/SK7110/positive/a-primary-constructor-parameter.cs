@@ -1,11 +1,5 @@
 // A primary-constructor parameter has no constructor body to sit in; the enclosing type is
 // found from the type declaration, which is why this shape is reported at all.
-namespace Microsoft.Extensions.Logging {
-    interface ILogger { }
-
-    interface ILogger<out TCategoryName> : ILogger { }
-}
-
 namespace Fixtures {
     using Microsoft.Extensions.Logging;
 
