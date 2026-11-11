@@ -10036,12 +10036,20 @@ public sealed class BreakPlan {
 
         var keeps = options.KeepsUserBreaksBetweenItems;
         var broken = chopsAlways || forced || keeps && interBroken || keeps && keepExisting && delimiterBroken;
+        var owner = keepExisting ? -1 : PropertyPatternOwnerMarker(node);
 
         Describe(
             node,
             outer,
             chopsAlways || forced ? GroupMode.Break : GroupMode.Preserve,
-            new(broken, joins, true, HidesFlatWidthWhenBroken: true)
+            new(
+                broken,
+                joins,
+                true,
+                HidesFlatWidthWhenBroken: true,
+                Owner: owner,
+                BreaksIfOwnerIsMultiLine: owner >= 0
+            )
         );
 
         DescribeInner(
@@ -10055,6 +10063,35 @@ public sealed class BreakPlan {
                 HidesFlatWidthWhenBroken: true
             )
         );
+    }
+
+    /// <summary>
+    ///     The head marker a property pattern's braces read: they break open whenever the pattern they
+    ///     belong to already spans lines when its <c>{</c> is reached; −1 for a clause with no head.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ An output fact, never a source one (fuzz 1044487512275255493). Measured 2026-11-11 with
+    ///     <c>Testing ask</c> on twenty-six shapes: the oracle writes <c>Foo&lt;int,</c> / <c>int&gt; {</c> /
+    ///     <c>P: not null</c> / <c>}</c> for a type argument list it filled and one the author broke alike, in
+    ///     a case label, an <c>is</c>, a switch arm and a subpattern's value, behind <c>not</c>, before a
+    ///     positional clause and before a designation, and for a positional clause the author broke
+    ///     (<c>Foo(1,</c> / <c>2) {</c>). A subpattern's value spans lines from the subpattern's name: a
+    ///     break after the colon opens the value's braces whether the author kept it or the colon's own group
+    ///     added it (<c>Name:</c> / <c>Type {</c> / … / <c>}</c> at 83 columns), and #561's
+    ///     <c>forced</c> was the kept half of that alone — pass one added the colon's break with the braces
+    ///     joined and pass two, reading it as the author's, broke them. Behind <c>not</c> the colon's break is
+    ///     not the pattern's: <c>Name:</c> / <c>not Foo { P: not null }</c> stays joined.
+    /// </remarks>
+    int PropertyPatternOwnerMarker(PropertyPatternClauseSyntax node) {
+        if (node.Parent is not RecursivePatternSyntax pattern) {
+            return -1;
+        }
+
+        var head = pattern.Parent is SubpatternSyntax { ExpressionColon: not null } holder && holder.Pattern == pattern
+            ? FirstToken(holder)
+            : FirstToken(pattern);
+
+        return head.IsKind(SyntaxKind.None) || head == node.OpenBraceToken ? -1 : MarkerAt(head);
     }
 
     /// <summary>
