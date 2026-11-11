@@ -44,8 +44,7 @@ public sealed class SarifSuppressionTests {
         };
 
     static JsonElement Results(RunReport report) =>
-        JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.Build(report)))
-            .RootElement
+        JsonElement.Parse(SarifWriter.Serialize(SarifWriter.Build(report)))
             .GetProperty("runs")[0]
             .GetProperty("results");
 
@@ -164,8 +163,7 @@ public sealed class SarifSuppressionTests {
 
         var full = RuleIds(Results(report));
         var narrowed = RuleIds(
-            JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)))
-                .RootElement
+            JsonElement.Parse(SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)))
                 .GetProperty("runs")[0]
                 .GetProperty("results")
         );
@@ -194,8 +192,7 @@ public sealed class SarifSuppressionTests {
             Gate = new GateResult("ci", false, ["1 new finding(s)"])
         };
 
-        var run = JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)))
-            .RootElement
+        var run = JsonElement.Parse(SarifWriter.Serialize(SarifWriter.BuildWithoutSuppressed(report)))
             .GetProperty("runs")[0];
 
         Assert.Empty(run.GetProperty("results").EnumerateArray());
@@ -329,7 +326,7 @@ public sealed class SarifSeverityTests {
         [..array.EnumerateArray().Select(element => select(element).GetString() ?? string.Empty)];
 
     static JsonElement Log(RunReport report) =>
-        JsonDocument.Parse(SarifWriter.Serialize(SarifWriter.Build(report))).RootElement
+        JsonElement.Parse(SarifWriter.Serialize(SarifWriter.Build(report)))
         .GetProperty("runs")[0];
 
     /// <summary>

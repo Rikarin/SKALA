@@ -101,7 +101,7 @@ public static class ExplainCommand {
     public static string Render(OptionInfo option) {
         var builder = new StringBuilder();
         builder.Append(option.Key).Append("  ").AppendLine(option.Construct);
-        builder.Append(new string('─', 78)).AppendLine();
+        builder.Append('─', 78).AppendLine();
         builder.AppendLine(Wrap(option.Summary, 78));
         builder.AppendLine();
 
@@ -159,7 +159,7 @@ public static class ExplainCommand {
     public static string Render(RuleInfo rule) {
         var builder = new StringBuilder();
         builder.Append(rule.Id).Append("  ").AppendLine(rule.Title);
-        builder.Append(new string('─', 78)).AppendLine();
+        builder.Append('─', 78).AppendLine();
 
         // ⚠ First line after the rule, not a footnote. `skala explain SK1020` is what somebody runs
         // when a diagnostic they cannot reproduce turns up in a baseline, and the answer to that

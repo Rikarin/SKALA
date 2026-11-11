@@ -768,7 +768,7 @@ public sealed class FuzzGenerator {
                 var inner = new StringBuilder("(x, y) => {\n");
                 var pad = new string(' ', (indent + 1) * 4);
                 inner.Append(pad).Append("return ").Append(Expression(depth + 2, indent + 1)).Append(";\n");
-                inner.Append(new string(' ', indent * 4)).Append('}');
+                inner.Append(' ', indent * 4).Append('}');
                 return inner.ToString();
             }
 
@@ -1107,7 +1107,7 @@ public sealed class FuzzGenerator {
     int Next() => ++counter;
 
     void Line(int indent, string text) {
-        builder.Append(new string(' ', indent * 4)).Append(text).Append('\n');
+        builder.Append(' ', indent * 4).Append(text).Append('\n');
     }
 
     void Blank() => builder.Append('\n');

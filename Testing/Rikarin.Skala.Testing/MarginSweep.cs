@@ -250,7 +250,7 @@ public static class MarginSweep {
         builder.AppendLine("    static void Body() {");
         var opened = 0;
         for (var i = 2; i < depth; i++) {
-            builder.Append(new string(' ', (i + 1) * Indent)).AppendLine("if (flag) {");
+            builder.Append(' ', (i + 1) * Indent).AppendLine("if (flag) {");
             opened++;
         }
 
@@ -266,7 +266,7 @@ public static class MarginSweep {
         }
 
         for (var i = opened + 1; i > 1; i--) {
-            builder.Append(new string(' ', i * Indent)).AppendLine("}");
+            builder.Append(' ', i * Indent).AppendLine("}");
         }
 
         builder.AppendLine("    }");

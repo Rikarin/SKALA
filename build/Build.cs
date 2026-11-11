@@ -881,10 +881,10 @@ class Build : NukeBuild {
             );
 
     AbsolutePath ReleaseTool =>
-        RootDirectory / "build" / "Rikarin.Skala.Release" / "bin" / Configuration / "net10.0" / "skala-release.dll";
+        RootDirectory / "build" / "Rikarin.Skala.Release" / "bin" / Configuration / "net11.0" / "skala-release.dll";
 
     static AbsolutePath ToolAssembly(AbsolutePath root) =>
-        root / "Tools" / "Rikarin.Skala.Cli" / "bin" / "Release" / "net10.0" / "skala.dll";
+        root / "Tools" / "Rikarin.Skala.Cli" / "bin" / "Release" / "net11.0" / "skala.dll";
 
     /// <summary>
     ///     The previous release's tree, extracted beside this one and built.

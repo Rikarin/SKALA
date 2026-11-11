@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -10,6 +10,13 @@
     <NukeRootDirectory>..</NukeRootDirectory>
     <NukeScriptDirectory>..</NukeScriptDirectory>
     <IsPackable>false</IsPackable>
+    <!--
+      ⚠ No apphost. On .NET 11, NUKE 10.1.0's static constructor asserts that the entry assembly's
+      location equals the invoked path; launched through the apphost (`bin/Debug/_build`, which is
+      what `dotnet run` uses) the two differ and every target dies with a TypeInitializationException
+      before running. `dotnet _build.dll` passes, so `dotnet run` must launch through the muxer.
+    -->
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
 
   <ItemGroup>

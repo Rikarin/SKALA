@@ -15,17 +15,18 @@
     Reference packs for `// fixture-option: TargetFramework = …` (#515). A fixture otherwise compiles
     against the test host's own runtime assemblies, whose core library is System.Private.CoreLib — the
     shape no real build has, so a rule that reads the target framework off the reference set could not
-    be fixtured at all. net10.0 is the SDK's own targeting pack, already on disk wherever this builds;
-    net9.0 is downloaded by restore like any package (9.0.19, pinned so restore needs nothing new on a
-    machine that has it). netstandard2.0 and netstandard2.1 are the older legs of a multi-targeted
+    be fixtured at all. net11.0 is the SDK's own targeting pack, already on disk wherever this builds;
+    net10.0 and net9.0 are downloaded by restore like any package (10.0.15 and 9.0.19, pinned so
+    restore needs nothing new on a machine that has them). netstandard2.0 and netstandard2.1 are the older legs of a multi-targeted
     project, for a sibling compilation that lacks a member the net10.0 leg has (#511). The paths reach
     the tests the way SkalaRepositoryRoot does.
   -->
   <ItemGroup>
-    <PackageDownload Include="Microsoft.NETCore.App.Ref" Version="[9.0.19]" />
+    <PackageDownload Include="Microsoft.NETCore.App.Ref" Version="[9.0.19];[10.0.15]" />
     <PackageDownload Include="NETStandard.Library" Version="[2.0.3]" />
     <PackageDownload Include="NETStandard.Library.Ref" Version="[2.1.0]" />
-    <AssemblyMetadata Include="SkalaReferencePack:net10.0" Value="$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Ref/$(BundledNETCoreAppPackageVersion)/ref/net10.0" />
+    <AssemblyMetadata Include="SkalaReferencePack:net11.0" Value="$(NetCoreTargetingPackRoot)/Microsoft.NETCore.App.Ref/$(BundledNETCoreAppPackageVersion)/ref/net11.0" />
+    <AssemblyMetadata Include="SkalaReferencePack:net10.0" Value="$(NuGetPackageRoot)microsoft.netcore.app.ref/10.0.15/ref/net10.0" />
     <AssemblyMetadata Include="SkalaReferencePack:net9.0" Value="$(NuGetPackageRoot)microsoft.netcore.app.ref/9.0.19/ref/net9.0" />
     <AssemblyMetadata Include="SkalaReferencePack:netstandard2.0" Value="$(NuGetPackageRoot)netstandard.library/2.0.3/build/netstandard2.0/ref" />
     <AssemblyMetadata Include="SkalaReferencePack:netstandard2.1" Value="$(NuGetPackageRoot)netstandard.library.ref/2.1.0/ref/netstandard2.1" />

@@ -55,7 +55,7 @@
   <!-- Tool profile: everything else -->
   <PropertyGroup Condition="'$(SkalaProfile)' == '' and '$(MSBuildProjectName)' != '_build'">
     <SkalaProfile>tool</SkalaProfile>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>

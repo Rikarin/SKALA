@@ -1714,7 +1714,7 @@ public static class PreferenceSweep {
         builder.AppendLine("static class Sweep {");
         builder.AppendLine("    static void Body() {");
         foreach (var statement in statements) {
-            builder.Append(new string(' ', Indent * 2)).AppendLine(statement);
+            builder.Append(' ', Indent * 2).AppendLine(statement);
             builder.AppendLine();
         }
 
@@ -1735,7 +1735,7 @@ public static class PreferenceSweep {
         var builder = new StringBuilder();
         builder.AppendLine("abstract class Sweep {");
         foreach (var member in members) {
-            builder.Append(new string(' ', Indent)).AppendLine(member);
+            builder.Append(' ', Indent).AppendLine(member);
             builder.AppendLine();
         }
 

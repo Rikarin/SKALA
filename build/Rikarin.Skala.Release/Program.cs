@@ -47,7 +47,7 @@ bool Flag(string name) => Array.IndexOf(args, "--" + name) >= 0;
 
 var candidateRoot = Path.GetFullPath(Option("candidate") ?? Rikarin.Skala.Testing.Corpus.RepositoryRoot);
 var candidateTool = Option("candidate-tool")
-    ?? Path.Combine(candidateRoot, "Tools", "Rikarin.Skala.Cli", "bin", "Release", "net10.0", "skala.dll");
+    ?? Path.Combine(candidateRoot, "Tools", "Rikarin.Skala.Cli", "bin", "Release", "net11.0", "skala.dll");
 
 var baselineRoot = Option("baseline") is { Length: > 0 } baseline ? Path.GetFullPath(baseline) : null;
 var baselineToolPath = Option("baseline-tool");

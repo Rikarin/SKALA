@@ -15,6 +15,6 @@
   <ItemGroup>
     <AssemblyMetadata Include="SkalaRepositoryRoot" Value="$(SkalaRepositoryRoot)" />
     <AssemblyMetadata Include="SkalaCliAssembly"
-                      Value="$(SkalaRepositoryRoot)Tools/Rikarin.Skala.Cli/bin/$(Configuration)/net10.0/skala.dll" />
+                      Value="$(SkalaRepositoryRoot)Tools/Rikarin.Skala.Cli/bin/$(Configuration)/net11.0/skala.dll" />
   </ItemGroup>
 </Project>
