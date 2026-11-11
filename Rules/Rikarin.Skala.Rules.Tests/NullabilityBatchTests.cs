@@ -132,15 +132,6 @@ public sealed class NullabilityBatchTests {
     [InlineData(NullableContextOptions.Disable)]
     public void EachRule_BehavesAsItsCatalogueEntrySaysWhenNullableIsOff(NullableContextOptions options) {
         const string source = """
-                              namespace Microsoft.Extensions.DependencyInjection {
-                                  static class ServiceProviderServiceExtensions {
-                                      public static T GetService<T>(this System.IServiceProvider provider) => default;
-
-                                      public static T GetRequiredService<T>(this System.IServiceProvider provider) =>
-                                          throw new System.InvalidOperationException();
-                                  }
-                              }
-
                               namespace Fixtures {
                                   using Microsoft.Extensions.DependencyInjection;
 

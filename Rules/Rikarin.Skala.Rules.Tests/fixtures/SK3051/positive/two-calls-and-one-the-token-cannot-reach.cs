@@ -4,15 +4,16 @@ using System.Threading.Tasks;
 
 // ⚠ #328: the fix appends the parameter *and* passes it to every call that can take one. Two here
 // can — `ReadLineAsync` through an appended overload, `Task.Delay` through another — and
-// `TextWriter.WriteAsync(string)` cannot, which does not withdraw the finding: a token promises
-// cooperative cancellation at the awaits that can honour it, not an abort.
+// `TextWriter.WriteAsync(char)` cannot, which does not withdraw the finding: a token promises
+// cooperative cancellation at the awaits that can honour it, not an abort. (The unreachable call was
+// `WriteAsync(string)` until .NET 11 added `WriteAsync(string?, CancellationToken)`.)
 public sealed class Channel {
     readonly TextReader input = TextReader.Null;
     readonly TextWriter output = TextWriter.Null;
 
     public async Task PumpAsync() {
         var line = await input.ReadLineAsync();
-        await output.WriteAsync(line);
+        await output.WriteAsync(line is null ? '\0' : '\n');
         await Task.Delay(1);
     }
 }

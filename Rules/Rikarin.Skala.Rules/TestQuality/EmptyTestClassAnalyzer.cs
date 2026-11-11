@@ -37,7 +37,8 @@ public sealed class EmptyTestClassAnalyzer : DiagnosticAnalyzer {
     public override void Initialize(AnalysisContext context) {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(static start => {
+        var registrar = PartialConstructorDefinitions.Visiting(context);
+        registrar.RegisterCompilationStartAction(static start => {
                 var frameworks = TestFrameworks.Resolve(start.Compilation);
                 if (frameworks.MsTestClassAttribute is null && frameworks.NUnitFixtureAttribute is null) {
                     return;
