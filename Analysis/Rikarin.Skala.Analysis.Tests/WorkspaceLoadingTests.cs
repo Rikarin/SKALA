@@ -2,6 +2,7 @@ using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Formatting.CSharp.Arrangement;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Testing;
 using System.Reflection;
 
 namespace Rikarin.Skala.Analysis.Tests;
@@ -46,14 +47,14 @@ public sealed class WorkspaceLoadingTests {
                                }
                                """;
 
-    const string Project = """
-                           <Project Sdk="Microsoft.NET.Sdk">
-                             <PropertyGroup>
-                               <TargetFramework>net10.0</TargetFramework>
-                               <Nullable>enable</Nullable>
-                             </PropertyGroup>
-                           </Project>
-                           """;
+    const string Project = $"""
+                            <Project Sdk="Microsoft.NET.Sdk">
+                              <PropertyGroup>
+                                <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                                <Nullable>enable</Nullable>
+                              </PropertyGroup>
+                            </Project>
+                            """;
 
     const string NamingConfig = """
                                 root = true
@@ -73,13 +74,13 @@ public sealed class WorkspaceLoadingTests {
     ///     project with no documents, which is why the fail-closed test below cannot be written
     ///     against the project count.
     /// </summary>
-    const string UnloadableProject = """
-                                     <Project Sdk="Definitely.Not.A.Real.Sdk">
-                                       <PropertyGroup>
-                                         <TargetFramework>net10.0</TargetFramework>
-                                       </PropertyGroup>
-                                     </Project>
-                                     """;
+    const string UnloadableProject = $"""
+                                      <Project Sdk="Definitely.Not.A.Real.Sdk">
+                                        <PropertyGroup>
+                                          <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                                        </PropertyGroup>
+                                      </Project>
+                                      """;
 
     /// <summary>
     ///     ⚠ The cheapest guard, and the one that fails first if the reference regresses.
@@ -142,6 +143,12 @@ public sealed class WorkspaceLoadingTests {
             report.Diagnostics,
             static diagnostic => diagnostic.Id == ConfigDiagnosticIds.AnalyzerAssemblyMissing
         );
+
+        // ⚠ And the must-not-fire twin of the core-library refusal: this project's references resolve.
+        Assert.DoesNotContain(
+            report.Diagnostics,
+            static diagnostic => diagnostic.Message.Contains("no core library", StringComparison.Ordinal)
+        );
     }
 
     /// <summary>
@@ -156,16 +163,16 @@ public sealed class WorkspaceLoadingTests {
     ///     repository — but it is the same condition arriving by a shorter route, and it is the
     ///     condition the guard reads.
     /// </remarks>
-    const string ProjectNamingAMissingAnalyzer = """
-                                                 <Project Sdk="Microsoft.NET.Sdk">
-                                                   <PropertyGroup>
-                                                     <TargetFramework>net10.0</TargetFramework>
-                                                   </PropertyGroup>
-                                                   <ItemGroup>
-                                                     <Analyzer Include="Absent.Generator.dll" />
-                                                   </ItemGroup>
-                                                 </Project>
-                                                 """;
+    const string ProjectNamingAMissingAnalyzer = $"""
+                                                  <Project Sdk="Microsoft.NET.Sdk">
+                                                    <PropertyGroup>
+                                                      <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                                                    </PropertyGroup>
+                                                    <ItemGroup>
+                                                      <Analyzer Include="Absent.Generator.dll" />
+                                                    </ItemGroup>
+                                                  </Project>
+                                                  """;
 
     /// <summary>
     ///     ⚠ #336: a load that cannot reproduce the build's generated sources is refused, not reported.
@@ -244,6 +251,64 @@ public sealed class WorkspaceLoadingTests {
         );
 
         Assert.DoesNotContain(report.Findings, static finding => finding.RuleId == "CS0219");
+    }
+
+    /// <summary>
+    ///     A project whose framework references never resolved — the shape an unrestored project
+    ///     targeting a framework the SDK does not bundle takes, reduced to one property.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The real route is environment-dependent (it needs a targeting pack absent from the SDK's
+    ///     <c>packs</c> directory and no <c>obj/project.assets.json</c>), so a fixture cannot carry it
+    ///     portably. <c>DisableImplicitFrameworkReferences</c> reaches the same state the loader sees:
+    ///     source documents, no core library, and no workspace diagnostic.
+    /// </remarks>
+    const string ProjectWithNoFrameworkReferences = $"""
+                                                     <Project Sdk="Microsoft.NET.Sdk">
+                                                       <PropertyGroup>
+                                                         <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                                                         <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+                                                       </PropertyGroup>
+                                                     </Project>
+                                                     """;
+
+    /// <summary>
+    ///     ⚠ A reference-less compilation is refused, not reported as a page of <c>CS0246</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Found when SDK 11 became the only SDK installed: every scratch project still naming
+    ///     <c>net10.0</c> loaded with zero workspace diagnostics and reported
+    ///     <c>CS0246 The type or namespace name 'System' could not be found</c>, and a
+    ///     <c>skala fix</c> test expecting a revert saw the fix applied because nothing bound before or
+    ///     after it. Sabotage: make <c>ReportReferencelessProjects</c> return <c>false</c> and this
+    ///     goes red on the exit code and on <c>CS0518</c>.
+    /// </remarks>
+    [Fact]
+    public void Workspace_RefusesAProjectWithNoCoreLibrary() {
+        using var scratch = new Scratch();
+        scratch.Write(WidgetFile, Unformatted);
+        var project = scratch.Write("Scratch.csproj", ProjectWithNoFrameworkReferences);
+
+        var (result, report) = CheckCommand.Run(
+            new() {
+                RepositoryRoot = scratch.Root,
+                Paths = [scratch.Root],
+                Mode = LoadMode.Workspace,
+                ProjectPath = project,
+                AllowLoadFallback = false,
+                Output = string.Empty,
+                NoCache = true
+            },
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(ExitCodes.LoadFailure, result.ExitCode);
+        Assert.Contains(
+            report.Diagnostics,
+            static diagnostic => diagnostic.Severity == SkalaSeverity.Error
+                && diagnostic.Message.Contains("no core library", StringComparison.Ordinal)
+        );
+        Assert.DoesNotContain(report.Findings, static finding => finding.RuleId == "CS0518");
     }
 
     /// <summary>

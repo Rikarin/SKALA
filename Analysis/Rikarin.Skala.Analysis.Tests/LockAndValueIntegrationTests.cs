@@ -1,5 +1,6 @@
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Analysis.Tests;
 
@@ -10,11 +11,11 @@ public sealed class LockAndValueIntegrationTests {
         using var scratch = new Scratch();
         var project = scratch.Write(
             "Scratch.csproj",
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable></PropertyGroup>
-            </Project>
-            """
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup><TargetFramework>{ScratchTargetFramework.Current}</TargetFramework><Nullable>enable</Nullable></PropertyGroup>
+             </Project>
+             """
         );
         const string configuration = """
                                      root = true

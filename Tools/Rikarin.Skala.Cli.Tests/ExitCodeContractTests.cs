@@ -196,13 +196,13 @@ public sealed class ExitCodeContractTests : IDisposable {
     ///     A <c>.csproj</c> naming an SDK that does not exist: MSBuild records a failure and hands back no
     ///     documents.
     /// </summary>
-    const string UnloadableProject = """
-                                     <Project Sdk="Definitely.Not.A.Real.Sdk">
-                                       <PropertyGroup>
-                                         <TargetFramework>net10.0</TargetFramework>
-                                       </PropertyGroup>
-                                     </Project>
-                                     """;
+    const string UnloadableProject = $"""
+                                      <Project Sdk="Definitely.Not.A.Real.Sdk">
+                                        <PropertyGroup>
+                                          <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                                        </PropertyGroup>
+                                      </Project>
+                                      """;
 
     /// <summary>
     ///     ⚠ #361: a project the default ladder found and could not load is exit 1, not 0, and the

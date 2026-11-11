@@ -1,5 +1,6 @@
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Testing;
 using System.Security;
 
 namespace Rikarin.Skala.Analysis.Tests;
@@ -17,7 +18,7 @@ public sealed class PerformanceAndConcurrencyIntegrationTests {
             "Scratch.csproj",
             $$"""
               <Project Sdk="Microsoft.NET.Sdk">
-                <PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable></PropertyGroup>
+                <PropertyGroup><TargetFramework>{{ScratchTargetFramework.Current}}</TargetFramework><Nullable>enable</Nullable></PropertyGroup>
                 <ItemGroup>
                   <Reference Include="{{factName}}"><HintPath>{{factPath}}</HintPath></Reference>
                   <Reference Include="{{assertName}}"><HintPath>{{assertPath}}</HintPath></Reference>

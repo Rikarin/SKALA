@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Rikarin.Skala.Analysis.Loading;
 using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Reporting;
+using Rikarin.Skala.Testing;
 
 namespace Rikarin.Skala.Analysis.Tests;
 
@@ -227,7 +228,7 @@ public sealed class DocumentationModeTests {
             $"""
              <Project Sdk="Microsoft.NET.Sdk">
                <PropertyGroup>
-                 <TargetFramework>net10.0</TargetFramework>
+                 <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
                  <GenerateDocumentationFile>{(generate ? "true" : "false")}</GenerateDocumentationFile>
                </PropertyGroup>
              </Project>

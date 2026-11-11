@@ -2,4 +2,8 @@
   <ItemGroup>
     <ProjectReference Include="../Rikarin.Skala.Analysis/Rikarin.Skala.Analysis.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- One constant for the scratch-project framework, shared with Rikarin.Skala.Cli.Tests. -->
+    <Compile Include="../../Testing/Rikarin.Skala.Testing/ScratchTargetFramework.cs" Link="ScratchTargetFramework.cs" />
+  </ItemGroup>
 </Project>
