@@ -64,7 +64,19 @@ echo "Feed:    $FEED"
 echo "Feed (native): $FEED_NATIVE"
 echo "Version: $VERSION"
 
-WORK="$(mktemp -d)"
+# ⚠ The physical path, never the one `mktemp` prints. On macOS `$TMPDIR` lives under `/var`, a
+# symlink to `/private/var`; a project built through the symlinked spelling has its `.editorconfig`
+# found under `/var/…` while csc names the sources under `/private/var/…`, so no section matches and
+# every `dotnet_diagnostic.*.severity` line is silently dropped. Measured with a plain CA1050 and no
+# Skala in it: 0 warnings from `/var/folders/…`, 2 from `/private/var/folders/…`. It began failing
+# the SK1010 assertion on 2026-11-11, when the macOS runner's mktemp started returning the `/var`
+# form; Linux and Windows have no such symlink and were never affected.
+#
+# ⚠ Two steps, each checked: `cleanup` below runs `rm -rf "$WORK"`, and a one-liner `cd "$(mktemp -d)"`
+# whose mktemp failed would `cd ""`, stay put, and hand cleanup the current directory.
+WORK_LINK="$(mktemp -d)" || { echo "mktemp failed" >&2; exit 2; }
+[ -n "$WORK_LINK" ] && [ -d "$WORK_LINK" ] || { echo "mktemp returned no directory" >&2; exit 2; }
+WORK="$(cd "$WORK_LINK" && pwd -P)" || { echo "cannot resolve $WORK_LINK" >&2; exit 2; }
 FAILURES=0
 
 cleanup() {
