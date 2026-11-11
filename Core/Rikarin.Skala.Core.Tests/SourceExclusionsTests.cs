@@ -12,7 +12,7 @@ namespace Rikarin.Skala.Core.Tests;
 ///     everything there was to compile, and every push to <c>master</c> exited 4.
 /// </remarks>
 public sealed class SourceExclusionsTests {
-    static string Under(params string[] segments) => Path.Combine([RepositoryPaths.Root, .. segments]);
+    static string Under(params string[] segments) => Path.Combine([RepositoryPaths.Root, ..segments]);
 
     static bool ExcludedFromRoot(SourceExclusions exclusions, params string[] segments) {
         var full = Under(segments);
