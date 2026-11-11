@@ -277,6 +277,11 @@ public sealed class FuzzRegressionTests {
     // ((x, y) => {` / `}) + […]);`. Ending the tail inside the parenthesised operator broke the `=` on pass one;
     // pass two, the lambda's body joined, kept it. Only a parenthesised cast over an atom ends its tail there.
     [InlineData(7852776670216566259UL)]
+    // Nightly 42805676343, split-line: `not (0` / `or 1 or 2) when Emit(…) =>` / body. Pass one's arrow broke for
+    // width and its lift went through the pattern chain broken inside the `(`, the `or`s a level deeper; pass two
+    // read the break after the arrow as kept, whose lift does not go through. The oracle lifts through neither
+    // (IndentFlags.ArmPattern).
+    [InlineData(7817611539049315985UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

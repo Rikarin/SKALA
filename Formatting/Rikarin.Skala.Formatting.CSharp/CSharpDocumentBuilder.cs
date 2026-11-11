@@ -2250,7 +2250,7 @@ public sealed partial class CSharpDocumentBuilder {
                             unconditional || inside > 1,
                             node is ParenthesizedExpressionSyntax
                                 ? IndentFlags.Grouping | (brokenAfter ? IndentFlags.BrokenAfter : IndentFlags.None)
-                                : IndentFlags.Delimiter
+                                : IndentFlags.Delimiter | (IsInAnArmsPattern(node) ? IndentFlags.ArmPattern : IndentFlags.None)
                         );
                     }
 
@@ -2880,6 +2880,10 @@ public sealed partial class CSharpDocumentBuilder {
 
     void OpenIndent(IndentKind kind, bool unconditional = false, int columns = 0) =>
         OpenIndent(kind, unconditional, IndentFlags.None, columns);
+
+    /// <summary>Whether a node lies in a switch expression arm's pattern, not its <c>when</c> clause. See <see cref="IndentFlags.ArmPattern" />.</summary>
+    static bool IsInAnArmsPattern(SyntaxNode node) =>
+        node.FirstAncestorOrSelf<SwitchExpressionArmSyntax>() is { } arm && arm.Pattern.Span.Contains(node.Span);
 
     /// <param name="shape">
     ///     A delimited construct's scope: <see cref="IndentFlags.Grouping" /> or
