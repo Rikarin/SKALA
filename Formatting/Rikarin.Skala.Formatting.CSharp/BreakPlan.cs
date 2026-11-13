@@ -3689,12 +3689,16 @@ public sealed class BreakPlan {
     ///     ⚠ A typed local with more than one argument was not measured and plans nothing.
     /// </remarks>
     InvocationExpressionSyntax? PlanHeldSingleCall(ExpressionSyntax value, int kind, bool unwrapsCast) {
+        // ⚠ A cast parenthesised call with more than one argument is held behind a typed local too (#598, round 8):
+        // `List<int> s =` / `(T)(a + b…).M(c, d);` moves down where nothing planned chopped the arguments.
+        var castParen = unwrapsCast && CastOverAParenthesisedCall(value) is not null;
         value = unwrapsCast ? CastOverAParenthesisedCall(value) ?? value : value;
         if (value is not InvocationExpressionSyntax {
                 Expression: MemberAccessExpressionSyntax { OperatorToken: var dot, Expression: var receiver }
             } call
             || kind == 1
             && call.ArgumentList.Arguments.Count > 1
+            && !castParen
             // ⚠ Measured on plain arguments only: an argument that breaks inside itself — a lambda's body,
             // an initializer — is #529's and #378's layout, not this table's.
             || call.ArgumentList.DescendantNodes()
@@ -3723,7 +3727,8 @@ public sealed class BreakPlan {
 
         var group = NewGroup();
         Point(dot, group);
-        if (IsACallOnAParenthesisedOperator(call)) {
+        var parenCall = IsASingleCallOnAParenthesisedOperator(call);
+        if (parenCall) {
             LiftReceiver(dot, receiver, group);
         }
 
@@ -3735,8 +3740,9 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: true,
                 HeldCall: call.ArgumentList.Arguments.Count > 1 ? 4 : 3,
                 HeldCallHead: FormattedWidth(dot, call.ArgumentList.OpenParenToken),
-                ParenReceiver: IsACallOnAParenthesisedOperator(call),
-                ParenReceiverTail: IsACallOnAParenthesisedOperator(call) ? ParenReceiverTailOf(receiver) : 0
+                ParenReceiver: parenCall,
+                ParenReceiverTail: parenCall ? ParenReceiverTailOf(receiver) : 0,
+                ParenReceiverHeld: parenCall && call.ArgumentList.Arguments.Count > 0
             ),
             // ⚠ A level of its own, as a chain's: `var y =` / `R` / `.Call(…)` puts the dot one level past
             // the receiver, and LayoutWriter's one-level-per-line collapse keeps `var y = R` / `.Call(…)` at one.
@@ -3748,7 +3754,8 @@ public sealed class BreakPlan {
             // `(b with { … })` / `.M(s);` puts the dot on the `(`'s column as well (#627, fuzz seed
             // 6141772401922034799, measured under `with`, `as`, `await`, a cast, `?:`, `!`, `??` and `new { }`).
             receiver is ParenthesizedExpressionSyntax,
-            ownLevel: receiver is not ParenthesizedExpressionSyntax
+            ownLevel: receiver is not ParenthesizedExpressionSyntax,
+            holdsLevel: parenCall && call.ArgumentList.Arguments.Count > 0 ? HeldLevel.WhileFlat : HeldLevel.None
         );
         return call;
     }
@@ -3761,17 +3768,23 @@ public sealed class BreakPlan {
         if (root is not InvocationExpressionSyntax {
                 Expression: MemberAccessExpressionSyntax { OperatorToken: var dot }
             } call
-            || !IsACallOnAParenthesisedOperator(call)
+            || !IsASingleCallOnAParenthesisedOperator(call)
             || BreaksBefore(dot)
             || HasLineBreakIn(call)) {
             return;
         }
 
+        // ⚠ And a compound assignment's value, which keeps its operator as `return` keeps its keyword (#598, round 8):
+        // `y += (T)(a + b…)` / `.M();`, where nothing planned broke inside the parentheses.
         var whole = call.Parent is CastExpressionSyntax cast && cast.Expression == call ? cast : (ExpressionSyntax)call;
-        if (whole.Parent is not ReturnStatementSyntax) {
+        if (whole.Parent is not ReturnStatementSyntax
+            && !(whole.Parent is AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } compound
+                && !compound.IsKind(SyntaxKind.SimpleAssignmentExpression)
+                && compound.Right == whole)) {
             return;
         }
 
+        var arguments = call.ArgumentList.Arguments.Count;
         var group = NewGroup();
         Point(dot, group);
         LiftReceiver(dot, ((MemberAccessExpressionSyntax)call.Expression).Expression, group);
@@ -3781,10 +3794,16 @@ public sealed class BreakPlan {
             GroupMode.Preserve,
             new(
                 BreaksIfTooLong: true,
+                HeldCall: arguments == 0 ? 0 : arguments > 1 ? 4 : 3,
+                HeldCallHead: arguments == 0 ? 0 : FormattedWidth(dot, call.ArgumentList.OpenParenToken),
                 ParenReceiver: true,
-                ParenReceiverTail: ParenReceiverTailOf(((MemberAccessExpressionSyntax)call.Expression).Expression)
+                ParenReceiverTail: ParenReceiverTailOf(((MemberAccessExpressionSyntax)call.Expression).Expression),
+                ParenReceiverHeld: arguments > 0
             ),
-            true
+            true,
+            // ⚠ With arguments, the call's level is spent only once the dot breaks: `return (T)(a` / `+ b…).M(` /
+            // `x` / `);` puts `x` one level in, and pass one wrote it two (#598, round 8).
+            holdsLevel: arguments > 0 ? HeldLevel.WhileFlat : HeldLevel.None
         );
     }
 
@@ -3800,9 +3819,64 @@ public sealed class BreakPlan {
     /// </remarks>
     static InvocationExpressionSyntax? CastOverAParenthesisedCall(ExpressionSyntax value) =>
         value is CastExpressionSyntax { Expression: InvocationExpressionSyntax call }
-        && IsACallOnAParenthesisedOperator(call)
+        && IsASingleCallOnAParenthesisedOperator(call)
             ? call
             : null;
+
+    /// <summary>
+    ///     The property a cast value reads off one parenthesis around a binary operator, <c>(T)(a + b).Length</c>, or
+    ///     null (#598, SK-DIV-0575 round 8).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not uncast: <c>(a + b).Length</c> through the held value's table newly diverged 5 rows of a 3 000-row grid,
+    ///     so it stays on the ordering rule.
+    /// </remarks>
+    MemberAccessExpressionSyntax? HeldParenPropertyOf(ExpressionSyntax value) {
+        if (value is not CastExpressionSyntax { Expression: var inner }) {
+            return null;
+        }
+
+        return inner is MemberAccessExpressionSyntax { Name: IdentifierNameSyntax } access
+            && ParenthesisedOperatorOf(access.Expression) is not null
+            && access.IsKind(SyntaxKind.SimpleMemberAccessExpression)
+            && !BreaksBefore(access.OperatorToken)
+            && !HasLineBreakIn(access)
+            && IsAMeasuredReceiverContext(access)
+                ? access
+                : null;
+    }
+
+    /// <summary>
+    ///     Whether a call, with arguments or without, has one parenthesis around a binary operator as its receiver:
+    ///     <c>(a + b).Select(x)</c> (#598, SK-DIV-0575 round 8).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c>: under a cast the oracle lays the call out as it lays out the
+    ///     uncast one with the cast in its receiver, arguments or not, so a cast no longer sends <c>.Select(x)</c>,
+    ///     <c>.M(a, b)</c> to the ordering rule, which broke inside the parentheses. Round 7's "admitting one argument
+    ///     newly wrongs 12" was <see cref="IsACallOnAParenthesisedOperator" /> admitting it, which also moved the
+    ///     dot's rule; here the dot keeps the held call's rule (<see cref="GroupFacts.ParenReceiverHeld" />).
+    /// </remarks>
+    static bool IsASingleCallOnAParenthesisedOperator(InvocationExpressionSyntax call) =>
+        call.Expression is MemberAccessExpressionSyntax access
+        && ParenthesisedOperatorOf(access.Expression) is not null;
+
+    /// <summary>
+    ///     The binary operator one parenthesis holds, or two around it, <c>(a + b)</c> or <c>((a + b))</c>, as a
+    ///     receiver (#598, SK-DIV-0575 round 8); null for a type test or anything else.
+    /// </summary>
+    static BinaryExpressionSyntax? ParenthesisedOperatorOf(ExpressionSyntax receiver) {
+        var inside = receiver is ParenthesizedExpressionSyntax { Expression: var once } ? once : null;
+        if (inside is ParenthesizedExpressionSyntax { Expression: var twice }) {
+            inside = twice;
+        }
+
+        return inside is BinaryExpressionSyntax binary
+            && !binary.IsKind(SyntaxKind.IsExpression)
+            && !binary.IsKind(SyntaxKind.AsExpression)
+                ? binary
+                : null;
+    }
 
     /// <summary>
     ///     Whether a call takes no arguments and its receiver is one parenthesis around a binary operator,
@@ -3813,14 +3887,7 @@ public sealed class BreakPlan {
     ///     (ChainWithACallRootIssue380Tests), the held table's answer.
     /// </remarks>
     static bool IsACallOnAParenthesisedOperator(InvocationExpressionSyntax call) =>
-        call is {
-            ArgumentList.Arguments.Count: 0,
-            Expression: MemberAccessExpressionSyntax {
-                Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binary }
-            }
-        }
-        && !binary.IsKind(SyntaxKind.IsExpression)
-        && !binary.IsKind(SyntaxKind.AsExpression);
+        call.ArgumentList.Arguments.Count == 0 && IsASingleCallOnAParenthesisedOperator(call);
 
     /// <summary>
     ///     A member-access expression that is no chain of calls — <c>A.B.C.D.Value</c> — breaks at the last
@@ -3856,11 +3923,8 @@ public sealed class BreakPlan {
         // `Testing ask` behind `x =`, `var y =`, `return`, a cast and as an argument. A fill's group breaks before
         // its point does, which the receiver's level cannot wait for. See GroupFacts.ParenReceiver and ReceiverLiftOf.
         var parenOperator = dots.Count == 1
-            && root is MemberAccessExpressionSyntax {
-                Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binary }
-            }
-            && !binary.IsKind(SyntaxKind.IsExpression)
-            && !binary.IsKind(SyntaxKind.AsExpression)
+            && root is MemberAccessExpressionSyntax rootAccess
+            && ParenthesisedOperatorOf(rootAccess.Expression) is not null
             && !IsAssignmentTarget(root)
             && !HasLineBreakIn(root)
             && IsAMeasuredReceiverContext(root);
@@ -6544,7 +6608,16 @@ public sealed class BreakPlan {
 
         // ⚠ A single call on a receiver, as the whole value: moved down at its dot rather than chopped
         // when the `=` stays (#528). See PlanHeldSingleCall for where the `=` stays.
+        // ⚠ A typed local's head under twelve columns over a cast parenthesised call takes the short heads' table
+        // (#598, SK-DIV-0575 round 8): `long n = (T)(a + b…)` / `.M(x);` breaks the dot where the typed table broke the
+        // `=`. Uncast, it stays on the typed table: `long n = (a` / `?? b…).M(c, d);` kept its `=` on a fresh probe
+        // where the short table broke it.
         var heldKind = owner switch {
+            EqualsOwner.TypedLocal when HeadWidthThroughEquals(node, equals) < MinimumEqualsHead
+                && (CastOverAParenthesisedCall(value) is not null
+                    || value is InvocationExpressionSyntax plainCall
+                    && IsASingleCallOnAParenthesisedOperator(plainCall))
+                => 2,
             EqualsOwner.TypedLocal => 1,
             EqualsOwner.VarLocal or EqualsOwner.Assignment => HeadWidthThroughEquals(node, equals) < MinimumEqualsHead
                 ? 2
@@ -6556,26 +6629,34 @@ public sealed class BreakPlan {
         // Fitter.CastParenBehindAWideHeadBreaks.
         var unwrapsCast = heldKind == 2 || heldKind > 0 && HeadWidthThroughEquals(node, equals) >= MinimumEqualsHead;
         var heldCall = heldKind > 0 ? PlanHeldSingleCall(value, heldKind, unwrapsCast) : null;
-        var heldCast = heldCall is not null && value is CastExpressionSyntax castValue ? castValue : null;
-        var heldBinary = heldCast is not null
-            && heldCall?.Expression is MemberAccessExpressionSyntax {
-                Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binaryInside }
-            }
-                ? binaryInside
+        // ⚠ And a cast property on a parenthesised operator behind a wide head answers as the call does, by the held
+        // value's facts (#598, SK-DIV-0575 round 8); its dot is PlanPropertyFill's point. See
+        // Fitter.CastPropertyBesideAWideHeadBreaks.
+        var heldProperty = heldKind is 1 or 3
+            && heldCall is null
+            && HeadWidthThroughEquals(node, equals) >= MinimumEqualsHead
+                ? HeldParenPropertyOf(value)
                 : null;
+        var heldMember = heldCall?.Expression as MemberAccessExpressionSyntax ?? heldProperty;
+        var holds = heldCall is not null || heldProperty is not null;
+        var heldCast = holds && value is CastExpressionSyntax castValue ? castValue : null;
+        var heldBinary = heldMember is not null
+            ? ParenthesisedOperatorOf(heldMember.Expression)
+            : null;
         var choppedHeld = heldKind == 1 && heldCall is null ? ChoppedHeldCallOf(value) : null;
+        var heldCallee = (heldCall ?? choppedHeld)?.Expression as MemberAccessExpressionSyntax ?? heldProperty;
         var targetKept = false;
         // ⚠ A block comment after the `=` sits on the target's line beside it, ahead of the value (fuzz 7310017 on
         // held-value-behind-a-target-call): `E….Value = /* f */ World.Get(b);` measured the value from the `=` and
         // found it fitting at 120 columns where the line is 128, so pass one kept the `=` and chopped the arguments,
         // and pass two, the value no held call once broken, broke the `=` — the oracle's answer on both.
         var commentAfterEquals = CommentsWidth(equals, equals.GetNextToken());
-        var targetTail = heldCall is not null && owner == EqualsOwner.Assignment
+        var targetTail = holds && owner == EqualsOwner.Assignment
             ? TargetTailOf(node, equals, out targetKept)
             : 0;
         targetTail = targetTail > 0 ? targetTail + commentAfterEquals : 0;
-        var heldReceiver = heldCall?.Expression is MemberAccessExpressionSyntax heldAccess
-            ? FormattedWidth(value.GetFirstToken(), heldAccess.Expression.GetLastToken())
+        var heldReceiver = heldMember is not null
+            ? FormattedWidth(value.GetFirstToken(), heldMember.Expression.GetLastToken())
             : 0;
         var wideLambdaCall = WideLambdaCallLocalOf(node, value);
         var lambdaCall = (value as LambdaExpressionSyntax)?.ExpressionBody as InvocationExpressionSyntax;
@@ -6765,15 +6846,34 @@ public sealed class BreakPlan {
                     OrRight: OrOperandsOf(owner, value) is { } orRight ? FlatSourceWidth(orRight.Right) : 0,
                     OrHead: OrOperandsOf(owner, value) is not null ? HeadWidthThroughEquals(node, equals) : 0,
                     OrLeftIsPattern: OrOperandsOf(owner, value)?.Left is IsPatternExpressionSyntax,
-                    HeldValue: heldCall is null ? 0 : heldKind,
-                    HeldValueWidth: heldCall is null
+                    HeldValue: !holds ? 0 : heldKind,
+                    HeldValueWidth: !holds
                         ? 0
                         : FlatSourceWidth(value)
                         + WidthThroughSemicolon(value)
                         + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
                     HeldValueReceiver: heldReceiver,
-                    HeldValueCast: heldCall is not null && value is CastExpressionSyntax,
-                    HeldValueParen: heldCall is not null && IsACallOnAParenthesisedOperator(heldCall),
+                    // ⚠ And an uncast single parenthesis behind a short head takes the cast's table (#598, round 8):
+                    // master's table broke the `=` where the oracle kept it, and nine grids moved with none newly
+                    // wrong. Not a doubled parenthesis, whose `=` breaks past the receiver, nor behind a wide head,
+                    // where the cast's forms newly diverged 4 to 9 rows per probe.
+                    HeldValueCast: holds
+                    && (value is CastExpressionSyntax
+                        || heldKind == 2
+                        && heldMember is {
+                            Expression: ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax }
+                        }
+                        && ParenthesisedOperatorOf(heldMember.Expression) is not null),
+                    HeldValueParen: heldCall is not null && IsACallOnAParenthesisedOperator(heldCall)
+                    || heldProperty is not null,
+                    HeldValueProperty: heldProperty is not null,
+                    HeldValueMember: heldCall is { Expression: MemberAccessExpressionSyntax memberDot }
+                        ? FormattedWidth(memberDot.OperatorToken, heldCall.ArgumentList.CloseParenToken)
+                        : heldProperty is not null
+                            ? FormattedWidth(heldProperty.OperatorToken, heldProperty.Name.GetLastToken())
+                            : 0,
+                    HeldValueParenCall: heldCall is { ArgumentList.Arguments.Count: > 0 }
+                    && IsASingleCallOnAParenthesisedOperator(heldCall),
                     HeldValueCastWidth: heldCast is null
                         ? 0
                         : FormattedWidth(heldCast.OpenParenToken, heldCast.CloseParenToken),
@@ -6785,23 +6885,20 @@ public sealed class BreakPlan {
                         + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
                     HeldValueHead: heldCall is { Expression: MemberAccessExpressionSyntax heldDot }
                         ? FormattedWidth(heldDot.OperatorToken, heldCall.ArgumentList.OpenParenToken)
-                        : 0,
+                        : heldProperty is not null
+                            ? FormattedWidth(heldProperty.OperatorToken, heldProperty.Name.GetLastToken())
+                            : 0,
                     HeldValueManyArgs: heldCall?.ArgumentList.Arguments.Count > 1,
                     HeldValueGeneric: heldCall is {
                         Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax }
                     },
-                    HeldValueTypedHead: (heldCall is not null || choppedHeld is not null) && heldKind == 1
+                    HeldValueTypedHead: (holds || choppedHeld is not null) && heldKind == 1
                         ? HeadWidthThroughEquals(node, equals)
                         : 0,
-                    HeldValueCallee: (heldCall ?? choppedHeld) is {
-                        Expression: MemberAccessExpressionSyntax heldCallee
-                    }
-                    && heldKind == 1
+                    HeldValueCallee: heldCallee is not null && heldKind == 1
                         ? FlatSourceWidth(heldCallee.Expression) + heldCallee.Name.Identifier.Span.Length
                         : 0,
-                    HeldValueName: (heldCall ?? choppedHeld) is {
-                        Expression: MemberAccessExpressionSyntax { Name: IdentifierNameSyntax }
-                    }
+                    HeldValueName: heldCallee is { Name: IdentifierNameSyntax }
                     && heldKind == 1
                     && owner == EqualsOwner.TypedLocal
                         ? EqualsNameOf(node, owner, value)
@@ -6843,7 +6940,9 @@ public sealed class BreakPlan {
                     TailSpare: parenthesised
                     && owner == EqualsOwner.TypedLocal
                     && value is ParenthesizedExpressionSyntax
-                    && HeadWidthThroughEquals(node, equals) < 20
+                    // ⚠ Only behind a head the collection rule reads (#598, round 8): `long n =` / `(a && b…);`, which
+                    // the one-past-the-margin rule broke on pass one, joined on pass two for want of six spare columns.
+                    && HeadWidthThroughEquals(node, equals) is >= MinimumEqualsHead and < 20
                         ? 6
                         : 0,
                     ShortHeadTypeEnd: ShortHeadTypeEndOf(node, equals, value, owner),
@@ -8540,8 +8639,8 @@ public sealed class BreakPlan {
     ///     parenthesised receiver holds through its <c>)</c>, or zero.
     /// </summary>
     int ParenReceiverTailOf(ExpressionSyntax receiver) =>
-        receiver is ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binary } parenthesis
-            ? FormattedWidth(binary.OperatorToken, parenthesis.CloseParenToken)
+        ParenthesisedOperatorOf(receiver) is { } binary
+            ? FormattedWidth(binary.OperatorToken, receiver.GetLastToken())
             : 0;
 
     /// <summary>

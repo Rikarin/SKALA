@@ -757,7 +757,13 @@ public sealed class Fitter {
 
                 // ⚠ A single call on a parenthesised receiver: broken exactly when the line overflows and the
                 // receiver fits on it. See GroupFacts.ParenReceiver (#598).
-                if (facts.ParenReceiver) {
+                // ⚠ A call with arguments leaves the receiver that fits to the held call's rule below: the dot breaks
+                // only once its `(` lands past the margin, and the arguments chop otherwise (#598, round 8).
+                if (facts.ParenReceiver
+                    && !(facts.ParenReceiverHeld
+                        && m.FlatWidth < Unbounded
+                        && tail < Unbounded
+                        && Fits(m.Column, m.FlatWidth - tail))) {
                     if (m.FlatWidth >= Unbounded || tail >= Unbounded || m.Trailing >= Unbounded) {
                         return ResolvedMode.Flat;
                     }
@@ -766,8 +772,12 @@ public sealed class Fitter {
                     // line still overflows with the call (#617). The operator then nests a level past the dot's
                     // line (BreakPlan.ReceiverLiftOf). See GroupFacts.ParenReceiverTail.
                     if (!Fits(m.Column, m.FlatWidth - tail)) {
+                        // ⚠ With arguments, the receiver's last line keeps the call while its `(` fits there: the
+                        // arguments chop, `+ b…).M(` / `x` / `);` (#598, round 8).
                         return facts.ParenReceiverTail > 0
-                            && !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing)
+                            && (facts.ParenReceiverHeld && facts.HeldCallHead > 0
+                                ? !Fits(lineStart + indentWidth, facts.ParenReceiverTail + facts.HeldCallHead)
+                                : !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing))
                                 ? ResolvedMode.Broken
                                 : ResolvedMode.Flat;
                     }
@@ -883,8 +893,16 @@ public sealed class Fitter {
                 }
 
                 // ⚠ An `=` before a single call: by the measured table. See GroupFacts.HeldValue.
+                // ⚠ A cast property whose receiver fits beside a wide head's `=` has a measured band of its own; where
+                // that band does not decide, master's ordering rule below still answers (#598, SK-DIV-0575 round 8).
                 if (facts.HeldValue > 0) {
-                    return HeldValueBreaks(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    if (!(facts.HeldValueProperty && HeldReceiverFitsBeside(facts, m))) {
+                        return HeldValueBreaks(facts, m) ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    }
+
+                    if (CastPropertyBesideAWideHeadBreaks(facts, m) is { } property) {
+                        return property ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    }
                 }
 
                 // ⚠ The last operand of a header condition: read from the planner's flat widths, breaks the body
@@ -2434,6 +2452,44 @@ public sealed class Fitter {
     }
 
     /// <summary>
+    ///     Whether the <c>=</c> breaks before <c>(T)(a op b…).Name</c> behind a head of twelve columns or more, while the
+    ///     receiver through its <c>)</c> fits beside the <c>=</c> and the value fits below; null where the measurement
+    ///     does not decide and master's ordering rule answers (#598, SK-DIV-0575 round 8).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> on 407 such rows of four probes. A property is not a call with
+    ///     no arguments: <c>10·s − 7·cast ≤ 1033</c>, the call's rule, broke 28 <c>=</c> the oracle kept. The property's
+    ///     own form is <c>10·s − 8·cast − member</c> (<c>s</c> the statement less its head, <c>member</c> the dot through
+    ///     the name): every row at 962 or less broke the <c>=</c> and every row at 990 or more kept it. Between them the
+    ///     oracle goes both ways, so the rule leaves those rows where they were. 962 is one row tighter than the fit's
+    ///     972, after a fresh probe kept an <c>=</c> at 963.
+    /// </remarks>
+    bool? CastPropertyBesideAWideHeadBreaks(in GroupFacts facts, in Measures m) {
+        var continuation = m.ContinuationColumn;
+        if (HeldValueColumn(facts, m) + facts.HeldValueWidth <= width) {
+            return false;
+        }
+
+        if (continuation + facts.HeldValueWidth > width) {
+            return null;
+        }
+
+        var s = continuation + facts.HeldValueWidth - indentWidth;
+        var v = 10 * s - 8 * facts.HeldValueCastWidth - facts.HeldValueMember;
+        return v <= 962 ? true : v >= 990 ? false : null;
+    }
+
+    /// <summary>Whether a held value's receiver, through its <c>)</c>, fits beside the <c>=</c>.</summary>
+    bool HeldReceiverFitsBeside(in GroupFacts facts, in Measures m) =>
+        HeldValueColumn(facts, m) + facts.HeldValueReceiver <= width;
+
+    /// <summary>The column a held value starts on beside its <c>=</c>. See <see cref="HeldValueBreaks" />.</summary>
+    int HeldValueColumn(in GroupFacts facts, in Measures m) =>
+        facts.HeldValueTargetTail > 0 && (facts.HeldValueTargetKept || m.Column + facts.HeldValueTarget > width)
+            ? m.ContinuationColumn + facts.HeldValueTargetTail + 1
+            : m.Column + Math.Max(m.PointWidth, facts.HeldValueTarget) + 1;
+
+    /// <summary>
     ///     Whether an <c>=</c> before a single call breaks, by the head's kind. See GroupFacts.HeldValue.
     /// </summary>
     /// <remarks>
@@ -2521,6 +2577,39 @@ public sealed class Fitter {
                     return end == width + 2 || end == width + 3;
                 }
 
+                // ⚠ A call with arguments on a parenthesised operator, cast or not (#598, SK-DIV-0575 round 8). Measured
+                // 2026-11-13 with `Testing ask`: once its `(` lands two columns or more past the margin beside the `=`,
+                // the `=` stays and the dot breaks, in all 1 846 such rows of eight probes; on column 121 the old table
+                // answers. Where the `(` fits beside, two arguments always chop beside the `=`, and one breaks the `=`
+                // by the two measured forms below: every cast row at 640 or more (uncast 633) with the value fitting
+                // below moved down, and every cast row at 1 028 or more with it not fitting below did too. Short of
+                // those the `=` stays and the argument chops, master's answer for a cast.
+                if (facts.HeldValueParenCall && parenBeside >= width + 2) {
+                    return false;
+                }
+
+                if (facts.HeldValueParenCall
+                    && parenBeside <= width
+                    && (facts.HeldValueCastWidth > 0 || below <= width)) {
+                    var statement = continuation - indentWidth;
+                    var head = valueColumn - statement;
+                    var end = valueColumn + facts.HeldValueWidth;
+                    if (facts.HeldValueManyArgs) {
+                        return false;
+                    }
+
+                    return below <= width
+                        ? 10 * parenBeside - 8 * end - 7 * statement + 66 * head - facts.HeldValueHead
+                        >= (facts.HeldValueCastWidth > 0 ? 640 : 633)
+                        : 10 * parenBeside
+                        - 6 * end
+                        - 8 * statement
+                        + 4 * facts.HeldValueHead
+                        + 75 * head
+                        + Math.Min(facts.HeldValueFirstOperand, 24)
+                        >= 1028;
+                }
+
                 return facts.HeldValueManyArgs
                     ? parenBeside > width && parenBelow <= width - 3
                     : below <= width + 1 || parenBelow <= width - 3;
@@ -2578,6 +2667,15 @@ public sealed class Fitter {
         var end = valueColumn + facts.HeldValueWidth;
         var s = continuation + facts.HeldValueWidth - indentWidth;
         if (valueColumn + facts.HeldValueReceiver <= width) {
+            // ⚠ A call with arguments breaks the `=` from one column over, and past three by its own form, where the
+            // call's width counts against the break (#598, SK-DIV-0575 round 8): 832 of 851 rows that broke lie at
+            // 1 025 or less, and none that kept the `=`.
+            if (facts.HeldValueParenCall) {
+                return end <= width + 3
+                    || 10 * s - 4 * cast - 14 * facts.HeldValueMember + 12 * facts.HeldValueHead <= 1025
+                    && continuation + facts.HeldValueWidth <= width;
+            }
+
             if (end == width + 1) {
                 return head + cast > 18;
             }
@@ -2585,7 +2683,37 @@ public sealed class Fitter {
             return end <= width + 3 || 10 * s - 7 * cast <= 1033 && continuation + facts.HeldValueWidth <= width;
         }
 
-        var keeps = 10 * s + 4 * Math.Min(facts.HeldValueFirstOperand, 24) - 7 * cast >= 1185
+        // ⚠ Round 8 (#598): the member after the parenthesis and the head count too. Every row of 1 477 at 1 094 or
+        // less broke the `=` (the fit's 1 095 kept one on a fresh probe), and every row at 1 170 or more kept it;
+        // between them round 6's safe bound still answers.
+        // ⚠ Past the receiver with the value fitting below (#598, round 8): over 3 325 rows, cast or not, every row at
+        // 1 065 or less broke the `=` and every row at 1 121 or more kept it.
+        if (continuation + facts.HeldValueWidth <= width) {
+            var w = 10 * s
+                + 3 * facts.HeldValueFirstOperand
+                - 8 * cast
+                - 19 * facts.HeldValueMember
+                - head
+                - (cast > 0 ? 7 : 0);
+            if (w <= 1065) {
+                return true;
+            }
+
+            if (w >= 1121) {
+                return continuation + facts.HeldValueOperatorTail > width;
+            }
+        }
+
+        var v = 10 * s
+            + 8 * Math.Min(facts.HeldValueFirstOperand, 24)
+            - 7 * cast
+            - 20 * facts.HeldValueMember
+            - 4 * head;
+        if (v <= 1094) {
+            return true;
+        }
+
+        var keeps = (v >= 1170 || 10 * s + 4 * Math.Min(facts.HeldValueFirstOperand, 24) - 7 * cast >= 1185)
             && continuation + facts.HeldValueOperatorTail <= width;
         return !keeps;
     }
