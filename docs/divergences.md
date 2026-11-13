@@ -14297,9 +14297,41 @@ oracle chopping one column inside the new edge, and two band cells at 107 one co
 on every grid is stable on a second pass. What stays apart is one-column boundary noise of the first condition (the oracle
 one column later at indents 20 and 24, and behind heads of 12 to 17) and the two-argument edge.
 
+**Round ten (#603, 2026-11-13): the two-argument edge is a steep plane, and the one-column misses were the first
+condition's coefficients.** Measured with `Testing ask` on a grid built for the edge (e603, 1 999 cells: `[A(`, `[Range(`,
+`[Describe(`, `[JsonPropertyName(` with `(1, "…")`, indents 8 to 24, parameters five columns either side of
+`5·w + 2·i − h = 155`, the section ending from four columns before the first condition to 120), master 1 943. Read as a
+threshold per family, the two residues are one shape: the first chopping column rises 4/3 a column per column of
+parameter, then jumps by 2 to 7 at the last width that chops at all (`i8 h2`: 107, 108, 109, 111, 113, 120, never), and
+one width past `5·w + 2·i − h ≤ 155` still chops from 118 to 120 at indents 16 to 24.
+
+- **Second condition:** a plane in `E` as well, `11·E ≥ 78·w + 28·i − 19·h − 1053` — seven columns of section end per
+  column of parameter, so it decides only the last width or two. ⚠ Round nine's bend `4·E ≥ 20·w + 7·i − 4·h − 134`
+  is the right idea at the wrong slope: with the old first condition it matches 1 973 of e603 and 1 780 of the fresh
+  probe below, where the steep plane alone matches 1 980 and 1 787.
+- **First condition, refitted beside it:** `50·E ≥ 3520 + 67·w + 24·(i + h)`. The indent and the head share one
+  coefficient — the `(`'s column, which round six already named. The integer search finds it unique with zero slack;
+  it removes the one-column misses at every indent, not only 20 and 24.
+- Fitted on e603, then checked on e603b (1 959 cells written before the refit: `[Fmt(`, `[Bind(`, `[Serialize(`,
+  `[ValidateWith(` with `("…", 2)`, `(typeof(int), "…")` and three arguments), where the e603 fit alone missed 6 cells,
+  all at the second condition and the same for the three argument forms — what the arguments are still does not enter.
+  The second plane was refitted on both.
+- Inside a default's band the old second condition is unchanged: these grids have no default.
+
+| probe (cells matching the oracle) | master | now |
+|---|---|---|
+| e603, the edge grid (fit) | 1 943 / 1 999 | 1 999 |
+| e603b, other names and argument forms (fit for the second plane) | 1 908 / 1 959 | 1 959 |
+| f603a, random sections (seed 603631, written after the rule) | 1 497 / 1 500 | 1 500 |
+| **f603b, random sections near both conditions, last parameters too (seed 6030632, after the rule)** | 1 765 / 1 800 | **1 800** |
+
+No cell on any of the four matched on master and does not now, and every output is stable on a second pass. Pinned by
+`SecondConditionPlaneIssue603Tests` (7 of its 10 cells fail with the old pair).
+
 - options: `skala_wrap_arguments_style`; no key for the join.
-- status: **partially fixed**, pinned by `DefaultBandAndEdgeSectionChopIssue603Tests` (`Fitter.SectionChops`); the
-  two-argument edge and the first condition's one-column misses stay open.
+- status: **partially fixed**, pinned by `DefaultBandAndEdgeSectionChopIssue603Tests` and
+  `SecondConditionPlaneIssue603Tests` (`Fitter.SectionChops`); the two-argument edge outside a default's band is fixed
+  on every probe above. Still open: the second condition inside a default's band, which was not re-measured.
 
 ## SK-DIV-0571 — a line break inside a long parameter behind its section: read off the source, and pass-stable
 

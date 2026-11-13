@@ -1809,11 +1809,13 @@ public sealed class Document {
 /// <param name="ParameterAfterSection">
 ///     ⚠ A parameter's one attribute section with two or more positional arguments, in front of a parameter wider
 ///     than eleven columns (#476, SK-DIV-0352): the parameter's width <c>w</c>. The arguments chop, with the
-///     parameter below them, exactly when the joined line overflows, <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and
-///     <c>5·w + 2·i − h ≤ 155</c> — <c>E</c> the column the section's <c>]</c> ends at, <c>i</c> the section's column,
-///     <c>h</c> the width from its <c>[</c> to its <c>(</c>. Otherwise the section stays whole and the parameter goes
-///     below it alone. ⚠ Inside a default's band (the line through its <c>=</c> fits) the threshold is its own,
-///     <c>24·E ≥ 1644 + 42·w + 12·i + 12·h − 8·v</c> (SK-DIV-0570). See <c>Fitter.ChopsBeforeTheParameter</c>.
+///     parameter below them, exactly when the joined line overflows, <c>50·E ≥ 3520 + 67·w + 24·(i + h)</c> and
+///     <c>11·E ≥ 78·w + 28·i − 19·h − 1053</c> — <c>E</c> the column the section's <c>]</c> ends at, <c>i</c> the
+///     section's column, <c>h</c> the width from its <c>[</c> to its <c>(</c> (#603 round ten; until then
+///     <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and <c>5·w + 2·i − h ≤ 155</c>). Otherwise the section stays whole and
+///     the parameter goes below it alone. ⚠ Inside a default's band (the line through its <c>=</c> fits) the threshold
+///     is its own, <c>24·E ≥ 1644 + 42·w + 12·i + 12·h − 8·v</c> with <c>5·w + 2·i − h ≤ 155</c> (SK-DIV-0570). See
+///     <c>Fitter.ChopsBeforeTheParameter</c>.
 /// </param>
 /// <param name="SectionHead">
 ///     With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the
