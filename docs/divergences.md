@@ -12038,6 +12038,56 @@ misses there); and 3 one-column cells of the dot's bar behind brackets.
 Pinned by `WhenBandIssue576Tests`. Grid scripts: session scratchpad `L-576r2/` (`grids_l.py`, `grids_f*.py`,
 `harness.py`, `band.py`, `bounds.py`, `salt.py`).
 
+⚠ **#576 round 8 (2026-11-13): "before a body too wide to be read through, the `when` always breaks" is wrong behind
+a head under twelve columns.** A first probe of query and call bodies behind four heads that span lines (b576, 1 216
+arms) was meant for the body kept on the arrow's line. Classified first, 432 of its 486 diverging rows were the `when`
+gap instead: behind `X when` and `var v when` the oracle fills the type arguments beside the `when`
+(`X when Materialise<List<bool>,` / `IReadOnlyDictionary<…>>() => Handle(` / the arguments / `),`), and Skala, sending
+every non-atom body to `return true`, broke it. Behind `Tyyyyyyyyyyyy when` and `{ Kind: not null } when` both break.
+
+Measured with `Testing ask`, one column of head at a time:
+- w576 (3 040 arms): heads 6 to 16 × four conditions × call and query bodies of 20 to 130 in steps of 6, indents 12
+  and 20. From a head of twelve every row breaks. Below it the `when` breaks from a body width that falls as the head
+  widens, the same for a call and a query.
+- d576 (2 300 arms): heads 6 to 11, five conditions of 104 to 116 columns, query bodies in steps of 2. The limit is
+  `head·(body − 6) ≥ 627`: 64 behind 11, 76 behind 9, 86 behind 8, 96 behind 7, 112 behind 6 — every family whose
+  condition's lead through its first comma (`Materialise<List<bool>,`, `Convert<Dictionary<int, string>,`) is 23
+  columns or more lies on it, a 116-column condition at indent 20 apart.
+- s576 (900 arms): three callees × three first arguments. A shorter lead breaks two to eight columns of body earlier
+  (`M<int,`: 60 behind 11; `Pick<int,` 56 to 60), ragged across indents. Not modelled: such arms keep the break.
+
+The rule (`Fitter.WhenBreaks`, `GroupFacts.WhenWideBody`, `GroupFacts.WhenLead`): behind a head under twelve, before a
+call, a creation or a parenthesised query, with a lead of 23 or more, the `when` breaks while `head·(body − 6) ≥ 627`.
+What fills is otherwise laid out as before; the arrow, the body and the lifted continuation were already the oracle's.
+
+⚠ **The first cut regressed four rows of its fresh probe** (f576a): `X when Convert<…, IReadOnlyList<T…>>()` and three
+more, each a condition that ends at 115 to 119 on the line below — the oracle breaks the `when` there whatever the body.
+⚠ But "the condition fits below, so it moves" is not the rule either: b576's `var v when Convert<…, T…>()` ends at 117
+below and fills for bodies under 74, as the limit says, and d576's 104-column conditions at indent 12 end at exactly 120
+and follow it too. So the rule is wired only where the condition ends at 120 or past it below; under that the old
+break stands. Which of the two the oracle picks there is open.
+
+Diverging rows, master `afad8cb8b` → now (none non-idempotent before or after, none newly diverging):
+
+| Grid | Rows | Master | Now |
+|---|---|---|---|
+| b576, query and call bodies behind four heads (discovery) | 1 216 | 486 | 172 |
+| w576, heads 6–16 × four conditions × two body kinds (fit) | 3 040 | 1 274 | 487 |
+| d576, heads 6–11 × five conditions, bodies in steps of 2 (fit) | 2 300 | 1 480 | 588 |
+| s576, nine condition leads (fit, lead bound) | 900 | 592 | 421 |
+| fresh, seed 5760814, after the first cut (then used for the line-below guard) | 900 | 299 | 214 |
+| **fresh, seed 5760815, after the final rule** | 1 000 | **308** | **229** |
+
+⚠ Still open, all measured:
+- shorter leads, and the indent-20 rows of a 116-column condition, whose limit sits higher;
+- the `when` gap for a condition that fits a level in, below 120 (above);
+- the body kept on the arrow's line and broken inside (`>>() => (from item` / `in items`), most of what d576 and b576
+  still differ on, unchanged from round 5;
+- round 7's residue (the band's upper edge for other condition shapes, `Pick<int,`), not reworked.
+
+Pinned by `WideBodyWhenIssue576Tests` (6 of its 9 cells fail with the rule off; the line-below guard's cell fails without
+the guard). Grid scripts: worktree `.scratch-arm/` (`gen576.py`, `h.py`, `when576.py`), uncommitted.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as

@@ -1812,6 +1812,13 @@ public sealed class Fitter {
     ///         limit was fitted on <c>Materialise&lt;List&lt;bool&gt;, IReadOnlyDictionary&lt;int, T…&gt;&gt;()</c>;
     ///         it moves with the condition's shape, which is not modelled.
     ///     </para>
+    ///     <para>
+    ///         ⚠ Round 8 (2026-11-13): "before a body too wide to be read through the oracle always breaks" holds only
+    ///         from a head of twelve columns. Before a call, a creation or a parenthesised query behind a narrower head
+    ///         it breaks while <c>head·(body − 6) ≥ 627</c> and fills beside the <c>when</c> otherwise, measured on
+    ///         6 240 arms where the condition ends at 120 or past it on the line below and its lead through the first
+    ///         comma is 23 columns or more (<see cref="GroupFacts.WhenWideBody" />, <see cref="GroupFacts.WhenLead" />).
+    ///     </para>
     /// </remarks>
     bool WhenBreaks(in GroupFacts facts, in Measures m, int tail, int lineStart) {
         if (m.FlatWidth >= Unbounded || Fits(m.Column, m.FlatWidth)) {
@@ -1829,6 +1836,23 @@ public sealed class Fitter {
         }
 
         if (facts.WhenBody <= 0) {
+            // ⚠ Before a call, a creation or a parenthesised query, behind a head under twelve columns, the `when`
+            // breaks only from a body width that falls as the head widens: `head·(body − 6) ≥ 627` (#576 round 8,
+            // SK-DIV-0399). Short of it the type arguments fill beside the `when`, the rest of the arm as it is under a
+            // broken `when`. Measured where the condition's lead through its first comma is 23 columns or more; a
+            // shorter lead breaks a few columns of body earlier, not modelled, so it keeps the break. ⚠ Only for a
+            // condition that, on the line below, ends at column 120 or past it: one ending at 119 or before moves there
+            // whatever the body (the first fresh probe's four regressions, ending at 115 to 119), and one ending at
+            // exactly 120 still fills by the rule (the dense grid's 104-column conditions at indent 12).
+            var head = m.Column - lineStart;
+            if (facts.WhenWideBody > 0
+                && facts.WhenLead >= 23
+                && head < 12
+                && tail < Unbounded
+                && !Fits(m.ContinuationColumn, tail + 1)) {
+                return head * (facts.WhenWideBody - 6) >= 627;
+            }
+
             return true;
         }
 

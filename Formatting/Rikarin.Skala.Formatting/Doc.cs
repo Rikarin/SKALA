@@ -1883,6 +1883,15 @@ public sealed class Document {
 ///     <see cref="WhenArrowKept" />, an arm whose arrow the author broke on either side: there a condition with
 ///     type arguments moves below exactly when it fits there, the rule before the table.
 /// </param>
+/// <param name="WhenWideBody">
+///     ⚠ With <see cref="WhenTable" />, an arm whose body is a call, an object creation or a parenthesised query: the
+///     body's formatted width, or zero (#576 round 8). Behind a head under twelve columns the <c>when</c> breaks only
+///     before a body at least as wide as <c>Fitter.WhenBreaks</c>'s measured limit for that head.
+/// </param>
+/// <param name="WhenLead">
+///     With <see cref="WhenWideBody" />: the width from the condition's first token through the first comma of its
+///     outermost type argument list — what a fill beside the <c>when</c> leaves on the <c>when</c>'s line — or zero.
+/// </param>
 /// <param name="ValueHeadArguments">
 ///     With <see cref="ValueHeadCallee" />: the call condition's argument count, which the line below may run to
 ///     before the oracle keeps the <c>=</c> and chops the call instead (#596's residue, SK-DIV-0447).
@@ -2109,6 +2118,8 @@ public readonly record struct GroupFacts(
     bool WhenTable = false,
     bool WhenAtom = false,
     int WhenBody = 0,
+    int WhenWideBody = 0,
+    int WhenLead = 0,
     bool WhenArrowKept = false,
     int CastParenFirst = 0,
     int ShortHeadTypeEnd = 0,

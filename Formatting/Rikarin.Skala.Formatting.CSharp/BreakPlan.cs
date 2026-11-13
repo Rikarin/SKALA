@@ -5201,6 +5201,27 @@ public sealed class BreakPlan {
         return 4 + width;
     }
 
+    /// <summary>
+    ///     For the gap after an arm's <c>when</c>: the formatted width of a body that is a call, an object creation or a
+    ///     parenthesised query, or zero (#576 round 8, <see cref="GroupFacts.WhenWideBody" />).
+    /// </summary>
+    int WhenWideBodyWidth(SwitchExpressionArmSyntax arm) =>
+        arm.Expression is InvocationExpressionSyntax
+            or ObjectCreationExpressionSyntax
+            or ParenthesizedExpressionSyntax { Expression: QueryExpressionSyntax }
+            ? FormattedWidth(arm.Expression)
+            : 0;
+
+    /// <summary>
+    ///     For the gap after an arm's <c>when</c>: the width from a generic call condition's first token through the
+    ///     first comma of its type argument list, or zero (#576 round 8, <see cref="GroupFacts.WhenLead" />).
+    /// </summary>
+    int WhenLeadWidth(ExpressionSyntax condition) =>
+        condition is InvocationExpressionSyntax { Expression: GenericNameSyntax { TypeArgumentList: var list } }
+        && list.Arguments.SeparatorCount > 0
+            ? FormattedWidth(condition.GetFirstToken(), list.Arguments.GetSeparator(0))
+            : 0;
+
     /// <summary>The <c>[</c> of a list pattern written on one line straight after an <c>is</c>.</summary>
     bool IsAOneLineListPatternAfterIs(SyntaxToken open) =>
         open.Parent is ListPatternSyntax { Parent: IsPatternExpressionSyntax } list
@@ -9851,6 +9872,8 @@ public sealed class BreakPlan {
                         WhenAtom: !node.Condition.DescendantNodesAndSelf()
                             .Any(static part => part is TypeArgumentListSyntax),
                         WhenBody: WhenBodyWidth((SwitchExpressionArmSyntax)node.Parent!),
+                        WhenWideBody: WhenWideBodyWidth((SwitchExpressionArmSyntax)node.Parent!),
+                        WhenLead: WhenLeadWidth(node.Condition),
                         WhenArrowKept: options.KeepsUserBreaksBetweenItems
                         && node.Parent is SwitchExpressionArmSyntax keptArm
                         && (BreaksBefore(keptArm.EqualsGreaterThanToken)
