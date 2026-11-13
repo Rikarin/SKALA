@@ -1818,11 +1818,13 @@ public sealed class Document {
 /// <param name="ParameterAfterSection">
 ///     ⚠ A parameter's one attribute section with two or more positional arguments, in front of a parameter wider
 ///     than eleven columns (#476, SK-DIV-0352): the parameter's width <c>w</c>. The arguments chop, with the
-///     parameter below them, exactly when the joined line overflows, <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and
-///     <c>5·w + 2·i − h ≤ 155</c> — <c>E</c> the column the section's <c>]</c> ends at, <c>i</c> the section's column,
-///     <c>h</c> the width from its <c>[</c> to its <c>(</c>. Otherwise the section stays whole and the parameter goes
-///     below it alone. ⚠ Inside a default's band (the line through its <c>=</c> fits) the threshold is its own,
-///     <c>24·E ≥ 1644 + 42·w + 12·i + 12·h − 8·v</c> (SK-DIV-0570). See <c>Fitter.ChopsBeforeTheParameter</c>.
+///     parameter below them, exactly when the joined line overflows, <c>50·E ≥ 3520 + 67·w + 24·(i + h)</c> and
+///     <c>11·E ≥ 78·w + 28·i − 19·h − 1053</c> — <c>E</c> the column the section's <c>]</c> ends at, <c>i</c> the
+///     section's column, <c>h</c> the width from its <c>[</c> to its <c>(</c> (#603 round ten; until then
+///     <c>24·E ≥ 1695 + 32·w + 11·i + 12·h</c> and <c>5·w + 2·i − h ≤ 155</c>). Otherwise the section stays whole and
+///     the parameter goes below it alone. ⚠ Inside a default's band (the line through its <c>=</c> fits) the threshold
+///     is its own, <c>24·E ≥ 1644 + 42·w + 12·i + 12·h − 8·v</c> with <c>5·w + 2·i − h ≤ 155</c> (SK-DIV-0570). See
+///     <c>Fitter.ChopsBeforeTheParameter</c>.
 /// </param>
 /// <param name="SectionHead">
 ///     With <see cref="ParameterAfterSection" />: the width from the <c>[</c> to the
@@ -1889,6 +1891,15 @@ public sealed class Document {
 ///     decided from the syntax so that a kept arrow break on pass two does not change it. With
 ///     <see cref="WhenArrowKept" />, an arm whose arrow the author broke on either side: there a condition with
 ///     type arguments moves below exactly when it fits there, the rule before the table.
+/// </param>
+/// <param name="WhenWideBody">
+///     ⚠ With <see cref="WhenTable" />, an arm whose body is a call, an object creation or a parenthesised query: the
+///     body's formatted width, or zero (#576 round 8). Behind a head under twelve columns the <c>when</c> breaks only
+///     before a body at least as wide as <c>Fitter.WhenBreaks</c>'s measured limit for that head.
+/// </param>
+/// <param name="WhenLead">
+///     With <see cref="WhenWideBody" />: the width from the condition's first token through the first comma of its
+///     outermost type argument list — what a fill beside the <c>when</c> leaves on the <c>when</c>'s line — or zero.
 /// </param>
 /// <param name="ValueHeadArguments">
 ///     With <see cref="ValueHeadCallee" />: the call condition's argument count, which the line below may run to
@@ -2117,6 +2128,8 @@ public readonly record struct GroupFacts(
     bool WhenTable = false,
     bool WhenAtom = false,
     int WhenBody = 0,
+    int WhenWideBody = 0,
+    int WhenLead = 0,
     bool WhenArrowKept = false,
     int CastParenFirst = 0,
     int ShortHeadTypeEnd = 0,

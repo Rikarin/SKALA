@@ -1597,6 +1597,9 @@ public sealed class Fitter {
     ///     what chopping them saves enters it; the <c>(</c>'s column does. The 16 misses are a threshold that rises
     ///     faster than the line next to the second condition's edge, where the oracle keeps the section whole a few
     ///     columns longer. Only for a section that starts its line, which is what was measured: a chopped list.
+    ///     ⚠ Round ten (#603, SK-DIV-0570): those misses were the second condition, which is a plane in <c>E</c> too,
+    ///     <c>11·E ≥ 78·w + 28·i − 19·h − 1053</c>, with the first refitted beside it as
+    ///     <c>50·E ≥ 3520 + 67·w + 24·(i + h)</c>. Inside a default's band the old pair still stands.
     /// </remarks>
     ResolvedMode? ChopsBeforeTheParameter(in GroupFacts facts, in Measures m, int lineStart) {
         if (m.Column != lineStart + facts.SectionHead) {
@@ -1725,8 +1728,13 @@ public sealed class Fitter {
                 && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * head;
         }
 
-        return 5 * parameter + 2 * lineStart - head <= 155
-            && 24 * end >= 1695 + 32 * parameter + 11 * lineStart + 12 * head;
+        // ⚠ Two or more positional arguments outside a band (#603 round ten, SK-DIV-0570): the second condition is a
+        // plane in E as well, steep — seven columns of section end per column of parameter — so the last parameter
+        // width that chops at all starts chopping anywhere from 113 to 120, where `5·w + 2·i − h ≤ 155` chopped it
+        // from the first condition's column. Measured on 3 958 cells; the first condition refitted on them puts the
+        // indent and the head on one coefficient, the `(`'s column.
+        return 11 * end >= 78 * parameter + 28 * lineStart - 19 * head - 1053
+            && 50 * end >= 3520 + 67 * parameter + 24 * (lineStart + head);
     }
 
     /// <summary>What a <see cref="GroupMode.Preserve" /> group whose source was broken does with the break.</summary>
@@ -1820,6 +1828,13 @@ public sealed class Fitter {
     ///         limit was fitted on <c>Materialise&lt;List&lt;bool&gt;, IReadOnlyDictionary&lt;int, T…&gt;&gt;()</c>;
     ///         it moves with the condition's shape, which is not modelled.
     ///     </para>
+    ///     <para>
+    ///         ⚠ Round 8 (2026-11-13): "before a body too wide to be read through the oracle always breaks" holds only
+    ///         from a head of twelve columns. Before a call, a creation or a parenthesised query behind a narrower head
+    ///         it breaks while <c>head·(body − 6) ≥ 627</c> and fills beside the <c>when</c> otherwise, measured on
+    ///         6 240 arms where the condition ends at 120 or past it on the line below and its lead through the first
+    ///         comma is 23 columns or more (<see cref="GroupFacts.WhenWideBody" />, <see cref="GroupFacts.WhenLead" />).
+    ///     </para>
     /// </remarks>
     bool WhenBreaks(in GroupFacts facts, in Measures m, int tail, int lineStart) {
         if (m.FlatWidth >= Unbounded || Fits(m.Column, m.FlatWidth)) {
@@ -1837,6 +1852,23 @@ public sealed class Fitter {
         }
 
         if (facts.WhenBody <= 0) {
+            // ⚠ Before a call, a creation or a parenthesised query, behind a head under twelve columns, the `when`
+            // breaks only from a body width that falls as the head widens: `head·(body − 6) ≥ 627` (#576 round 8,
+            // SK-DIV-0399). Short of it the type arguments fill beside the `when`, the rest of the arm as it is under a
+            // broken `when`. Measured where the condition's lead through its first comma is 23 columns or more; a
+            // shorter lead breaks a few columns of body earlier, not modelled, so it keeps the break. ⚠ Only for a
+            // condition that, on the line below, ends at column 120 or past it: one ending at 119 or before moves there
+            // whatever the body (the first fresh probe's four regressions, ending at 115 to 119), and one ending at
+            // exactly 120 still fills by the rule (the dense grid's 104-column conditions at indent 12).
+            var head = m.Column - lineStart;
+            if (facts.WhenWideBody > 0
+                && facts.WhenLead >= 23
+                && head < 12
+                && tail < Unbounded
+                && !Fits(m.ContinuationColumn, tail + 1)) {
+                return head * (facts.WhenWideBody - 6) >= 627;
+            }
+
             return true;
         }
 
