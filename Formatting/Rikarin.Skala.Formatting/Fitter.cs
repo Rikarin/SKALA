@@ -791,11 +791,15 @@ public sealed class Fitter {
                     // ⚠ A single call that is a whole `=` value (kinds 3 and 4): moved down whenever its `(`
                     // would land past the margin — chopping below as well if it must — or, with one argument,
                     // when the value overflows by a single column; otherwise its arguments chop (#528).
+                    // ⚠ The single column moves the dot only while the `(` lands far enough right of where the value
+                    // starts: `10·paren − 3·column ≥ 871`, the `(` 1-based, the value's column 0-based — beside a kept
+                    // `=` and below a broken one alike. Short of it the oracle chops (#446, SK-DIV-0211 round 7).
                     if (facts.HeldCall >= 3) {
                         return Fits(m.Column, receiver)
                             && (paren > width
                                 || facts.HeldCall == 3
-                                && m.Column + m.FlatWidth + m.Trailing == width + 1)
+                                && m.Column + m.FlatWidth + m.Trailing == width + 1
+                                && OneOverMovesTheDot(paren, m.Column))
                                 ? ResolvedMode.Broken
                                 : ResolvedMode.Flat;
                     }
@@ -2212,6 +2216,23 @@ public sealed class Fitter {
 
     /// <summary>The margin <see cref="GroupFacts.CreationLimit" /> was measured at (#581).</summary>
     const int CreationLimitWidth = 120;
+
+    /// <summary>
+    ///     Whether a single one-argument call that is a whole <c>=</c> value, its line one column past the margin, moves
+    ///     below at its dot (<c>r</c> / <c>.M(a);</c>) rather than chopping its argument (<c>r.M(</c> / <c>a</c> /
+    ///     <c>);</c>): by the <c>(</c>'s 1-based column and the 0-based column the value starts on (#446).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> on 4 032 cells: the <c>(</c> swept a column at a time from 84
+    ///     to 107, beside a kept <c>=</c> behind <c>var</c>, assignment, <c>this.</c> and <c>string</c> heads of 5 to 12
+    ///     columns and below a broken one behind typed locals, <c>var</c> and <c>string</c> heads, methods of 2, 6 and
+    ///     14 columns, indents 8 to 24. The method's width plays no part, and the indent and the head only through the
+    ///     column the value starts on. #528's rule moved the dot at any <c>(</c>; the oracle chops wherever the
+    ///     <c>(</c> lands short of about 92, which leaves the argument a line of 26 columns or more.
+    ///     <c>10·paren − 3·column ≥ 871</c> is the bound under which no measured cell moves the dot: 1 362 of the 1 431
+    ///     chopped cells lie under it, and the 69 above it stay as #528 had them.
+    /// </remarks>
+    static bool OneOverMovesTheDot(int paren, int column) => 10 * paren - 3 * column >= 871;
 
     /// <summary>
     ///     The widest line a held first call may take below and still be moved there rather than held and

@@ -10390,6 +10390,49 @@ and 20, an argument of four), so it was not taken.
   **resolved within the measured shapes** (#446 item 2). **Open**: the name line's `=` decision, and a value that
   fits neither beside nor below (`=` / chop, where Skala breaks the dot).
 
+⚠ **Round 7 (2026-11-13): "where Skala breaks the dot" is #528's one-column rule, and it is not about the `=`.**
+Round 6's 778 cells were all a value whose line runs exactly one column past the margin. That is where #528 moves a
+one-argument single call below at its dot (`HeldCall` 3, `m.Column + width == width + 1`), and it did so at any `(`.
+The oracle does it only while the `(` lands far right. It is the same beside a kept `=` (`var nnnn = r…` /
+`.M(a);`) and below a broken one (`T name =` / `r…` / `.M(a);`). Short of the bound it chops (`r….M(` / `a` / `);`).
+
+- **Measured** with `Testing ask` on two sweeps. The `(` moved a column at a time from 84 to 107, with methods of 2,
+  6 and 14 columns and indents 8, 12, 16 and 24. The first sweep (2 304 cells) was below a broken `=`, behind typed,
+  `string` and `var` heads. The second (1 728) was beside a kept `=`, behind `var`, assignment, `this.` and `string`
+  heads of 5 to 12 columns.
+  - The first column that moves the dot is 92 at indent 8, rising a column per level, to 96 at indent 24.
+  - Beside the `=` it is one or two columns later, by the head's width.
+  - ⚠ The method's width plays no part: the dot's column does not decide it, the `(`'s does.
+- **The rule** (`Fitter.OneOverMovesTheDot`): `10·paren − 3·column ≥ 871`. `paren` is the `(`'s 1-based column and
+  `column` the 0-based column the value starts on. This is the bound under which no measured cell moves the dot,
+  not a fitted boundary. It catches 1 362 of the 2 880 cells' 1 431 chops. The 69 above it are a column from the
+  boundary and stay as #528 had them. No linear form in the `(`, the indent, the head and the method separates the
+  two classes outright: the best one still misses 27.
+
+| probe | cells | master | now |
+|---|---:|---:|---:|
+| below a broken `=`, the `(` swept (fit) | 2 304 | 1 320 | 1 788 |
+| beside a kept `=`, the `(` swept (fit) | 1 728 | 920 | 1 700 |
+| six heads × receivers 2–98 × beside/below × 121/122 | 3 336 | 2 073 | 2 568 |
+| seven heads × names × receivers × 1/2 arguments × 121–123 | 2 766 | 1 903 | 1 945 |
+| typed locals × values ending 116–126 below | 6 380 | 5 873 | 5 915 |
+| **fresh random (seed 81723, written after the rule: six heads, receivers 1–90, methods 2–24, ends 121–123, a third of the arguments calls)** | 4 000 | 2 474 | 3 108 |
+| **fresh random (seed 90411: types, lists and dictionaries, 1–3 arguments, ends 120–124)** | 4 000 | 2 728 | 2 930 |
+
+No cell is newly wrong and none takes two passes, on master or now. Pinned by `HeldCallOneOverIssue446Tests`; with
+the rule switched off, 3 of its 6 cells fail.
+
+Still open:
+- **The `=` decision itself.** Most of what the fresh probes still miss is here (seed 81723's largest classes):
+  - Behind `var`, assignment and `this.` heads the oracle keeps the `=` and chops (`x = r.M(` / `a` / `);`) where
+    Skala breaks it: 198 cells. For heads under twelve that is #528's `below <= width + 1`. In the 3 336-cell sweep
+    the oracle breaks such an `=` only where the dot breaks too: from a `(` of 97 at indent 8, against 92 under a
+    typed local.
+  - It breaks the `=` before a call whose argument is a call (`= r.M(x.Y(z))`), which Skala keeps and chops: 227.
+  - A typed local of two arguments beside its `=`: the oracle keeps the `=` and chops where Skala breaks it.
+- **A typed local's type/name gap at one column over** (`T` / `name = r.M(a);`): 39.
+- ⚠ status: the dot after a one-column overflow is **fixed** (#446 item 2). **Open**: the `=` decisions listed above.
+
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
 Measured beside SK-DIV-0206 (`SearchValuesAnalyzer.cs`) and probed for #444, with `jb cleanupcode`
