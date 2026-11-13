@@ -33,11 +33,11 @@ namespace Rikarin.Skala.Formatting.CSharp.Arrangement;
 ///     <para>
 ///         ⚠ <b>A shortened name can make a using necessary that was removable when the pass began</b>, and
 ///         the oracle keeps it: <c>using System.Text;</c> beside only <c>System.Text.StringBuilder</c> ends
-///         as <c>using System.Text;</c> and <c>StringBuilder</c>. <see cref="UsingsRule" /> decides removal
-///         from a set computed before the pass, so it would delete the directive the shortened name now
-///         binds through, and safety layer 2 would revert the whole document on <c>CS0246</c>. Every
-///         directive a shortening relies on is therefore recorded in <see cref="Required" />, which the
-///         usings rule of the same pass reads.
+///         as <c>using System.Text;</c> and <c>StringBuilder</c>. This rule used to record the directives it
+///         relied on for <see cref="UsingsRule" /> to spare; since #639 the usings rule re-asks the
+///         rewritten tree instead (<see cref="ArrangementRule.Rebase" />), because
+///         <see cref="StaticQualifierRule" /> shortens a static receiver's namespace the same way, recorded
+///         nothing, and had its using deleted under it.
 ///     </para>
 ///     <para>
 ///         ⚠ Only the <c>false</c> direction exists. At <c>true</c> the oracle qualifies the references
@@ -51,18 +51,12 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
     /// <summary>⚠ Semantic: a short name is only a spelling of the long one where it binds to the same type.</summary>
     public override bool NeedsSemantics => true;
 
-    /// <summary>
-    ///     The using directives (by <see cref="UsingsRule.Key(UsingDirectiveSyntax)" />) a shortening in this
-    ///     pass binds through, and which therefore must not be removed in it.
-    /// </summary>
-    public HashSet<string> Required { get; } = new(StringComparer.Ordinal);
-
     public override bool IsEnabled(in ArrangementOptions options) => !options.PreferQualifiedReference;
 
     public override SyntaxNode Apply(ArrangementContext context) =>
-        new Rewriter(context.Guard, context.Semantics, Required).Visit(context.Root);
+        new Rewriter(context.Guard, context.Semantics).Visit(context.Root);
 
-    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model, HashSet<string> required)
+    sealed class Rewriter(FormatterTagGuard guard, SemanticModel model)
         : GuardedRewriter(guard) {
         public override SyntaxNode? VisitQualifiedName(QualifiedNameSyntax node) {
             var visited = (QualifiedNameSyntax)base.VisitQualifiedName(node)!;
@@ -128,7 +122,6 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
             if (boundary >= 0) {
                 var candidate = Build(segments, boundary + 1, expression);
                 if (Binds(node, attribute, candidate, bound, expression)) {
-                    Require(node, spine[boundary + 1], segments[boundary + 1]);
                     return Build(written, boundary + 1, expression).WithTriviaFrom(visited);
                 }
             }
@@ -214,50 +207,6 @@ public sealed class QualifiedReferenceRule : ArrangementRule {
                 : model.GetSpeculativeSymbolInfo(node.SpanStart, candidate, option);
 
             return info.CandidateSymbols.IsEmpty && SymbolEqualityComparer.Default.Equals(info.Symbol, bound);
-        }
-
-        /// <summary>
-        ///     Records the directives the shortened name now binds through, unless a <c>global using</c>
-        ///     provides the namespace as well — then the file's own directive is redundant either way, and
-        ///     the oracle removes it.
-        /// </summary>
-        void Require(ExpressionSyntax node, ExpressionSyntax first, SimpleNameSyntax name) {
-            // An attribute's name binds to its constructor; the namespace is the type's.
-            var symbol = model.GetSymbolInfo(first).Symbol;
-            if ((symbol as INamedTypeSymbol ?? (symbol as IMethodSymbol)?.ContainingType)
-                is not { ContainingNamespace: { } containing }) {
-                return;
-            }
-
-            // ⚠ By name, not by symbol: a metadata type's namespace is its module's, while a using's name
-            // binds to the compilation's merged namespace, and the two are never Equal (measured — the
-            // first version of this compared symbols and kept nothing).
-            var imported = containing.ToDisplayString();
-
-            foreach (var scope in model.GetImportScopes(node.SpanStart)) {
-                foreach (var import in scope.Imports) {
-                    if (import.NamespaceOrType?.ToDisplayString() == imported
-                        && import.DeclaringSyntaxReference?.GetSyntax() is UsingDirectiveSyntax {
-                            GlobalKeyword.RawKind: (int)SyntaxKind.GlobalKeyword
-                        }) {
-                        return;
-                    }
-                }
-            }
-
-            if (node.SyntaxTree.GetRoot() is not CompilationUnitSyntax unit) {
-                return;
-            }
-
-            foreach (var directive in unit.DescendantNodes().OfType<UsingDirectiveSyntax>()) {
-                if (directive.Alias is { } alias
-                        ? alias.Name.Identifier.ValueText == name.Identifier.ValueText
-                        : directive.StaticKeyword == default
-                        && model.GetSymbolInfo(directive.Name!).Symbol is INamespaceSymbol named
-                        && named.ToDisplayString() == imported) {
-                    required.Add(UsingsRule.Key(directive));
-                }
-            }
         }
 
         static bool IsOutOfScope(SyntaxNode node) {

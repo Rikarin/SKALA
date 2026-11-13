@@ -151,6 +151,36 @@ public abstract class ArrangementRule {
     ///     root is exact and free, while comparing two trees for equality is neither.
     /// </remarks>
     public abstract SyntaxNode Apply(ArrangementContext context);
+
+    /// <summary>
+    ///     Whether the rule carries an answer its caller took about the <em>input</em>, before the pass
+    ///     began — and so one that a rewrite earlier in the same pass can make wrong.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only <see cref="UsingsRule" />'s removable set, today. Every other rule decides from the
+    ///     tree and model it is handed, which <see cref="Arranger" /> keeps current.
+    /// </remarks>
+    public virtual bool DecidedBeforeThePass => false;
+
+    /// <summary>
+    ///     This rule with its <see cref="DecidedBeforeThePass" /> answer re-taken against
+    ///     <paramref name="model" />, which is bound to the tree as earlier rules of the pass left it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #639. Two rewrites of one pass each decided against the original tree and were composed
+    ///     blindly: <c>SK0215</c> shortened <c>Repro.Severity.ImportSeverity.Error</c> to
+    ///     <c>ImportSeverity.Error</c> <em>because</em> <c>using Repro.Severity;</c> was there, and
+    ///     <c>SK0210</c> then removed that using as unused — which it was, in the input. The result did
+    ///     not bind (<c>CS0103</c>) and safety layer 2 reverted the whole document. Re-asking at the point
+    ///     of use is what makes the composition sound for every rule that can make a using necessary,
+    ///     rather than for the one pair a rule remembered to report to the next.
+    ///     <para>
+    ///         ⚠ A rebased answer may only <em>narrow</em> the original. The original is the caller's,
+    ///         and a caller with several compilations has intersected it across all of them; the model
+    ///         here is one compilation's and cannot speak for the others.
+    ///     </para>
+    /// </remarks>
+    public virtual ArrangementRule Rebase(SemanticModel model, CancellationToken cancellation) => this;
 }
 
 /// <summary>What arranging one document produced.</summary>

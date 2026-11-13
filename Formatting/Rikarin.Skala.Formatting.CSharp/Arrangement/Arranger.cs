@@ -45,32 +45,27 @@ public static class Arranger {
     ///         pair from the arrow exactly as it would have from the <c>return</c>.
     ///     </para>
     /// </remarks>
-    public static ImmutableArray<ArrangementRule> Rules(ImmutableHashSet<string>? removableUsings = null) {
-        // ⚠ One instance shared by two rules: the usings a shortening binds through must survive the
-        // removal that runs later in the same pass (#460).
-        var shortening = new QualifiedReferenceRule();
-        return [
-            new AccessibilityRule(),
-            new PredefinedTypeRule(),
-            new ArgumentStyleRule(),
-            new VarRule(),
-            new ObjectCreationRule(),
-            new DefaultValueRule(),
-            new NullCheckingPatternRule(),
-            new PropertyPatternRule(),
-            new EmptyStringRule(),
-            new ThisQualifierRule(),
-            new StaticQualifierRule(),
-            shortening,
-            new DiscardDeclarationRule(),
-            new RedundantBracesRule(),
-            new BodyStyleRule(),
-            new RedundantParenthesesRule(),
-            new TrailingCommaRule(),
-            new NamespaceBodyRule(),
-            new UsingsRule(removableUsings, shortening.Required)
-        ];
-    }
+    public static ImmutableArray<ArrangementRule> Rules(ImmutableHashSet<string>? removableUsings = null) => [
+        new AccessibilityRule(),
+        new PredefinedTypeRule(),
+        new ArgumentStyleRule(),
+        new VarRule(),
+        new ObjectCreationRule(),
+        new DefaultValueRule(),
+        new NullCheckingPatternRule(),
+        new PropertyPatternRule(),
+        new EmptyStringRule(),
+        new ThisQualifierRule(),
+        new StaticQualifierRule(),
+        new QualifiedReferenceRule(),
+        new DiscardDeclarationRule(),
+        new RedundantBracesRule(),
+        new BodyStyleRule(),
+        new RedundantParenthesesRule(),
+        new TrailingCommaRule(),
+        new NamespaceBodyRule(),
+        new UsingsRule(removableUsings)
+    ];
 
     /// <summary>Arranges text that has already been read, with options already resolved.</summary>
     /// <param name="compilation">
@@ -158,7 +153,14 @@ public static class Arranger {
                 continue;
             }
 
-            if (rule.NeedsSemantics
+            // ⚠ #639: a rule holding an answer taken about the input re-takes it about the tree it is
+            // about to rewrite, once an earlier rule in this pass has rewritten that tree. See
+            // `ArrangementRule.Rebase`.
+            var rebase = rule.DecidedBeforeThePass
+                && boundCompilation is not null
+                && !ReferenceEquals(current, root);
+
+            if ((rule.NeedsSemantics || rebase)
                 && boundCompilation is not null
                 && !ReferenceEquals(current, boundTree.GetRoot(cancellation))) {
                 // ⚠ Costed deliberately: a re-bind per *firing* rule, not per rule. Most rules do
@@ -202,7 +204,8 @@ public static class Arranger {
             // loop that can know in advance which node will do it. The finding was SK-FUZZ-0012.
             SyntaxNode rewritten;
             try {
-                rewritten = rule.Apply(new(current, model, options, guard));
+                var active = rebase ? rule.Rebase(model!, cancellation) : rule;
+                rewritten = active.Apply(new(current, model, options, guard));
             } catch (Exception exception) when (exception is not OperationCanceledException) {
                 diagnostics.Add(
                     new(
