@@ -14072,6 +14072,80 @@ Still open, from the last fresh probe's 36:
 - status: #619 **fixed** for the moved call's layout, every head past the margin and the value that fits below. Group
   I's band past the held limit **open**: measured, no model wired.
 
+⚠ **Round 6 (2026-11-13): group I's band, the held limit and both one-column-over lines are each one linear cut —
+solved exactly on series, not fitted on random cells — and rounds 3 to 5's readings past the margin were one
+saturation.** Round 5's grids swept the line below a column at a time, but only under two rests and two callees, so
+every fit learned their corners. This round drew random *series* (six heads, indents 8 to 20, names of 3 to 40,
+receivers of 1 to 14, fourteen callees of 4 to 15 columns, four tails, rests of 8 to 42, `&&`, `||` and pattern bodies
+of 2 to 4 operands), each swept across the boundary, so every series gives its own threshold as an interval of one
+column, and solved each rule for its largest margin over every interval and every statement of the random probes
+(an exact simplex; the scripts are in this round's uncommitted scratch, `scratch-i619b/`).
+
+- **Group I's band** (`Fitter.HeldChainBand`). The `=` breaks while the held call's line below a kept `=` is within
+  114.516, less 0.4026 a column of receiver, 0.1394 of the name's start column, 0.0167 of name and 0.3684 of name past
+  22, plus 0.5974 a column of call head past seven, 0.6667 of rest past ten and the held limit's arrow term. On names of
+  13 to 21 the least-squares residual is 0.29, a uniform column's rounding; solved exactly it separates all 15 359
+  constraints by 0.0013 of a column. It is not the held limit read further out: the limit falls 0.14 a column of name,
+  the plateau not at all until 22.
+- ⚠ **Saturation** (`Fitter.HeldLambdaSaturation`). The line is read no further than 113 plus the call head — where
+  the held call's body line below a kept call would end at 111. Round 5's "jump" to breaking at every line is this
+  (no threshold of 120 under `.Where(`, none of 118 to 120 under `.Any(`), and so are rounds 3 to 5's readings past
+  the margin: the margin's 120 is 113 plus `.Where(`'s seven. With the line read at the saturation and one limit, the
+  held call answers 20 834 of 20 837 decisions past the margin in nine random probes (the other three within 0.01),
+  where those readings missed 12.
+- **The held limit** (`Fitter.HeldLambdaLimitWithin`, #605's pieces solved again). Cap 114.9535 − 0.13947 a column of
+  the receiver's column − 0.01682 of receiver, plus 0.59743 of call head past seven; floor 69.9958 + 0.44470 of column
+  + 0.56591 of receiver, plus 1.18106 of call head, #605's far-right cell held as a constraint. Every series and
+  statement on the right side (margins 0.0010 and 0.0072). #605's pieces missed 81 series of the first grid and 62
+  statements of the probes. Used for a lambda call with a rest after it, behind a reach of twelve or more.
+- **A reach under twelve never moves** — within the margin too: below a broken `=` the oracle moved no call in 29 573
+  statements, and behind a kept `=` in none of 57; Skala moved 109 of the first.
+- **One column over, group I** (`Fitter.HeldChainOneOverBreaks`): the `=` breaks while that line (125 less the
+  receiver's reach) is within 110.284 − 0.4076 a column of receiver − 0.1187 of the name's start + 0.0086 of name,
+  plus 0.6218 of call head and 0.6512 of rest; 4 478 statements by 0.03. Neither the band nor the held limit separates
+  them.
+- **One column over, the held call** (`Fitter.HeldLambdaOneOverMoves`, replacing SK-DIV-0420's lone `)` at a reach of
+  16 where there is a rest): moves while the line is within 110.792 − 0.1214 a column of the receiver's column −
+  0.0058 of receiver, plus 0.6243 of call head and 0.6705 of rest; 4 685 statements by 0.012.
+- ⚠ **Round 4's fits-below edge in group I's region** (`below + 0.14·equals + … ≤ 132.7`) **was the band seen through
+  the value's end**: it missed 133 of 6 227 cells, the band none once the one-over line has its own rule.
+- ⚠ **Refuted: "no linear cut"** (round 5) — each rule is one once the name hinge and the saturation are in. ⚠ **And
+  refuted: an integer form.** Searched to a denominator of 100 around the band's coefficients, the best missed 28
+  series; fixing the head at 0.6 or the receiver at 0.4 leaves no separating plane. The margins are thin (0.001 to 0.03
+  of a column), so the coefficients are kept to six places; the held one-over line was solved three times, each fresh
+  set of about 2 500 statements finding one within 0.02 of it on the wrong side before it settled.
+
+Pinned by `EqualsPastTheHeldLimitIssue619Tests` (7) and `HeldLambdaSaturationIssue619Tests` (7). Sabotage: the band off,
+4 of the first fail; the saturation off, 4 of the 14; the fits-below branch off, 1.
+
+| probe (statements differing from the oracle) | statements | master 6ddd53620 | now | newly wrong |
+|---|---:|---:|---:|---:|
+| band series in the region, five grids (fit) | 48 050 | 1 823 | 44 | 0 |
+| round 5's band grid (fit) | 22 280 | 1 524 | 0 | 0 |
+| fits-below series, three grids (fit) | 14 595 | 294 | 0 | 0 |
+| held series outside the region, within and past the margin, three grids (fit) | 42 859 | 175 | 8 | 0 |
+| one-over statements, group I and outside, four sets (fit) | 12 464 | 227 | 4 | 0 |
+| random probes, ten (fit) | 58 000 | 399 | 38 | 0 |
+| **fresh random, seed 20261116, after the last band and held rule** | 6 000 | 32 | 5 | 0 |
+| **fresh random, seed 20261117** | 6 000 | 43 | 4 | 0 |
+| **fresh band series, seed 88904** | 4 711 | 104 | 0 | 0 |
+| **fresh fits-below series, seed 44120** | 2 468 | 46 | 0 | 0 |
+| **fresh held series, seed 60504** | 5 258 | 4 | 4 | 0 |
+| **fresh one-over, group I, seed 31303** | 2 500 | 52 | 0 | 0 |
+| **fresh one-over, the held call, seed 31306, after its last solve** | 2 987 | 44 | 3 | 0 |
+
+None takes two passes on any probe. Master here is 6ddd53620 (round 5 merged), which answers every probe as round 5; rebased
+onto b56ab6d38 (#620 round two, #598 round 9), the 26 probes rerun give the same counts against it and none newly wrong.
+
+Still open, from the two fresh random probes' 9: a type-test lambda's arrow on a moved or broken-below call — `x is A`
+kept on the arrow's line and the `or` operands chopped (7; the fresh held series' 4 too) — which is #618's and #620's
+`LambdaTest*` territory and was left alone; a lambda call with a rest of 8, a column inside the limit (1); and a value
+that fits below behind a line through the held call that fits (1). The fresh held one-over set leaves 3, none newly
+wrong: two where round 4's fits-below table breaks the `=` before a nine-column receiver outside group I's region, and
+one held one-over call. Every one of these was wrong on master too.
+- status: #619 **fixed** — group I's band, the held limit within the margin and past it, both one-column-over lines and
+  the moved call after a broken `=`. The type-test lambda's arrow is #618/#620's.
+
 ## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
 
 Found by group C's #602 probes (2026-10-14), not attempted. A sole lambda argument whose whole body is a type test the
