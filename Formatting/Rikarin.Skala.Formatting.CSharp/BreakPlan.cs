@@ -3753,6 +3753,9 @@ public sealed class BreakPlan {
             || kind == 1
             && call.ArgumentList.Arguments.Count > 1
             && !castParen
+            // ⚠ Nor uncast on a parenthesised operator (#598, SK-DIV-0830): `int[] items = (a + b…)` / `.M(c, d);` breaks
+            // its dot where nothing planned one, and the operator broke instead.
+            && !IsASingleCallOnAParenthesisedOperator(call)
             // ⚠ Measured on plain arguments only: an argument that breaks inside itself — a lambda's body,
             // an initializer — is #529's and #378's layout, not this table's.
             || call.ArgumentList.DescendantNodes()
@@ -3796,7 +3799,8 @@ public sealed class BreakPlan {
                 HeldCallHead: FormattedWidth(dot, call.ArgumentList.OpenParenToken),
                 ParenReceiver: parenCall,
                 ParenReceiverTail: parenCall ? ParenReceiverTailOf(receiver) : 0,
-                ParenReceiverHeld: parenCall && call.ArgumentList.Arguments.Count > 0
+                ParenReceiverHeld: parenCall && call.ArgumentList.Arguments.Count > 0,
+                ParenReceiverArguments: parenCall ? ArgumentsWidthOf(call) : 0
             ),
             // ⚠ A level of its own, as a chain's: `var y =` / `R` / `.Call(…)` puts the dot one level past
             // the receiver, and LayoutWriter's one-level-per-line collapse keeps `var y = R` / `.Call(…)` at one.
@@ -3813,6 +3817,12 @@ public sealed class BreakPlan {
         );
         return call;
     }
+
+    /// <summary>The width between a call's parentheses, zero for none (#598, SK-DIV-0831).</summary>
+    int ArgumentsWidthOf(InvocationExpressionSyntax call) =>
+        call.ArgumentList.Arguments.Count == 0
+            ? 0
+            : FormattedWidth(call.ArgumentList.OpenParenToken, call.ArgumentList.CloseParenToken) - 2;
 
     /// <summary>
     ///     A single call on a parenthesised receiver, cast or not, as the whole value of a <c>return</c>: its dot is a
@@ -3852,7 +3862,8 @@ public sealed class BreakPlan {
                 HeldCallHead: arguments == 0 ? 0 : FormattedWidth(dot, call.ArgumentList.OpenParenToken),
                 ParenReceiver: true,
                 ParenReceiverTail: ParenReceiverTailOf(((MemberAccessExpressionSyntax)call.Expression).Expression),
-                ParenReceiverHeld: arguments > 0
+                ParenReceiverHeld: arguments > 0,
+                ParenReceiverArguments: ArgumentsWidthOf(call)
             ),
             true,
             // ⚠ With arguments, the call's level is spent only once the dot breaks: `return (T)(a` / `+ b…).M(` /
@@ -7166,7 +7177,8 @@ public sealed class BreakPlan {
                             AssignmentExpressionSyntax bareAssignment => FormattedWidth(bareAssignment.Left),
                             _ => 0
                         },
-                    BareParenDoubled: bareParen is not null && bareDoubled
+                    BareParenDoubled: bareParen is not null && bareDoubled,
+                    ParenMember: ParenMemberValueOf(node, owner, equals, value)
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -7207,6 +7219,85 @@ public sealed class BreakPlan {
             && parenthesis.Expression is not BinaryExpressionSyntax {
                 RawKind: (int)SyntaxKind.IsExpression or (int)SyntaxKind.AsExpression
             };
+    }
+
+    /// <summary>
+    ///     <see cref="GroupFacts.ParenMember" />: a local's or a plain assignment's value that is one parenthesis around a
+    ///     binary operator with one member after it, cast or not, behind a head of twelve columns or more (#598,
+    ///     SK-DIV-0830); default otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Only plain arguments, as the held call's table: an argument that is a lambda, a creation, a call or an
+    ///     initializer breaks inside itself, which is another layout. And no comment inside the value.
+    /// </remarks>
+    ParenMemberValue ParenMemberValueOf(
+        SyntaxNode node,
+        EqualsOwner owner,
+        SyntaxToken equals,
+        ExpressionSyntax value
+    ) {
+        if (owner is not (EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment)
+            || options.WrapBeforeEq
+            || node is AssignmentExpressionSyntax assignment
+            && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+            || HeadWidthThroughEquals(node, equals) < MinimumEqualsHead) {
+            return default;
+        }
+
+        var cast = value as CastExpressionSyntax;
+        var inner = cast?.Expression ?? value;
+        var call = inner as InvocationExpressionSyntax;
+        if ((call?.Expression ?? inner) is not MemberAccessExpressionSyntax access
+            || !access.IsKind(SyntaxKind.SimpleMemberAccessExpression)
+            || access.Name is not IdentifierNameSyntax
+            || ParenthesisedOperatorOf(access.Expression) is not { } binary
+            || binary.IsKind(SyntaxKind.IsExpression)
+            || binary.IsKind(SyntaxKind.AsExpression)
+            || call is not null
+            && call.ArgumentList.DescendantNodes()
+                .Any(static argument => argument is AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or AnonymousObjectCreationExpressionSyntax
+                    or BaseObjectCreationExpressionSyntax
+                    or InvocationExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or WithExpressionSyntax
+                )
+            || value.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+                )) {
+            return default;
+        }
+
+        var name = node switch {
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Identifier: var identifier } } =>
+                identifier.Span.Length,
+            AssignmentExpressionSyntax plain => FormattedWidth(plain.Left),
+            _ => 0
+        };
+        var member = call is not null
+            ? FormattedWidth(access.OperatorToken, call.ArgumentList.CloseParenToken)
+            : FormattedWidth(access.OperatorToken, access.Name.GetLastToken());
+        var head = call is not null ? FormattedWidth(access.OperatorToken, call.ArgumentList.OpenParenToken) : member;
+        return name <= 0
+            ? default
+            : new(
+                name,
+                FormattedWidth(binary.Left),
+                cast is not null ? FormattedWidth(cast.OpenParenToken, cast.CloseParenToken) : 0,
+                FormattedWidth(value.GetFirstToken(), access.Expression.GetLastToken()),
+                FormattedWidth(value)
+                + WidthThroughSemicolon(value)
+                + TrailingCommentWidth(value.GetLastToken().GetNextToken()),
+                member,
+                call is null ? -1 : member - head - 1,
+                head,
+                access.Expression is ParenthesizedExpressionSyntax { Expression: ParenthesizedExpressionSyntax }
+            );
     }
 
     /// <summary>

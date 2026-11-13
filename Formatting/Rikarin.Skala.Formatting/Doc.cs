@@ -1858,6 +1858,11 @@ public sealed class Document {
 ///     <see cref="HeldCall" /> decides the dot; past it, the dot breaks only when the call's <c>(</c> does not fit on
 ///     the receiver's last line, and the call's own level is held while the dot stays (<c>HeldLevel.WhileFlat</c>).
 /// </param>
+/// <param name="ParenReceiverArguments">
+///     ⚠ With <see cref="ParenReceiverHeld" />, the width between the call's parentheses (#598, SK-DIV-0831): on a line
+///     one column over, the dot breaks rather than the arguments chop, two arguments as one, while that is ten columns
+///     or less.
+/// </param>
 /// <param name="WhenOuterTail">
 ///     ⚠ The outermost type argument list of an arm's <c>when</c> condition (#576, SK-DIV-0399): the width from its
 ///     second argument through its <c>&gt;</c>, or zero. Too long for its line, the list breaks after its first comma
@@ -2022,6 +2027,10 @@ public sealed class Document {
 ///     With <see cref="BareParenOperand" />: the value is a doubled parenthesis, <c>((a + b…))</c>, behind a head of
 ///     twelve columns or more, read by the same form two columns tighter.
 /// </param>
+/// <param name="ParenMember">
+///     ⚠ A parenthesised operator with one member after it, cast or not, behind a head of twelve columns or more:
+///     its <c>=</c> answers by a measured form of its own (#598, SK-DIV-0830). See <see cref="ParenMemberValue" />.
+/// </param>
 /// <param name="CastParenFirst">
 ///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator, the whole value of a <c>return</c> or a
 ///     plain <c>=</c> (#598): the width of the operator's first operand, or zero. See
@@ -2141,6 +2150,7 @@ public readonly record struct GroupFacts(
     bool ParenReceiver = false,
     int ParenReceiverTail = 0,
     bool ParenReceiverHeld = false,
+    int ParenReceiverArguments = 0,
     int WhenOuterTail = 0,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
@@ -2311,7 +2321,40 @@ public readonly record struct GroupFacts(
     int BareParenCast = 0,
     int BareParenWidth = 0,
     int BareParenName = 0,
-    bool BareParenDoubled = false);
+    bool BareParenDoubled = false,
+    ParenMemberValue ParenMember = default);
+
+/// <summary>
+///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator
+///     with one member after it, <c>(a + b…).M(x)</c>, <c>(T)(a + b…).Length</c>, behind a head of twelve columns or
+///     more (#598, SK-DIV-0830). Every width is read from the formatted tokens, so a break pass one wrote inside the
+///     value does not move it. <see cref="Width" /> is zero where the value is no such shape. See
+///     <c>Fitter.ParenMemberEqualsBreaks</c>.
+/// </summary>
+/// <param name="Name">The width of what the <c>=</c> assigns: a local's name, or an assignment's whole target.</param>
+/// <param name="Operand">The operator's first operand.</param>
+/// <param name="Cast">The cast's width through its <c>)</c>, or zero.</param>
+/// <param name="Receiver">From the value's first token through the parenthesis's <c>)</c>, the cast included.</param>
+/// <param name="Width">The value's flat width through its <c>;</c>.</param>
+/// <param name="Member">The member: its <c>.</c> through the call's <c>)</c> or the property's name.</param>
+/// <param name="Arguments">
+///     The width between the call's parentheses, zero for a call with no arguments; minus one for a property.
+/// </param>
+/// <param name="Head">The member's <c>.</c> through the call's <c>(</c>, or the property's whole member.</param>
+/// <param name="Doubled">
+///     The parenthesis is doubled, <c>((a + b…)).M()</c>: past the margin it keeps the <c>=</c> two
+///     columns later.
+/// </param>
+public readonly record struct ParenMemberValue(
+    int Name,
+    int Operand,
+    int Cast,
+    int Receiver,
+    int Width,
+    int Member,
+    int Arguments,
+    int Head,
+    bool Doubled);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
