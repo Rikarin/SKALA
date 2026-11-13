@@ -5,8 +5,9 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 
 /// <summary>
 ///     Issue #603, round nine (SK-DIV-0570): inside a default's band a two-argument section chops about four columns
-///     later than its own rule and a one-argument section never does, and a one-argument section's second condition
-///     depends on the section's end. Every expected string is jb cleanupcode 2025.2.6's own output for the input.
+///     later than its own rule and a one-argument section never does here (⚠ it does elsewhere, SK-DIV-0730), and a
+///     one-argument section's second condition depends on the section's end. Every expected string is jb cleanupcode
+///     2025.2.6's own output for the input.
 /// </summary>
 public sealed class DefaultBandAndEdgeSectionChopIssue603Tests {
     /// <summary>The oracle's answer under the repository's export, and a second pass that changes nothing.</summary>
@@ -27,7 +28,7 @@ public sealed class DefaultBandAndEdgeSectionChopIssue603Tests {
 
     /// <summary>
     ///     Inside the band where the line through the default's = fits, the = breaks a few columns past the section's own
-    ///     chop, and a one-argument section never chops there.
+    ///     chop, and these one-argument sections do not chop there.
     /// </summary>
     [Theory]
     [InlineData("c603b:c2_bf_i12_104")]

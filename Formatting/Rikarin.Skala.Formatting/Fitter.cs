@@ -1624,7 +1624,9 @@ public sealed class Fitter {
     ///     columns longer. Only for a section that starts its line, which is what was measured: a chopped list.
     ///     ⚠ Round ten (#603, SK-DIV-0570): those misses were the second condition, which is a plane in <c>E</c> too,
     ///     <c>11·E ≥ 78·w + 28·i − 19·h − 1053</c>, with the first refitted beside it as
-    ///     <c>50·E ≥ 3520 + 67·w + 24·(i + h)</c>. Inside a default's band the old pair still stands.
+    ///     <c>50·E ≥ 3520 + 67·w + 24·(i + h)</c>. ⚠ Round eleven (SK-DIV-0730): inside a default's band both are
+    ///     read on a parameter about 3/13 of its kept part wider, and a parameter of eleven columns or fewer takes
+    ///     this rule too, where it was once chopped whenever the joined line overflowed.
     /// </remarks>
     ResolvedMode? ChopsBeforeTheParameter(in GroupFacts facts, in Measures m, int lineStart) {
         if (m.Column != lineStart + facts.SectionHead) {
@@ -1737,20 +1739,37 @@ public sealed class Fitter {
         var value = facts.DefaultValueWidth;
 
         // ⚠ Inside a default's band — the line through the `=` fits — the competitor is the `=`'s break and not the
-        // section alone on its line (#603, SK-DIV-0570): a one-argument section never chops there, and two or more
-        // positional arguments chop about four columns later, the later the more of the parameter stays on the line.
-        if (value > 0 && end + parameter - value <= width) {
-            return !facts.SectionSingle
-                && 5 * parameter + 2 * lineStart - head <= 155
-                && 24 * end >= 1644 + 42 * parameter + 12 * lineStart + 12 * head - 8 * value;
+        // section alone on its line (#603, SK-DIV-0570): the arguments chop later, the later the more of the
+        // parameter stays on the line.
+        // ⚠ Round eleven (#603, SK-DIV-0730): each condition is the rule outside a band, read on a parameter wider by
+        // about 3/13 of `k`, the part the `=` keeps on the section's line (`w − v`). Two or more arguments: the first
+        // is `E ≥ 70.4 + 1.338·w + 0.311·k + 0.480·(i + h)` (outside: 1.34·w, 0.48), the second the steep plane with
+        // `18·k = 78·(3/13)·k` added. Round nine's `24·E ≥ 1644 + 42·w + 12·(i + h) − 8·v` crossed it a column either
+        // way, and its `5·w + 2·i − h ≤ 155` could not bind in a band short of indent 44: the band's edge is the
+        // steep plane, which keeps `[A(1, "…")] T value… = …` whole up to the last column of the band and chops it there.
+        // ⚠ One argument: round nine's "never chops in a band" is refuted at indents 8 to 20, mostly behind short heads —
+        // `[A("…")] T x = default` chops from 113 at indent 8 — and the same `w + 3·k/13` reads it (below).
+        var inBand = value > 0 && end + parameter - value <= width;
+        if (inBand && !facts.SectionSingle) {
+            var kept = parameter - value;
+            return 148 * end >= 10424 + 198 * parameter + 46 * kept + 71 * (lineStart + head)
+                && 11 * end >= 78 * parameter + 18 * kept + 28 * lineStart - 19 * head - 1051;
         }
 
         // ⚠ A one-argument section's second condition depends on E (#603, SK-DIV-0570): a plane steeper than the
         // first, so near the margin the threshold bends up — `[A("…")]` behind 15 columns chops from 118, not 113 —
         // where `2·w + i − h ≤ 36` held it at the first condition until a fixed parameter width and then never.
+        // ⚠ Round eleven (SK-DIV-0730), in and out of a band, on `13·w + 3·k` (`k = 0` outside one): the first
+        // condition puts the indent and the head on one coefficient, the `(`'s column, as round ten found for two
+        // arguments — `48·E ≥ 4196 + 64·w + 23·(i + h)`, where `24·E ≥ 2106 + 32·w + 11·i + 11·h` chopped a column
+        // early behind `[Describe(` and `[NotNullIfNotNull(` — and the steep plane is `20·E ≥ 136·w + 49·i − 34·h − 22`
+        // (6.8 columns of section end per column of parameter), where `4·E ≥ 28·w + 10·i − 7·h − 16` kept
+        // `[Bind(name: "…")] long valuea = ""` at indent 8 whole a column too long and could not separate `i8 w13 E113`
+        // (chops) from `i16 w10 E112` (does not) inside a band.
         if (facts.SectionSingle) {
-            return 4 * end >= -16 + 28 * parameter + 10 * lineStart - 7 * head
-                && 24 * end >= 2106 + 32 * parameter + 11 * lineStart + 11 * head;
+            var wide = 13 * parameter + (inBand ? 3 * (parameter - value) : 0);
+            return 260 * end >= 136 * wide + 637 * lineStart - 442 * head - 288
+                && 624 * end >= 54548 + 64 * wide + 299 * (lineStart + head);
         }
 
         // ⚠ Two or more positional arguments outside a band (#603 round ten, SK-DIV-0570): the second condition is a

@@ -5264,6 +5264,10 @@ public sealed partial class CSharpDocumentBuilder {
     ///     eleven columns. ⚠ A parameter with a default value is flagged and not helped: its `=` is a
     ///     point of its own that ends the arguments' measure first, and `[…] int a =` / `5` past the
     ///     margin is what Skala writes with or without the flag, where the oracle chops (SK-DIV-0352).
+    ///     ⚠ Two indents were not enough (#603 round eleven, SK-DIV-0730): from indent 16 a one-argument section
+    ///     stays whole above <c>int value</c> past the margin, and above a default it joins and the <c>=</c> breaks.
+    ///     The chop itself is now the measured section rule at every width (<c>Fitter.SectionChops</c>), which says
+    ///     "chop when the joined line overflows" at indent 8 and mostly at 12; only this measure flag is still keyed here.
     /// </remarks>
     static bool IsAShortParameterBehindItsSection(SyntaxToken token) =>
         token.Parent?.AncestorsAndSelf().OfType<ParameterSyntax>().FirstOrDefault() is { } parameter
