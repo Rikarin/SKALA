@@ -1239,6 +1239,19 @@ public sealed class BreakPlan {
             // `wrap_before_type_argument_langle`, so the fill is the only arm. Measured on a return
             // type, a local's type, `new Dictionary<…>()` and a generic invocation.
             case TypeArgumentListSyntax typeArguments:
+                // ⚠ Except in a cast over a parenthesised cast of an atom, whose `=` measured the line below to the
+                // inner cast's last resort (SK-DIV-0608).
+                if (IsInTheTypeOfACastOverAnAtom(typeArguments)) {
+                    var own = OwnGapsOf(typeArguments);
+                    if (!(options.KeepsUserBreaksBetweenItems && own.Any(BreaksBefore))) {
+                        foreach (var token in own) {
+                            Flat(token);
+                        }
+
+                        return;
+                    }
+                }
+
                 PlanTypeParameters(node, typeArguments.Arguments, typeArguments.GreaterThanToken);
                 return;
 
@@ -7138,6 +7151,51 @@ public sealed class BreakPlan {
             Expression: CastExpressionSyntax inner
         }
         && IsACastAtom(inner.Expression);
+
+    /// <summary>
+    ///     Whether a type argument list lies in the type of either cast of <c>(A)((B)x)</c> or <c>((B)x)</c>, an atom's
+    ///     cast held in a parenthesis, as the whole value of a <c>return</c>, a plain assignment or a local. Such a
+    ///     list keeps an author's break and never fills for width (SK-DIV-0608).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Fuzz 18236595362986456582, bisected to 57e0e514: the <c>=</c> before such a value measures its tail to the
+    ///     inner cast's last-resort <c>)</c> (GroupFacts.TailStopsAtLastResort), so its decision assumes the line below
+    ///     ends there. A type argument fill comes before that point and is taken first, so pass one broke the <c>=</c>
+    ///     and then <c>(IReadOnlyList&lt;</c>. Pass two read that fill as a kept break, ended the tail at it and joined
+    ///     the <c>=</c>. Measured 2026-11-13 with <c>Testing ask</c> on 1 167 rows (four heads; outer casts of 3 to 66
+    ///     columns, generic, tuple and plain; three inner casts; 112 to 150 columns): the oracle breaks inside neither
+    ///     cast's type arguments in any row, where Skala did on 238 lines. Holding them flat takes the non-idempotent
+    ///     rows from 14 to 0 and the oracle divergences from 727 to 686, adding none.
+    /// </remarks>
+    static bool IsInTheTypeOfACastOverAnAtom(TypeArgumentListSyntax list) {
+        if (list.Ancestors().OfType<CastExpressionSyntax>().FirstOrDefault() is not { } cast
+            || !cast.Type.Span.Contains(list.Span)) {
+            return false;
+        }
+
+        ExpressionSyntax value = cast;
+        if (cast.Parent is ParenthesizedExpressionSyntax parenthesis) {
+            value = parenthesis.Parent is CastExpressionSyntax outer && outer.Expression == parenthesis
+                ? outer
+                : parenthesis;
+        }
+
+        return HoldsACastOverAnAtom(value)
+            && value.Parent is ReturnStatementSyntax
+                or AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression }
+                or EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax }
+            && (value.Parent is not AssignmentExpressionSyntax assignment || assignment.Right == value);
+    }
+
+    /// <summary>
+    ///     The gaps a type argument list plans itself: after the <c>&lt;</c>, either side of each comma, before the
+    ///     <c>&gt;</c>. A nested list's are its own.
+    /// </summary>
+    static SyntaxToken[] OwnGapsOf(TypeArgumentListSyntax list) => [
+        list.Arguments[0].GetFirstToken(),
+        ..list.Arguments.GetSeparators().SelectMany(static comma => new[] { comma, comma.GetNextToken() }),
+        list.GreaterThanToken
+    ];
 
     /// <summary>
     ///     Whether a cast is the whole value of a <c>return</c>, or of a plain assignment or local

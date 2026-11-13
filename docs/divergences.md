@@ -15040,3 +15040,42 @@ the arm. Skala writes 16 and 20 on both passes, on dd8fbfd0 as now.
 
 - status: **fixed** (the second pass), pinned by `FuzzRegressionTests.ReportedMutateSeeds_HaveNoViolations` and
   `ArmLiftOverABrokenHeadTests`.
+
+## SK-DIV-0608 — a cast over a parenthesised cast of an atom: no type argument fill, and the oracle's outer-cast break
+
+⚠ **Found by `fuzz --seed=8842266104` on 2026-11-13** (`fuzz --replay=18236595362986456582`), **bisected to `57e0e514`**,
+the merge of the fix for fuzz 3254860842460080159 (`GroupFacts.TailStopsAtLastResort`). It failed on every pushed
+commit since, `afad8cb8` and `a4ab6dc6` included; `e671dfc4`, the merge's first parent, was clean. Minimal:
+`(CancellationToken? First, Dictionary<bool, List<bool>> Second) v141 = (IReadOnlyList<Nullable<char>>)((Dictionary<…>)"ss");`
+at indent 16.
+
+The `=` measures its tail to the inner cast's last-resort `)`: 118 columns below, so it breaks. That assumes the line
+below ends at the last resort. But the outer cast's type argument list is a fill point *before* it, and the line below
+(122 columns) took the fill first: `(IReadOnlyList<` / `Nullable<char>>)((…)"ss");`. Pass two read that fill as the
+author's break, ended the `=`'s tail there, found the line through `(IReadOnlyList<` fitting at 102 and joined the `=`.
+The source read was a kept break standing in for the last resort the tail was measured to.
+
+The fix: a type argument list in either cast's type of `(A)((B)x)` or `((B)x)`, the whole value of a `return`, a plain
+assignment or a local, keeps an author's break at its own gaps and otherwise never fills
+(`BreakPlan.IsInTheTypeOfACastOverAnAtom`). The line below then ends where the tail said it would.
+
+Measured 2026-11-13 with `Testing ask` on two grids, 1 167 rows. The first has four heads (a typed local, `var`, an
+assignment, `return`), outer casts `(IReadOnlyList<Nullable<char>>)`, a tuple, `(object)` and
+`(Dictionary<string, List<int>>)`, three inner casts, a literal or a name, and 112 to 150 columns. The second has
+outer casts of 3 to 32 columns, plain and `List<…>`, behind three heads at 121, 126 and 132 columns.
+- The oracle breaks inside neither cast's type arguments in any row. Skala did on 238 lines.
+- Non-idempotent rows: 14 → 0.
+- Rows differing from the oracle: 727 → 686, none added.
+
+⚠ **Open, stable, and measured but not wired: the oracle's break after the outer cast.** Past the margin the oracle
+often writes `(A)` / `((B)x);`, the parenthesis on the cast's own column. Skala has no point there. A prototype point
+(ordinary, breaking when the line overflows) made the seed's output the oracle's and fixed 209 rows. It also added
+51 new divergences, so it was not kept. The boundary is not "the rest fits below"; it depends on the outer cast's
+width, the inner cast's width and the line together:
+- Behind `return` with a `(string)` inner cast, the outer break needs an outer cast of at least 8, 10 and 15 columns
+  at 121, 126 and 132 columns.
+- With a `((object First, int Second))` inner cast, at least 12, 16 and 22.
+- A 3 to 5 column outer cast never takes it.
+- Where the rest does not fit below, the oracle breaks at the inner cast instead, the operand one level in.
+- Short heads (`var v =`, `_field =`) break their `=` first in the oracle, under the twelve-column `MinimumHead` that
+  keeps Skala's `=` (#379).

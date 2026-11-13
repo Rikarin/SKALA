@@ -287,6 +287,11 @@ public sealed class FuzzRegressionTests {
     // as the author's (#561) and broke the braces open. The braces now read the pattern's head off the output: they
     // open whenever it spans lines at the `{`, as the oracle does for a filled, kept or positional head alike.
     [InlineData(1044487512275255493UL)]
+    // `fuzz --seed=8842266104` (2026-11-13; bisected to 57e0e514, the 3254860842460080159 fix above): `(…) v141 =
+    // (IReadOnlyList<Nullable<char>>)((Dictionary<…>)"ss");`. The `=` measured its tail to the inner cast's last
+    // resort and broke, but the line below filled `(IReadOnlyList<` first; pass two ended the tail at that kept break
+    // and joined the `=`. A cast type of this shape no longer fills, as the oracle never does.
+    [InlineData(18236595362986456582UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
