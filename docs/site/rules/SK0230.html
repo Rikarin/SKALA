@@ -11,8 +11,8 @@
 <nav><a class="brand" href="../index.html">Skala</a><a class="tab active" href="../rules/index.html">Rules</a><a class="tab" href="../options/index.html">Options</a></nav>
 <main>
 <p class="crumb"><a href="index.html">Rules</a> / Cleanup</p>
-<h1>SK0230 <span class="title">The <code>with</code> expression or object initializer is empty</span></h1>
-<p class="lede">A pair of initializer braces that sets nothing: <code>new Foo { }</code> is <code>new Foo()</code>, and <code>x with { }</code> copies a record and changes nothing.</p>
+<h1>SK0230 <span class="title">The object initializer is empty</span></h1>
+<p class="lede">A pair of object or collection initializer braces that sets nothing: <code>new Foo { }</code> is <code>new Foo()</code>. An empty <code>with</code> is a copy, and is never reported.</p>
 <table class="facts">
 <tbody>
 <tr><th>Category</th><td>Cleanup</td></tr>
@@ -27,17 +27,17 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>Empty braces read as a list somebody is about to fill in and stay in the file for years after nobody is. <code>new Foo { }</code> is two characters of ceremony over <code>new Foo()</code>. <code>x with { }</code> is more than ceremony — <code>with</code> invokes the record's compiler-generated copy constructor, so it allocates a whole instance in order to produce a value equal to the one it was given.</p>
-<p>⚠ ReSharper rates <code>RedundantWithExpression</code> a <em>suggestion</em> and <code>RedundantEmptyObjectOrCollectionInitializer</code> a <em>warning</em>; Skala reports one concept at <code>warning</code> and reading <code>resharper_redundant_with_expression_highlighting</code> therefore lowers both. The severity split is the same observation this rule's <code>fixIsSafe: false</code> records: the empty initializer is nothing, and the empty <code>with</code> is an allocation somebody may have meant.</p>
+<p>Empty braces read as a list somebody is about to fill in and stay in the file for years after nobody is. <code>new Foo { }</code> is two characters of ceremony over <code>new Foo()</code>, and the constructor call is all either of them performs.</p>
+<p>⚠ <strong>`x with { }` used to be this rule's too, and it is not redundant (#636).</strong> It was read as a record copy that changes nothing and fixed to <code>x</code>. But the copy <em>is</em> the change: <code>with</code> on a record class calls the copy constructor and returns a distinct instance, so the fix aliased a clone the author made in order to keep it apart. Measured on Vixen, where it removed four: an extracted texture layer went on sharing its instance with the stack it came from, a palette test compared an object with itself, and two equality tests stopped testing anything. An empty <code>with</code> is the one way C# spells &quot;a copy of this&quot;, so this rule no longer looks at <code>with</code> at all.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>var options = new JsonSerializerOptions { };
-var copy = original with { };</code></pre>
+var buffer = new List&lt;byte&gt; { };</code></pre>
 <p>Write:</p>
 <pre class="good"><code>var options = new JsonSerializerOptions();
-var copy = original;</code></pre>
+var buffer = new List&lt;byte&gt;();</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>⚠ <strong>The fix is declared unsafe, and the empty `with` is the whole reason.</strong> <code>new Foo { }</code> → <code>new Foo()</code> is a pure deletion with no observable effect at all, but <code>x with { }</code> → <code>x</code> is not: the copy constructor produces a <em>distinct</em> instance, so removing it aliases a clone the author may have written in order to mutate it, and it removes the <code>NullReferenceException</code> a null operand would have thrown. Splitting one concept into two safety classes would have been the alternative; the conservative reading of the whole rule is the cheaper mistake. ⚠ Only the two initializer kinds that mean &quot;and then set these members&quot; are matched. An empty array initializer belongs to an <code>ArrayCreationExpression</code>, which this rule never sees — <code>new int[] { }</code> cannot lose its braces and still compile. An anonymous type is a different node again: <code>new { }</code> has no <code>new ()</code> to become. ⚠ A creation with no argument list <em>grows</em> one, because <code>new Foo</code> is not an expression; a creation that already has arguments keeps them, and <code>new()</code> target-typed creation is matched through the same path. ⚠ A comment or a preprocessor directive between the braces withdraws the finding: an empty initializer holding a note is a note about why it is empty, and the fix deletes the braces wholesale.</p>
+<p>⚠ <strong>An empty `with` is never reported, on anything `with` applies to.</strong> On a record class the copy is a distinct instance, made by a copy constructor that can be written by hand and do anything. On a struct, a record struct or an anonymous type the copy is a value, and it is still not the operand: <code>(s with { }).Mutate()</code> mutates a temporary where <code>s.Mutate()</code> mutates <code>s</code>, and an anonymous instance is a reference that <code>ReferenceEquals</code> can tell apart. ⚠ <strong>The fix is still declared unsafe without the `with`, and expression trees are the reason.</strong> Compiled code cannot tell <code>new Foo { }</code> from <code>new Foo()</code>, but inside a lambda converted to <code>Expression&lt;…&gt;</code> the first is a <code>MemberInitExpression</code> with no bindings and the second a <code>NewExpression</code>, and a query provider is free to translate the two differently. ⚠ Only the two initializer kinds that mean &quot;and then set these members&quot; are matched. An empty array initializer belongs to an <code>ArrayCreationExpression</code>, which this rule never sees — <code>new int[] { }</code> cannot lose its braces and still compile. An anonymous type is a different node again: <code>new { }</code> has no <code>new ()</code> to become. ⚠ A creation with no argument list <em>grows</em> one, because <code>new Foo</code> is not an expression; a creation that already has arguments keeps them, and <code>new()</code> target-typed creation is matched through the same path. ⚠ A comment or a preprocessor directive between the braces withdraws the finding: an empty initializer holding a note is a note about why it is empty, and the fix deletes the braces wholesale.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><code>dotnet_diagnostic.SK0230.severity</code></li>

@@ -14,19 +14,27 @@ namespace Rikarin.Skala.Rules.Cleanup;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Three ReSharper inspections are one shape: <c>RedundantEmptyObjectOrCollectionInitializer</c>,
-///         <c>RedundantWithExpression</c> and <c>redundant_empty_with_element</c>. <c>new Foo { }</c> is
-///         <c>new Foo()</c> with two characters of ceremony, and <c>x with { }</c> is a record copy that
-///         changes nothing.
+///         <c>RedundantEmptyObjectOrCollectionInitializer</c> is the shape: <c>new Foo { }</c> is
+///         <c>new Foo()</c> with two characters of ceremony.
 ///     </para>
 ///     <para>
-///         ⚠ <b>The fix is not safe, and the empty <c>with</c> is why.</b> <c>new Foo { }</c> →
-///         <c>new Foo()</c> is a pure deletion with no observable effect at all. <c>x with { }</c> → <c>x</c>
-///         is not: <c>with</c> invokes the record's copy constructor, so it allocates a <em>distinct</em>
-///         instance and it dereferences <c>x</c>. Removing it aliases a clone the author may have written
-///         deliberately in order to mutate it, and it removes a <c>NullReferenceException</c> that a null
-///         operand would have thrown. Both are the sort of change a person has to look at, so the rule
-///         carries <c>fixIsSafe: false</c> rather than splitting into two safety classes for one concept.
+///         ⚠ <b>An empty <c>with</c> is not reported, on anything (#636).</b> This rule used to read
+///         <c>x with { }</c> as a copy that changes nothing and fix it to <c>x</c>, and that is a different
+///         program: <c>with</c> on a record class calls the copy constructor and returns a <em>distinct</em>
+///         instance, so the fix aliases a clone the author made in order to keep it apart — in Vixen it made
+///         an extracted texture layer share its instance with the stack it came from, and turned two
+///         equality tests into comparisons of an object with itself. A record's copy constructor can be
+///         written by hand and do anything. On a struct, a record struct or an anonymous type the copy is
+///         a value, and it is still not <c>x</c>: <c>(s with { }).Mutate()</c> mutates a temporary where
+///         <c>s.Mutate()</c> mutates <c>s</c>, and an anonymous instance is a reference. The empty
+///         <c>with</c> is the one way C# spells "a copy of this", so it is never redundant.
+///     </para>
+///     <para>
+///         ⚠ The fix stays <c>fixIsSafe: false</c> without the <c>with</c>, because <c>new Foo { }</c> and
+///         <c>new Foo()</c> are not the same <em>expression tree</em>: inside a lambda converted to
+///         <c>Expression&lt;…&gt;</c> the first is a <c>MemberInitExpression</c> with no bindings and the
+///         second a <c>NewExpression</c>, and a query provider may translate the two differently. Compiled
+///         code cannot tell them apart.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -44,7 +52,6 @@ public sealed class EmptyInitializerAnalyzer : DiagnosticAnalyzer {
             SyntaxKind.ObjectCreationExpression,
             SyntaxKind.ImplicitObjectCreationExpression
         );
-        registrar.RegisterSyntaxNodeAction(AnalyzeWith, SyntaxKind.WithExpression);
     }
 
     static void AnalyzeCreation(SyntaxNodeAnalysisContext context) {
@@ -80,21 +87,6 @@ public sealed class EmptyInitializerAnalyzer : DiagnosticAnalyzer {
             TextSpan.FromBounds(start, creation.Span.End),
             replacement,
             "The object initializer is empty"
-        );
-    }
-
-    static void AnalyzeWith(SyntaxNodeAnalysisContext context) {
-        var with = (WithExpressionSyntax)context.Node;
-        if (!IsEmpty(with.Initializer)) {
-            return;
-        }
-
-        Report(
-            context,
-            with,
-            TextSpan.FromBounds(with.Expression.Span.End, with.Span.End),
-            string.Empty,
-            "The `with` expression sets nothing, so it copies for nothing"
         );
     }
 

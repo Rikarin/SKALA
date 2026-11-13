@@ -35,7 +35,7 @@
 
 | Id | Rule | Severity | Fix | Loose mode |
 |---|---|---|---|---|
-| [SK0230](SK0230.md) | The `with` expression or object initializer is empty | warning | review | yes |
+| [SK0230](SK0230.md) | The object initializer is empty | warning | review | yes |
 | [SK0231](SK0231.md) | The string call produces the string it was given | warning | safe | no |
 | [SK0232](SK0232.md) | The argument or signature element is redundant | warning | safe | no |
 | [SK0233](SK0233.md) | The syntax is redundant | suggestion | safe | yes |
