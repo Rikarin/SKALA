@@ -576,4 +576,64 @@ public sealed class ArrayElementDraftIssue444Tests {
               }
               """
         );
+
+    /// <summary>
+    ///     A conditional's signs, pinned because the author broke at one of them (#518), draft as spaces: the
+    ///     element keeps its head beside the one before it whether its signs were broken for a line comment or by
+    ///     the author (fuzz replay 14753277088141197568). Pass two used to read the pins as unbounded and move it
+    ///     down. Each expected layout is <c>jb cleanupcode</c>'s answer for every one of these spellings.
+    /// </summary>
+    [Fact]
+    public void AConditionalsPinnedSigns_DraftAsSpaces() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object P() {
+                    var a = new[] { Aaaaaaaaaa, (b ? c : // x
+            d), Eeeeeeee };
+                    var b = new[] { Aaaaaaaaaa, (b
+            ? c : // x
+            d), Eeeeeeee };
+                    var c = new[] { Aaaaaaaaaa, (b
+            ? c
+            : d), Eeeeeeee };
+                    return new[] { Aaaaaaaaaa, b ? c : // x
+            d, Eeeeeeee };
+                }
+            }
+            """,
+            """
+            class C {
+                object P() {
+                    var a = new[] {
+                        Aaaaaaaaaa, (b
+                            ? c
+                            : // x
+                            d),
+                        Eeeeeeee
+                    };
+                    var b = new[] {
+                        Aaaaaaaaaa, (b
+                            ? c
+                            : // x
+                            d),
+                        Eeeeeeee
+                    };
+                    var c = new[] {
+                        Aaaaaaaaaa, (b
+                            ? c
+                            : d),
+                        Eeeeeeee
+                    };
+                    return new[] {
+                        Aaaaaaaaaa, b
+                            ? c
+                            : // x
+                            d,
+                        Eeeeeeee
+                    };
+                }
+            }
+            """
+        );
 }
