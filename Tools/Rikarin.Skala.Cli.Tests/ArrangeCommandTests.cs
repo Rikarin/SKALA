@@ -281,6 +281,59 @@ public sealed class ArrangeCommandTests {
     }
 
     /// <summary>
+    ///     ⚠ #637, end to end: a using whose only user sits under the configuration that was not loaded
+    ///     survives <c>arrange</c>, and an unused one in the same file still goes.
+    /// </summary>
+    /// <remarks>
+    ///     The issue was a Release binlog and <c>#if DEBUG</c>; a workspace load evaluates Debug, so the
+    ///     same defect shows here as <c>#if !DEBUG</c>. Both loaders reach <c>UsingsRule.Unused</c>, which
+    ///     is where the inactive branches are re-bound, so one fix covers both — and a loose load removes
+    ///     nothing at all (#395). The binlog half is not run here for the reason
+    ///     <see cref="Arrange_TakesTheBinlogOptionsCheckHas" /> gives: there is no cheap binlog fixture.
+    /// </remarks>
+    [Fact]
+    public void Arrange_KeepsAUsingOnlyAnInactiveBranchNeeds_AndRemovesAnUnusedOne() {
+        using var scratch = new Scratch();
+        var file = scratch.Write(
+            "Probe.cs",
+            """
+            using System.Text;
+            using System.Xml;
+
+            namespace P;
+
+            public static class Probe {
+                public static string Where() {
+            #if !DEBUG
+                    return new StringBuilder("release").ToString();
+            #else
+                    return "debug";
+            #endif
+                }
+            }
+            """
+        );
+        scratch.Write(
+            "Scratch.csproj",
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                 <ImplicitUsings>disable</ImplicitUsings>
+               </PropertyGroup>
+             </Project>
+             """
+        );
+
+        var arranged = RunIn(scratch.Root, "arrange", "--load=workspace", file);
+
+        Assert.Equal(0, arranged.ExitCode);
+        var rewritten = File.ReadAllText(file);
+        Assert.Contains("using System.Text;", rewritten, StringComparison.Ordinal);
+        Assert.DoesNotContain("using System.Xml;", rewritten, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ #395: <c>verify</c> is <c>arrange --check</c> plus two other stages, under every load mode — the
     ///     same files reported, with the same rules, by both verbs.
     /// </summary>
