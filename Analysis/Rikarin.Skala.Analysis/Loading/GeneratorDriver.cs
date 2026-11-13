@@ -92,7 +92,7 @@ public static class GeneratorDriver {
         return true;
     }
 
-    public static CSharpCompilation Run(
+    public static Outcome Run(
         CSharpCompilation compilation,
         ImmutableArray<string> analyzerReferences,
         ImmutableArray<string> additionalFiles,
@@ -102,14 +102,14 @@ public static class GeneratorDriver {
         CancellationToken cancellation
     ) {
         if (analyzerReferences.IsEmpty) {
-            return compilation;
+            return new(compilation, true);
         }
 
         // ⚠ #336. This used to be a bare `continue`: a generator assembly that is not on disk cost
         // its entire output and said nothing at all, which is the one silence in this type that its
         // own remarks do not cover. Warning rather than fatal here, and the distinction is real
         // rather than a hedge — see ReportMissingAssemblies.
-        ReportMissingAssemblies(
+        var complete = !ReportMissingAssemblies(
             analyzerReferences,
             compilation.AssemblyName ?? string.Empty,
             diagnostics,
@@ -124,7 +124,38 @@ public static class GeneratorDriver {
 
             try {
                 var reference = new AnalyzerFileReference(path, Loader);
-                generators.AddRange(reference.GetGeneratorsForAllLanguages());
+
+                // ⚠ #634. `AnalyzerFileReference` does not throw when a generator type will not load
+                // or construct — it raises this event and returns the others, so the `catch` below
+                // never saw any of it and a generator that failed here was a generator that was
+                // never mentioned. Unsubscribed, the event is the swallow.
+                reference.AnalyzerLoadFailed += (_, failure) => {
+                    if (failure.ErrorCode == AnalyzerLoadFailureEventArgs.FailureErrorCode.NoAnalyzers) {
+                        return;
+                    }
+
+                    complete = false;
+                    diagnostics.Add(
+                        new(
+                            RuleIds.AnalyzerFailedToLoad,
+                            SkalaSeverity.Warning,
+                            $"'{failure.TypeName ?? Path.GetFileName(path)}' in '{Path.GetFileName(path)}' could "
+                            + $"not be loaded as a generator ({failure.ErrorCode}): {failure.Message}; "
+                            + "the compilation is missing its output",
+                            path
+                        )
+                    );
+                };
+
+                // ⚠ #634, the root cause. `GetGeneratorsForAllLanguages()` returns ONE generator per
+                // assembly when the assembly holds several `IIncrementalGenerator`s: measured on
+                // Vixen.Net.Generators (ReplicationGenerator kept, RpcGenerator dropped) and on three
+                // of the SDK's own — ComInterfaceGenerator, JSImportGenerator and the
+                // LibraryImportGenerator assembly each lost one. Its sibling `GetGenerators("C#")`
+                // returns every one. Nothing reported the loss: the generator that went missing was
+                // simply never run, and `arrange` then deleted a `using` whose only types it emits.
+                // C# is the only language this driver serves, so asking for C# is not a narrowing.
+                generators.AddRange(reference.GetGenerators(LanguageNames.CSharp));
             } catch (Exception exception) when (exception is IOException
                                                     or BadImageFormatException
                                                     or FileLoadException
@@ -134,6 +165,7 @@ public static class GeneratorDriver {
                                                     or ArgumentException) {
                 // ⚠ SK9031, never fatal. A generator that will not load costs its own output; it
                 // must not cost the report.
+                complete = false;
                 diagnostics.Add(
                     new(
                         RuleIds.AnalyzerFailedToLoad,
@@ -146,7 +178,7 @@ public static class GeneratorDriver {
         }
 
         if (generators.Count == 0) {
-            return compilation;
+            return new(compilation, complete);
         }
 
         try {
@@ -166,12 +198,31 @@ public static class GeneratorDriver {
                 configOptions
             );
 
-            driver.RunGeneratorsAndUpdateCompilation(
+            var ran = driver.RunGeneratorsAndUpdateCompilation(
                 compilation,
                 out var updated,
                 out var produced,
                 cancellation
             );
+
+            // ⚠ #634. Roslyn's driver catches a generator's own exception and turns it into a
+            // `CS8784`/`CS8785` *warning*, which the error-only filter below never forwarded — so a
+            // generator that threw here was as silent as one that was never loaded. The exception on
+            // the run result is the fact; the warning is only its rendering.
+            foreach (var result in ran.GetRunResult().Results) {
+                if (result.Exception is { } thrown) {
+                    complete = false;
+                    diagnostics.Add(
+                        new(
+                            RuleIds.AnalyzerThrew,
+                            SkalaSeverity.Warning,
+                            $"source generator '{result.Generator.GetGeneratorType().FullName}' threw and the "
+                            + $"compilation is missing its output: {thrown.Message}",
+                            compilation.AssemblyName ?? string.Empty
+                        )
+                    );
+                }
+            }
 
             foreach (var diagnostic in produced) {
                 if (diagnostic.Severity == DiagnosticSeverity.Error) {
@@ -186,7 +237,7 @@ public static class GeneratorDriver {
                 }
             }
 
-            return (CSharpCompilation)updated;
+            return new((CSharpCompilation)updated, complete);
         } catch (Exception exception) when (exception is InvalidOperationException
                                                 or TypeLoadException
                                                 or MissingMethodException
@@ -200,9 +251,22 @@ public static class GeneratorDriver {
                 )
             );
 
-            return compilation;
+            return new(compilation, false);
         }
     }
+
+    /// <summary>
+    ///     The compilation with the generated half added, and whether every generator the build named
+    ///     actually contributed it.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ #634. <see cref="Complete" /> is <c>false</c> when an assembly was missing, a generator would
+    ///     not load or construct, or one threw — every case in which the compilation lacks members the
+    ///     build had. A rule may still report against such a compilation, because each case also carries
+    ///     its diagnostic; what must not happen is a <em>rewrite</em> justified by a member being absent,
+    ///     which is what deleted <c>using Vixen.Net.Generated;</c> and broke the next build.
+    /// </remarks>
+    public readonly record struct Outcome(CSharpCompilation Compilation, bool Complete);
 
     /// <summary>An <see cref="AdditionalText" /> over a file on disk.</summary>
     sealed class FileText(string path) : AdditionalText {

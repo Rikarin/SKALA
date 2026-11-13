@@ -50,9 +50,24 @@ public static class ArrangementCompilations {
     ///     ⚠ All of them, not the one that covers the first path — docs/plan/06 removes a using only when
     ///     it is unused in <em>every</em> compilation the file participates in. Empty is the documented
     ///     syntactic mode of <see cref="ArrangeCommand" />, not a failure.
+    ///     <para>
+    ///         ⚠ #634: <b>minus every compilation known to lack generated sources.</b> A binlog load whose
+    ///         generator did not run binds every use of a generated name to nothing, so the one using that
+    ///         imports the generated namespace reads as unused — and <c>arrange</c> deleted
+    ///         <c>using Vixen.Net.Generated;</c> and broke the next build. Its re-bind check could not
+    ///         catch that: it re-binds against the same incomplete compilation. A file in no remaining
+    ///         compilation gets the syntactic subset and is counted as such; the load's own
+    ///         <c>SK9029</c>/<c>SK9031</c>/<c>SK9030</c> says which generator was missing.
+    ///     </para>
     /// </remarks>
     public static IReadOnlyList<CSharpCompilation> For(LoadedProject loaded) =>
-        Semantic(loaded.Mode) ? [..loaded.Units.Select(static unit => unit.Compilation)] : [];
+        Semantic(loaded.Mode)
+            ? [
+                ..loaded.Units
+                    .Where(static unit => !unit.GeneratedSourcesIncomplete)
+                    .Select(static unit => unit.Compilation)
+            ]
+            : [];
 
     /// <summary>The arrangement rules a load in <paramref name="mode" /> does not run, with the reason.</summary>
     /// <remarks>

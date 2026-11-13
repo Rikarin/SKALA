@@ -323,7 +323,7 @@ public static partial class BinlogLoader {
         // compilation is missing every generated member, which on Vixen is 1 675 compiler errors
         // and a semantic model that answers questions about error types.
         var analyzerConfigPaths = ImmutableArray.CreateRange(parsed.AnalyzerConfigPaths);
-        compilation = GeneratorDriver.Run(
+        var generated = GeneratorDriver.Run(
             compilation,
             analyzerReferences.ToImmutable(),
             [
@@ -340,7 +340,8 @@ public static partial class BinlogLoader {
 
         return new() {
             Name = name,
-            Compilation = compilation,
+            Compilation = generated.Compilation,
+            GeneratedSourcesIncomplete = !generated.Complete,
             TargetFramework = TargetFrameworkOf(parsed),
             PreprocessorSymbols = [..parseOptions.PreprocessorSymbolNames],
             ReportablePaths = reportable.ToImmutable(),
