@@ -6664,6 +6664,14 @@ public sealed class BreakPlan {
         // ⚠ And a value that is one parenthesis around an operator or a cast, bare or cast itself, follows the
         // collection's rule (#598): see IsAParenthesisedOperator.
         var parenthesised = owner != EqualsOwner.None && IsAParenthesisedOperator(value);
+        // ⚠ A doubled `((a + b…))` is no parenthesised operator to the collection rule, so its head is read here, from
+        // the planner's width, rather than by a marker (#598, SK-DIV-0770).
+        var bareDoubled = BareParenOperatorOf(value, out var doubledParen) is not null && doubledParen;
+        var bareParen = owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment
+            && !options.WrapBeforeEq
+            && (parenthesised || bareDoubled && HeadWidthThroughEquals(node, equals) >= MinimumEqualsHead)
+                ? BareParenOperatorOf(value, out _)
+                : null;
         if ((yieldsToTheBracket || callee > 0 || parenthesised)
             && EqualsHeadStartOf(node) is { RawKind: not 0 } headToken
             && headToken != FirstToken(node)
@@ -6959,7 +6967,27 @@ public sealed class BreakPlan {
                     && IsAMeasuredArgument(atom.Expression)
                         ? HeadWidthThroughEquals(node, equals)
                         : 0,
-                    KeptArgumentCallee: KeptArgumentCalleeOf(owner, value)
+                    KeptArgumentCallee: KeptArgumentCalleeOf(owner, value),
+                    // ⚠ A bare `(a + b…)` or `(T)(a + b…)` keeps its `=` by a measured form of its own (#598,
+                    // SK-DIV-0770). See Fitter.BareParenEqualsBreaks.
+                    BareParenOperand: bareParen is not null ? FlatSourceWidth(bareParen.Left) : 0,
+                    BareParenCast: bareParen is not null && value is CastExpressionSyntax bareCast
+                        ? FormattedWidth(bareCast.OpenParenToken, bareCast.CloseParenToken)
+                        : 0,
+                    BareParenWidth: bareParen is not null
+                        ? FlatSourceWidth(value)
+                        + WidthThroughSemicolon(value)
+                        + TrailingCommentWidth(value.GetLastToken().GetNextToken())
+                        : 0,
+                    BareParenName: bareParen is null
+                        ? 0
+                        : node switch {
+                            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Identifier: var bareName } } =>
+                                bareName.Span.Length,
+                            AssignmentExpressionSyntax bareAssignment => FormattedWidth(bareAssignment.Left),
+                            _ => 0
+                        },
+                    BareParenDoubled: bareParen is not null && bareDoubled
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -7000,6 +7028,24 @@ public sealed class BreakPlan {
             && parenthesis.Expression is not BinaryExpressionSyntax {
                 RawKind: (int)SyntaxKind.IsExpression or (int)SyntaxKind.AsExpression
             };
+    }
+
+    /// <summary>
+    ///     The binary operator a bare value's one parenthesis holds, <c>(a + b)</c> or <c>(T)(a + b)</c>, with nothing
+    ///     after it; null otherwise (#598, SK-DIV-0770). See <see cref="GroupFacts.BareParenOperand" />.
+    /// </summary>
+    static BinaryExpressionSyntax? BareParenOperatorOf(ExpressionSyntax value, out bool doubled) {
+        var inner = value is CastExpressionSyntax cast ? cast.Expression : value;
+        doubled = inner is ParenthesizedExpressionSyntax { Expression: ParenthesizedExpressionSyntax };
+        if (doubled) {
+            inner = ((ParenthesizedExpressionSyntax)inner).Expression;
+        }
+
+        return inner is ParenthesizedExpressionSyntax { Expression: BinaryExpressionSyntax binary }
+            && !binary.IsKind(SyntaxKind.IsExpression)
+            && !binary.IsKind(SyntaxKind.AsExpression)
+                ? binary
+                : null;
     }
 
     /// <summary>

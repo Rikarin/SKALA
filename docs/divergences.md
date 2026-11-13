@@ -14902,7 +14902,7 @@ No statement that matched on master diverges, and none takes two passes, in any 
   - With the first pass's planner and fitter, the second pass's three tests fail 3 of 3.
   - With master's, the first pass's eight fail 8 of 8.
   - ⚠ **Open:**
-    - a bare value with no member, cast or not;
+    - a bare value with no member, cast or not: **fixed** in SK-DIV-0770, behind heads of twelve or more;
     - the uncast family behind wide heads;
     - each wired form's band between its safe bounds. Splitting on whether the receiver fits below narrowed the band
       past the receiver (round 6's form) from 1 076–1 185 to 1 098–1 128. The operator, the operator line and the
@@ -15261,3 +15261,91 @@ width, the inner cast's width and the line together:
 - Where the rest does not fit below, the oracle breaks at the inner cast instead, the operand one level in.
 - Short heads (`var v =`, `_field =`) break their `=` first in the oracle, under the twelve-column `MinimumHead` that
   keeps Skala's `=` (#379).
+
+## SK-DIV-0770 — a bare `(a op b…)` behind a wide head: the name the `=` assigns decides, not whether the value fits below
+
+#598, round 9 (2026-11-13). Some values are a parenthesis around a binary operator with nothing after it:
+`string value = (a + b…);`, `x = (T)(a ?? b…);` or doubled, `var v = ((a && b…));`. When such a value runs past the
+margin behind a head of twelve columns or more, the oracle keeps the `=` and breaks at the operator (`o`), breaks the
+`=` and moves the value down whole (`V`), or breaks both (`X`). Skala used the collection rule for the single
+parenthesis: break the `=` exactly when the value fits below. The doubled one went through the ordering rule. Round 8
+left this class untouched, 84 of 855 apart on its last fresh probe.
+
+Measured with `Testing ask` on six dense grids written for it, 54 670 statements:
+- **b1:** four heads × three casts × first operands 2–34 × every line width.
+- **b2:** seventeen heads of 12–39 columns (`var`, typed, generic, `this.…`, bare names) at indents 8 and 16.
+- **b3:** six heads × five casts of 0–26 columns × `+` and `&&` × nine first operands.
+- **b4:** the doubled parenthesis on b3's axes.
+- **b5:** first operands of 2–7 with eight heads, four casts and two operators, at indents 8 and 12.
+- **b6:** 34 heads × first operands 1–12, with the value too wide for the line below.
+
+The maps were read before anything was fitted.
+
+- **The indent does not matter.** The operator does not matter either (`+`, `&&`, `??`, `*`). Neither does the
+  head's type: `List<int> vvvvv =` and `Dictionary<int, string> vvvvv =` answer alike.
+- ⚠ **What matters is the width of what the `=` assigns**, `n`: a local's name, or an assignment's whole target.
+  Round 6 found "a one-column step between `int[] items =` and `List<int> s =`" and called it noise. It was this.
+- **The fragment beside the `=`** (b6). The `=` breaks whenever `3·min(a, 24) + 2·cast < w(n)`, where `a` is the first
+  operand and `w(n) = min(n + 3, 69 − 2n)`. This holds even when the value then overflows below, so Skala writes
+  `=` / `(aa` / `+ b…);` as the oracle does. The threshold does not move with the line's width (121, 124 and 127
+  columns below give the same map), and every one of b6's 27 heads of twelve columns or more follows it exactly. It
+  rises a column of operand per three of name up to about 22, then falls.
+- **Past the fragment, the parenthesis's end below.** Let `p` be the column the value would end on below the `=`,
+  without its cast. The `=` stays when `128·p + 49·min(a, 24) + 34·cast − 16·w` reaches 14 724, and breaks at 14 695
+  or less. Over every grid's 42 891 single-parenthesis rows past two columns over, the best single threshold
+  misclassifies 21, all within a column of it. Between the two bounds the collection rule still answers.
+  - `min(a, 24)` is round 6's plateau.
+  - The cast counts through `p` and again on its own.
+  - The `w` is the fragment's weight again.
+- **A doubled parenthesis** reads the same form with `p` two columns tighter, a gate of 3, and bounds 14 749 and
+  14 767. Where its inner or outer `)` lands on column 121, `ParenCloseEnd` still answers first.
+- **One and two columns over.** At 121 the form is exact (0 of 1 658 rows wrong). At 122 the `)` lands on column 121,
+  and `ParenCloseEnd`'s break answers as before.
+
+Wired as `Fitter.BareParenEqualsBreaks`, from planner facts (`GroupFacts.BareParenOperand`, `BareParenCast`,
+`BareParenWidth`, `BareParenName`, `BareParenDoubled`). The facts are read from the formatted tokens, so a break pass
+one kept inside the value does not move them. A broken `=` the form breaks stays broken on pass two, even where the
+value overflows below. This applies to locals and plain assignments only. Fields and compound assignments were not
+measured.
+
+Statements apart from the oracle. Master is `aee96b6f`. The start is `28db3cf91`, round 8 merged. No statement that
+matched on the start diverges on the branch, in any grid or probe, and none takes two passes:
+
+| Grid | Statements | Master | Start | Branch |
+|---|---:|---:|---:|---:|
+| b1 (fit) | 6 052 | 1 167 | 1 167 | 8 |
+| b2 (fit) | 5 712 | 1 106 | 1 106 | 16 |
+| b3 (fit) | 13 050 | 3 124 | 3 124 | 38 |
+| b4, doubled (fit) | 5 688 | 3 010 | 3 010 | 89 |
+| b5 (fit) | 22 944 | 3 320 | 3 320 | 68 |
+| b6 (fit) | 1 224 | 351 | 351 | 0 |
+| round 8's seed 7723 | 4 000 | 1 597 [3] | 296 | 216 |
+| round 8's seed 9941 | 5 000 | 1 834 [3] | 337 | 239 |
+| round 8's seed 12011 | 5 000 | 1 852 [1] | 338 | 256 |
+| **fresh**, bare values, seed 770001 | 3 000 | 212 [2] | 212 | **8** |
+| **fresh**, doubled, seed 770002 | 2 000 | 797 [5] | 197 | 137 |
+| **fresh**, every generator, seed 770003 | 5 000 | 1 355 [2] | 377 | 264 |
+
+Bracketed: statements a second pass changes. On the three fresh probes the bare class went from 392 apart to 15, with
+none newly wrong:
+- Six are single-parenthesis rows inside the band between the two bounds.
+- Two are doubled rows inside their band.
+- Two are doubled rows where the oracle breaks after the cast, `(T)` / `((a + b…))`, SK-DIV-0608's open
+  outer-cast break.
+- Five are behind short heads, which this does not touch.
+
+The rest of seed 770002's 137 are doubled values with a member, unchanged.
+
+⚠ **The same name dependence reaches past the bare value, and is not wired.** Over round 8's eleven grids, 1 673 of
+the 1 861 single-parenthesis misses with a member (90 %) are the `=`'s decision, not the layout below it. A dense grid
+was built for them: 16 200 statements over six heads, three casts, and the members `.M()`, `.ToList()`, `.Length`,
+`.Select(x)` and `.M(aaaa, bbbb)`, plus a gate grid. On it, behind a receiver that runs past the margin, the fragment
+gate holds with the member counted against it: about `3·min(a, 24) + 2·cast − 6·member ≥ w(n) + c`. For example, `var vvvvvvvvvvvv =` keeps `(aaaa…` beside it from `a = 10` with `.L` and from `a = 24` with
+`.Select(x)`. Behind a receiver that fits beside, round 6's one-, two- and three-over cases and the dot's own rule
+interleave, and no form separated cleanly (84 to 138 errors of 1 224 to 3 672 rows). This is the lead for the
+remaining member classes.
+
+- options: none.
+- status: **fixed** for a bare single or doubled parenthesis behind a head of twelve or more, outside the band between
+  the bounds. Pinned by `BareParenNameIssue598Tests`. With the form switched off, 5 of 5 fail. With `n` held at 9, 2
+  of 5 fail. ⚠ **Open:** the band, the doubled outer-cast break (SK-DIV-0608), and the member classes above.
