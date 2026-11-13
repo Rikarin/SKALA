@@ -135,7 +135,7 @@ public sealed class ArgumentStyleRule : ArrangementRule {
             }
 
             var arguments = visited.Arguments;
-            var changed = false;
+            var proposed = new List<(int Index, NameColonSyntax? Name)>();
             for (var i = 0; i < arguments.Count; i++) {
                 var argument = arguments[i];
                 if (i > firstOutOfPosition) {
@@ -164,13 +164,7 @@ public sealed class ArgumentStyleRule : ArrangementRule {
                         continue;
                     }
 
-                    arguments = arguments.Replace(
-                        argument,
-                        argument.WithNameColon(SyntaxFactory.NameColon(SyntaxFactory.IdentifierName(name)))
-                            .WithLeadingTrivia(argument.GetLeadingTrivia())
-                    );
-
-                    changed = true;
+                    proposed.Add((i, SyntaxFactory.NameColon(SyntaxFactory.IdentifierName(name))));
                     continue;
                 }
 
@@ -190,15 +184,102 @@ public sealed class ArgumentStyleRule : ArrangementRule {
                     continue;
                 }
 
-                arguments = arguments.Replace(
-                    argument,
-                    argument.WithNameColon(null).WithLeadingTrivia(argument.GetLeadingTrivia())
-                );
-
-                changed = true;
+                proposed.Add((i, null));
             }
 
-            return changed ? visited.WithArguments(arguments) : visited;
+            if (proposed.Count == 0) {
+                return visited;
+            }
+
+            return visited.WithArguments(Renamed(visited.Arguments, Preserving(node, method, proposed)));
+        }
+
+        /// <summary>
+        ///     The proposed renames that leave overload resolution on <paramref name="method" />: all of
+        ///     them when they can go together, otherwise each one that can still go given those before it.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ #638. A name is not redundant just because it matches the parameter at its own position in
+        ///     the overload the call binds to today — the <em>other</em> members of the method group decide
+        ///     whether it is. <c>Load(composition: null!, token)</c> beside an overload taking names
+        ///     loses its name and becomes CS0121; <c>Equal(a, b, tolerance: 1)</c> beside an
+        ///     <c>int precision</c> overload does the same. Worse is the case nothing downstream can see:
+        ///     <c>F(a: 1, x: 2)</c> beside <c>F(int b, int x)</c> binds <c>F(long a, int x)</c>, and unnamed
+        ///     it binds the <c>int</c> overload and compiles — safety layer 2 compares diagnostics, so it
+        ///     would have shipped a call to a different method. Adding a name is the same question in the
+        ///     other direction: a name can make an overload applicable that position alone ruled out. So
+        ///     each rewrite is bound speculatively against the whole group and must reach the same symbol.
+        ///     <para>
+        ///         Any subset is legal syntax, because every proposal sits at or before the first
+        ///         out-of-position name — an argument already in position stays in position whether it is
+        ///         named or not.
+        ///     </para>
+        /// </remarks>
+        List<(int Index, NameColonSyntax? Name)> Preserving(
+            ArgumentListSyntax node,
+            IMethodSymbol method,
+            List<(int Index, NameColonSyntax? Name)> proposed
+        ) {
+            if (Reaches(node, method, proposed)) {
+                return proposed;
+            }
+
+            var kept = new List<(int Index, NameColonSyntax? Name)>();
+            foreach (var rename in proposed) {
+                kept.Add(rename);
+                if (!Reaches(node, method, kept)) {
+                    kept.RemoveAt(kept.Count - 1);
+                }
+            }
+
+            return kept;
+        }
+
+        /// <summary>
+        ///     Whether the call <paramref name="node" /> belongs to, with <paramref name="renames" />
+        ///     applied, still binds to <paramref name="method" /> and to nothing else.
+        /// </summary>
+        /// <remarks>
+        ///     ⚠ Built from the <em>original</em> argument list, for the same reason as
+        ///     <see cref="PassesTheParamsArray" />: the speculative bind is anchored in the tree the model
+        ///     was created for.
+        /// </remarks>
+        bool Reaches(ArgumentListSyntax node, IMethodSymbol method, List<(int Index, NameColonSyntax? Name)> renames) {
+            var owner = node.Parent!;
+            var rewritten = owner.ReplaceNode(node, node.WithArguments(Renamed(node.Arguments, renames)));
+
+            // ⚠ A target-typed `new(…)` cannot be bound out of place, and declining it would cost every
+            // name in every `new(…)` argument list. Its constructors are its type's, so `new T(…)` asks
+            // overload resolution the same question. A tuple type cannot be written after `new`
+            // (CS8181), so that one is declined.
+            if (rewritten is ImplicitObjectCreationExpressionSyntax created) {
+                if (method.ContainingType is not { IsTupleType: false, IsAnonymousType: false } type) {
+                    return false;
+                }
+
+                rewritten = SyntaxFactory.ObjectCreationExpression(
+                    SyntaxFactory.ParseTypeName(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)),
+                    created.ArgumentList,
+                    null
+                );
+            }
+
+            return SymbolEqualityComparer.Default.Equals(SpeculativeRebind.Member(model, owner, rewritten), method);
+        }
+
+        static SeparatedSyntaxList<ArgumentSyntax> Renamed(
+            SeparatedSyntaxList<ArgumentSyntax> arguments,
+            List<(int Index, NameColonSyntax? Name)> renames
+        ) {
+            foreach (var (index, name) in renames) {
+                var argument = arguments[index];
+                arguments = arguments.Replace(
+                    argument,
+                    argument.WithNameColon(name).WithLeadingTrivia(argument.GetLeadingTrivia())
+                );
+            }
+
+            return arguments;
         }
 
         /// <summary>
