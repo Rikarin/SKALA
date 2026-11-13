@@ -398,13 +398,24 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
         new Rewriter(context.Guard, context.Options).Visit(context.Root);
 
     sealed class Rewriter(FormatterTagGuard guard, ArrangementOptions options) : GuardedRewriter(guard) {
+        /// <remarks>
+        ///     ⚠ Both halves are asked of the parentheses <em>as they will be written</em> — with
+        ///     whatever this rewriter already removed beneath them — and not of the original node (#635).
+        ///     They used to be asked of the original, and a doubled pair proved itself redundant twice
+        ///     over: in <c>-((x - 1f)) * w</c> the inner pair is redundant because the outer one still
+        ///     stands, and the outer pair is redundant because the inner one still stands, so both went
+        ///     and the program became <c>-x - 1f * w</c>. It compiles, so nothing downstream noticed.
+        ///     The policy half had the same hole: <c>a &amp; ((b + 1))</c> was judged by an inner
+        ///     <em>parenthesis</em>, which no key keeps, and lost the pair the export keeps.
+        /// </remarks>
         public override SyntaxNode? VisitParenthesizedExpression(ParenthesizedExpressionSyntax node) {
             var visited = (ParenthesizedExpressionSyntax)base.VisitParenthesizedExpression(node)!;
-            if (!ParenthesesRedundancy.MayRemove(node, options)) {
+            var subject = ReferenceEquals(visited, node) ? node : ParenthesesRedundancy.InPlace(node, visited);
+            if (!ParenthesesRedundancy.MayRemove(subject, options)) {
                 return visited;
             }
 
-            return ParenthesesRedundancy.RemovalPreservesParse(node)
+            return ParenthesesRedundancy.RemovalPreservesParse(subject)
                 ? ParenthesesRedundancy.Strip(visited)
                 : visited;
         }
@@ -595,6 +606,26 @@ public static class ParenthesesRedundancy {
     }
 
     const int MaxProofLength = 8192;
+
+    /// <summary>
+    ///     <paramref name="rewritten" /> standing where <paramref name="original" /> stood, in a copy of
+    ///     the original tree, so that its parents can be read and its removal proved in place.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A rewriter builds bottom-up, so a rewritten node has no parent to be judged against; the
+    ///     copy is how the judgement sees the parentheses beneath it already gone (#635).
+    /// </remarks>
+    public static ParenthesizedExpressionSyntax InPlace(
+        ParenthesizedExpressionSyntax original,
+        ParenthesizedExpressionSyntax rewritten
+    ) {
+        var marker = new SyntaxAnnotation();
+        var root = original.AncestorsAndSelf().Last();
+        return (ParenthesizedExpressionSyntax)root
+            .ReplaceNode(original, rewritten.WithAdditionalAnnotations(marker))
+            .GetAnnotatedNodes(marker)
+            .Single();
+    }
 
     /// <summary>
     ///     The expression without its parentheses, keeping every comment that sat inside them.
