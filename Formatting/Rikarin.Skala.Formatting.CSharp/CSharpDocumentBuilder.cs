@@ -1493,6 +1493,15 @@ public sealed partial class CSharpDocumentBuilder {
         // continuation nor its own level (HeldLevel.WhileGroupBroken).
         if ((planned.HoldsLevel & HeldLevel.WhileGroupBroken) != 0
             && plan.ArrowHeldAgainst(planned.Id) is >= 0 and var gap) {
+            // ⚠ And a receiver lambda's chain once its held call moves below the receiver (#619).
+            if (plan.MovedCallHeldAgainst(planned.Id) is >= 0 and var moved) {
+                doc.HoldAlsoAgainst(gap, moved);
+            }
+
+            if (plan.MovedCallReleasedBy(planned.Id) is >= 0 and var release) {
+                doc.ReleaseWhenBroken(gap, release);
+            }
+
             doc.OpenHeldIndent(IndentKind.Continuous, IndentFlags.HeldWhileGroupBroken, gap);
             continuousDepth++;
             return;

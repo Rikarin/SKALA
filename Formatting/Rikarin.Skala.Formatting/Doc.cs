@@ -688,6 +688,7 @@ public sealed class Document {
     readonly Dictionary<int, int> throughWidth;
     readonly Dictionary<int, int[]> alignedItems;
     readonly Dictionary<int, int> secondHolds;
+    readonly Dictionary<int, int> releases;
 
     internal Document(
         DocNode[] nodes,
@@ -709,7 +710,8 @@ public sealed class Document {
         Dictionary<int, int>? throughWidth = null,
         Dictionary<int, int[]>? alignedItems = null,
         Dictionary<int, int>? secondHolds = null,
-        Dictionary<int, int>? dotTails = null
+        Dictionary<int, int>? dotTails = null,
+        Dictionary<int, int>? releases = null
     ) {
         Nodes = nodes;
         NodeCount = nodeCount;
@@ -730,6 +732,7 @@ public sealed class Document {
         this.throughWidth = throughWidth ?? [];
         this.alignedItems = alignedItems ?? [];
         this.secondHolds = secondHolds ?? [];
+        this.releases = releases ?? [];
         this.dotTails = dotTails ?? [];
     }
 
@@ -739,6 +742,14 @@ public sealed class Document {
     ///     when its arrow does).
     /// </summary>
     public int SecondHoldOf(int group) => secondHolds.TryGetValue(group, out var second) ? second : -1;
+
+    /// <summary>
+    ///     The group whose break spends a level held while <paramref name="group" /> is broken
+    ///     (<see cref="IndentFlags.HeldWhileGroupBroken" />) after all, or −1: the level is held only while
+    ///     <paramref name="group" /> breaks and this one stays flat (#619 — a sole lambda's pattern chain in a held
+    ///     first call gives its levels back while the call moves below its receiver and the arrow stays).
+    /// </summary>
+    public int ReleaseOf(int group) => releases.TryGetValue(group, out var release) ? release : -1;
 
     public DocNode[] Nodes { get; }
 

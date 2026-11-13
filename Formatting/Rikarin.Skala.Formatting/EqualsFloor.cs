@@ -309,9 +309,17 @@ public static class EqualsFloor {
 
     /// <summary>
     ///     The column a sole lambda argument's arrow has to reach for it to break over an operand-chain or
-    ///     binary-pattern body (#578): the larger of 20 and the smaller of a ceiling the parameters and the
-    ///     first operand set and a column that rises with the line's end.
+    ///     binary-pattern body (#578): the larger of <paramref name="floor" /> and the smaller of a ceiling the
+    ///     parameters and the first operand set and a column that rises with the line's end.
     /// </summary>
+    /// <param name="floor">
+    ///     ⚠ Twelve columns past the line's start, not column 20 (#619). Every grid this was fitted on started its line
+    ///     at indent 8, where the two are one column. Measured with <c>Testing ask</c> on 1 344 cells —
+    ///     <c>U…(p =&gt; …);</c>, <c>r….Where(p =&gt; …);</c> and <c>return U…(p =&gt; …);</c> at indents 8 to 20, the
+    ///     arrow 8 to 20 columns past the line's start, lines of 124 to 190 — the oracle never breaks an arrow ending
+    ///     eleven columns or fewer past its line's start, at any indent, and column 20 broke 109 of them. It is what
+    ///     keeps <c>.Where(x =&gt; a</c> on a held call moved below its receiver, where the operands then chop.
+    /// </param>
     /// <param name="parameters">The width of everything before ` =&gt;`, modifiers and parentheses included.</param>
     /// <param name="first">The body's first operand's width.</param>
     /// <param name="end">The column the whole line would end at.</param>
@@ -347,7 +355,14 @@ public static class EqualsFloor {
     ///     expressions, types of 3 to 40, lines of 118 to 200, either context, the remaining operands split at
     ///     random), where the chain's constants miss 540 and these 15.
     /// </param>
-    public static bool BreaksTheOperandArrow(int arrow, int parameters, int first, int end, int patternLeft = 0) {
+    public static bool BreaksTheOperandArrow(
+        int arrow,
+        int parameters,
+        int first,
+        int end,
+        int patternLeft = 0,
+        int floor = 20
+    ) {
         // ⚠ The cap rises 0.55 a column per column of parameter text and 0.6 per column of first operand, up to
         // where the ceiling stops counting it (#586, group B); round 2's max(85, 85.5 + 0.25·(params − 36)) held
         // only near 30 columns of parameters and a first operand of 24.
@@ -365,7 +380,7 @@ public static class EqualsFloor {
             );
             var patternLine = (27.0 * end + 9 * parameters - 2832) / 30
                 - Math.Max(0, 10 + patternLeft - 0.375 * capped);
-            return arrow >= Math.Max(20, Math.Min(patternCeiling, patternLine));
+            return arrow >= Math.Max(floor, Math.Min(patternCeiling, patternLine));
         }
 
         var ceiling = Math.Min(
@@ -376,7 +391,7 @@ public static class EqualsFloor {
             )
         );
         var line = (27.0 * end + 9 * parameters - 2832) / 30 + Math.Min(3.25, Math.Max(0, 0.625 * (first - 18)));
-        return arrow >= Math.Max(20, Math.Min(ceiling, line));
+        return arrow >= Math.Max(floor, Math.Min(ceiling, line));
     }
 
 

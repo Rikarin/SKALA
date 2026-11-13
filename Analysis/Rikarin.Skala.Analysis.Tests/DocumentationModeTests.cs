@@ -90,8 +90,8 @@ public sealed class DocumentationModeTests {
 
         var verdict = report.Reportable
             .Where(static finding => finding.RuleId is PublicApiCommentDensity
-                    or NonPublicMemberNotDocumented
-                    or DocumentationDuplicatesBaseMember
+                or NonPublicMemberNotDocumented
+                or DocumentationDuplicatesBaseMember
             )
             .Select(static finding => finding.RuleId
                 + "@"

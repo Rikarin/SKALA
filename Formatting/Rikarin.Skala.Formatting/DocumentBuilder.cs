@@ -49,6 +49,9 @@ public sealed class DocumentBuilder {
     /// <summary><see cref="Document.SecondHoldOf" />, by the group a held level is first held against.</summary>
     readonly Dictionary<int, int> secondHolds = [];
 
+    /// <summary><see cref="Document.ReleaseOf" />, by the group a held level is held against.</summary>
+    readonly Dictionary<int, int> releases = [];
+
     /// <summary>
     ///     The groups that own at least one break point.
     /// </summary>
@@ -472,6 +475,12 @@ public sealed class DocumentBuilder {
     /// </summary>
     public void HoldAlsoAgainst(int group, int second) => secondHolds[group] = second;
 
+    /// <summary>
+    ///     A level held while <paramref name="group" /> is broken is spent anyway when <paramref name="release" />
+    ///     breaks. See <see cref="Document.ReleaseOf" />.
+    /// </summary>
+    public void ReleaseWhenBroken(int group, int release) => releases[group] = release;
+
     /// <summary>Opens an <see cref="DocKind.IfBroken" /> over a group; its two children are Then and Else.</summary>
     public void OpenIfBroken(int groupId) => Open(DocKind.IfBroken, groupId, 0);
 
@@ -773,7 +782,8 @@ public sealed class DocumentBuilder {
             throughWidth,
             alignedItems,
             secondHolds,
-            dotTails
+            dotTails,
+            releases
         );
     }
 

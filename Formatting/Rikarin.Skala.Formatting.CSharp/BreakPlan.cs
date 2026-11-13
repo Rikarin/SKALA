@@ -338,6 +338,18 @@ public sealed class BreakPlan {
     /// </summary>
     readonly Dictionary<int, int> arrowHeldAgainst = [];
 
+    /// <summary>The group <see cref="PlanHeldFirstCall" /> opened over each held first call, by the call's key.</summary>
+    readonly Dictionary<long, int> heldFirstCalls = [];
+
+    /// <summary>
+    ///     A receiver lambda's operand chain's held first call, by the chain's group: its level is held once the call
+    ///     moves below its receiver too. See <see cref="HoldWhileTheArrowBreaks" /> (#619).
+    /// </summary>
+    readonly Dictionary<int, int> movedCallHolds = [];
+
+    /// <summary>See <see cref="HoldWhileTheCallMoves" />: a pattern chain's arrow, by the chain's group.</summary>
+    readonly Dictionary<int, int> movedCallReleases = [];
+
     /// <summary>
     ///     The group <see cref="PlanAfterIs" /> opened for the gap after each <c>is</c>, by the test's key.
     /// </summary>
@@ -3545,6 +3557,7 @@ public sealed class BreakPlan {
         // GroupFacts.HeldCallRest.
         var rest = fillRoot is null || call == fillRoot ? 0 : RestWidth(call, fillRoot);
         var group = NewGroup();
+        heldFirstCalls[Key(call)] = group;
         Point(dot, group);
         Describe(
             call,
@@ -4693,9 +4706,11 @@ public sealed class BreakPlan {
                 && EnclosingTypeTest(root) is { Parent: BinaryExpressionSyntax logical } leftTest
                 && logical.Left == leftTest
                 && logical.Kind() is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression,
-                HoldsLevel: pattern ? HoldForASoleLambda(root, group) | HoldAfterIs(root, group)
-                : receiverBody ? HoldWhileTheArrowBreaks(root, group)
-                : HeldLevel.None
+                HoldsLevel: pattern
+                    ? HoldForASoleLambda(root, group) | HoldAfterIs(root, group) | HoldWhileTheCallMoves(root, group)
+                    : receiverBody
+                        ? HoldWhileTheArrowBreaks(root, group)
+                        : HeldLevel.None
             )
         );
     }
@@ -4752,14 +4767,63 @@ public sealed class BreakPlan {
     ///     A receiver lambda's operand chain gives its own level back once the arrow breaks: <c>x =&gt;</c> /
     ///     <c>a</c> / <c>&amp;&amp; b</c> on one column, the body's (SK-DIV-0420).
     /// </summary>
+    /// <remarks>
+    ///     ⚠ And once the call moves below its receiver (#619): <c>= r</c> / <c>.Where(x =&gt; a</c> / <c>&amp;&amp; b</c>
+    ///     one level past <c>.Where(</c>'s line, as with a dot the author broke, where the level read from the source
+    ///     put the <c>&amp;&amp;</c> two levels past it and pass two, reading the dot's break as the author's, one.
+    ///     The fitter moves the call, so the writer asks its group (<see cref="MovedCallHeldAgainst" />).
+    /// </remarks>
     HeldLevel HoldWhileTheArrowBreaks(SyntaxNode chain, int group) {
         if (chain.Parent is not LambdaExpressionSyntax lambda || !arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
             return HeldLevel.None;
         }
 
         arrowHeldAgainst[group] = arrow;
+        if (lambda.Parent?.Parent?.Parent is InvocationExpressionSyntax call
+            && heldFirstCalls.TryGetValue(Key(call), out var held)) {
+            movedCallHolds[group] = held;
+        }
+
         return HeldLevel.WhileGroupBroken;
     }
+
+    /// <summary>
+    ///     A sole lambda's pattern chain in a chain's held first call gives both its levels back once the call moves
+    ///     below its receiver (#619): <c>= r</c> / <c>.Where(x =&gt; x is A</c> / <c>or B</c> one level past
+    ///     <c>.Where(</c>'s line, where Skala wrote the <c>or</c>s two past it.
+    /// </summary>
+    HeldLevel HoldWhileTheCallMoves(SyntaxNode pattern, int group) {
+        if (!IsSoleLambdaArgumentBody(pattern)
+            || arrowHeldAgainst.ContainsKey(group)
+            || EnclosingTypeTest(pattern)?.Parent is not LambdaExpressionSyntax lambda
+            || lambda.Parent?.Parent?.Parent is not InvocationExpressionSyntax {
+                Expression: MemberAccessExpressionSyntax access, Parent: MemberAccessExpressionSyntax
+            } call
+            || !arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
+            return HeldLevel.None;
+        }
+
+        // ⚠ Held only while the arrow stays: once it breaks, `x is A` / `or B` one level past the body's line.
+        if (heldFirstCalls.TryGetValue(Key(call), out var held)) {
+            arrowHeldAgainst[group] = held;
+            movedCallReleases[group] = arrow;
+            return HeldLevel.WhileGroupBroken;
+        }
+
+        // ⚠ And behind a dot the author broke, which pass one's move is on pass two.
+        if (!BreaksBefore(access.OperatorToken) || !IsAPathOfNames(access.Expression)) {
+            return HeldLevel.None;
+        }
+
+        arrowHeldAgainst[group] = arrow;
+        return HeldLevel.WhileArrowFlat;
+    }
+
+    /// <summary>The arrow whose break spends a level <see cref="HoldWhileTheCallMoves" /> holds, or -1.</summary>
+    public int MovedCallReleasedBy(int group) => movedCallReleases.TryGetValue(group, out var arrow) ? arrow : -1;
+
+    /// <summary>The held first call a <see cref="HeldLevel.WhileGroupBroken" /> hold is also decided by, or -1.</summary>
+    public int MovedCallHeldAgainst(int group) => movedCallHolds.TryGetValue(group, out var held) ? held : -1;
 
     /// <summary>
     ///     The pattern chain right after an <c>is</c> whose gap <see cref="PlanAfterIs" /> planned holds its
