@@ -1788,6 +1788,12 @@ public sealed class Fitter {
                 break;
         }
 
+        // ⚠ Round five: what the kept arrow's first line would hold decides first (SK-DIV-0520). See
+        // KeptLineBreaksTheTestArrow; where it does not speak, the rounds below do.
+        if (KeptLineBreaksTheTestArrow(facts, arrowEnd, lineStart) is { } kept) {
+            return kept;
+        }
+
         // ⚠ An operand ending in a later call of two or more arguments (`open(x).Analyze(a, b)`, SK-DIV-0520 round
         // two): its own line first, then the operand's other line where it has one (−2: none, and the arrow stays).
         // A wider operand, a longer parameter list or a narrower callee keeps the arrow. ⚠ The constant is not the
@@ -1906,6 +1912,93 @@ public sealed class Fitter {
                 : facts.LambdaTestCallHead < 0
                 || 6 * callee - 3 * parameters + 5 * facts.LambdaTestCallHead - 8 * facts.LambdaTestCall - 6 * lineStart
                 >= -658);
+    }
+
+    /// <summary>
+    ///     Round five of #618 (SK-DIV-0520): whether a sole lambda's arrow breaks over a broken type test, read from what
+    ///     the kept arrow's first line would have to hold; <see langword="null" /> where this does not decide and the
+    ///     earlier rounds' lines still do.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         With <c>c</c> the head through the outer call's <c>(</c>, <c>p</c> the parameters, <c>i</c> the line's
+    ///         start, <c>w</c> the operand and <c>f</c> its first call through the <c>)</c>. Where the arrow's line holds
+    ///         the operand through the first call that takes an argument (<see cref="GroupFacts.LambdaTestHeldCall" />),
+    ///         the kept arrow can only break the operand between links. There the oracle keeps the arrow wherever it ends
+    ///         less than twelve columns past the line's start (<c>c + p &lt; 9</c>), and breaks it wherever the operand
+    ///         fits a level in with eleven columns to spare. Every member those two cover agrees, of every operand class,
+    ///         on twenty-three probes of 2 400. Past them a line per class decides — for parameters of five columns or
+    ///         fewer every line breaks, as the oracle does in every such member — and on its near side, by a margin
+    ///         measured so that no member the rules before agreed with moves, those rules still do.
+    ///     </para>
+    ///     <para>
+    ///         Where the line does not hold that call, a one-argument call (only properties after it) breaks the arrow
+    ///         by <c>5·(c + t) − 3·(p + h) ≥ min(9, 7·e − 790)</c>, with <c>e = i + 8 + a</c> the argument's line under
+    ///         the kept arrow, one more where the operand does not fit a level in and a point less for parameters of ten
+    ///         columns or more (two from seventeen). Per column of <c>e</c> the members separate at one threshold each.
+    ///     </para>
+    /// </remarks>
+    bool? KeptLineBreaksTheTestArrow(in GroupFacts facts, int arrowEnd, int lineStart) {
+        var parameters = facts.LambdaHead - 3;
+        var head = arrowEnd - facts.LambdaHead - lineStart;
+        var operand = facts.LambdaTestCall;
+        var below = lineStart + 4 + operand;
+        var fitsBelow = below <= width;
+        var later = facts.LambdaTestLaterCall;
+        var held = facts.LambdaTestHeldCall;
+        if (later || held == 0 || arrowEnd + 1 + held <= width) {
+            if (head + parameters < 9) {
+                // ⚠ A property run past the margin by its last `()` alone breaks the arrow, the run kept whole.
+                return facts.LambdaTestCallHead == -1
+                    && facts.LambdaTestArgument == 0
+                    && !facts.LambdaTestProperties
+                    && facts.LambdaTestFirstCall == operand
+                    && arrowEnd + 1 + operand <= width + 2;
+            }
+
+            if (below <= width - 11) {
+                return true;
+            }
+
+            var overflow = Math.Min(arrowEnd + 1 + operand - width, 12);
+            var first = facts.LambdaTestFirstCall;
+            var (score, margin) = later
+                ? (21 * head + 4 * lineStart - 7 * parameters - first - 2 * overflow + 22, 6)
+                : facts.LambdaTestLinks
+                    ? (10 * head + lineStart - 3 * parameters - first + 67, 11)
+                    : facts.LambdaTestProperties
+                        ? (14 * head + 3 * lineStart - 4 * parameters - overflow + (fitsBelow ? 1 : 0) - 39, 6)
+                        : facts.LambdaTestCallHead == -1 && facts.LambdaTestArgument == 0
+                            ? first == operand
+                                ? (9 * head + 2 * lineStart - 3 * parameters - 3 * overflow + 23, 11)
+                                : (15 * head + 3 * lineStart - 4 * parameters - operand - first + 106, 8)
+                            : facts.LambdaTestCallHead == -1 && facts.LambdaTestArgument > 0
+                                ? (5 * head + 2 * lineStart - operand + 64, 3)
+                                : (0, int.MaxValue);
+            return margin == int.MaxValue ? null
+                : score >= margin ? true
+                : score < -margin ? false
+                : null;
+        }
+
+        if (facts.LambdaTestCallHead != -1 || facts.LambdaTestArgument <= 0 || facts.LambdaTestLinks) {
+            return null;
+        }
+
+        if (head + parameters < 9) {
+            return false;
+        }
+
+        var tail = operand - facts.LambdaTestArgumentHead - facts.LambdaTestArgument - 1;
+        var spread = 5 * (head + tail)
+            - 3 * (parameters + facts.LambdaTestArgumentHead)
+            + (parameters >= 10 ? 1 : 0)
+            + (parameters >= 17 ? 1 : 0);
+        var argumentEnd = lineStart + 8 + facts.LambdaTestArgument;
+        var distance = spread - Math.Min(9, 7 * argumentEnd - 790 + (fitsBelow ? 0 : 1));
+        return argumentEnd >= 114 || distance >= 0 ? distance >= 0
+            : distance < -2 ? false
+            : null;
     }
 
     /// <summary>
