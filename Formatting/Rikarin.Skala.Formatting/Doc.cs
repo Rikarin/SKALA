@@ -1673,6 +1673,17 @@ public sealed class Document {
 ///     2026-10-14 with <c>Testing ask</c> behind <c>var x =</c> and <c>this.x =</c>: 15 of 15 rows at 121 break
 ///     the <c>=</c>, 0 of 92 past it do. The same value without the cast breaks the <c>=</c> past it too.
 /// </param>
+/// <param name="HeldValueParenCall">
+///     ⚠ A held call with arguments on one parenthesis around a binary operator, cast or not (#598, round 8): a short
+///     head's <c>=</c> answers by its own measured forms. See <c>Fitter.HeldValueBreaks</c>.
+/// </param>
+/// <param name="HeldValueProperty">
+///     ⚠ A held cast property, <c>(T)(a op b…).Name</c>, behind a head of twelve columns or more (#598, round 8). See
+///     <c>Fitter.CastPropertyBesideAWideHeadBreaks</c>.
+/// </param>
+/// <param name="HeldValueMember">
+///     ⚠ With a held value, the width from its dot through its call's <c>)</c> or its property's name (#598, round 8).
+/// </param>
 /// <param name="HeldValueParen">
 ///     ⚠ With <see cref="HeldValue" />: the call's receiver is parenthesised, <c>(a + b…).M()</c>, cast or not
 ///     (#598). Behind a head of fewer than twelve columns, while the receiver fits beside the <c>=</c>, the
@@ -1733,6 +1744,11 @@ public sealed class Document {
 ///     through their <c>)</c>. A receiver too wide for its line breaks inside, and the dot breaks too when that
 ///     last line, with the call, still overflows: <c>x = (a</c> / <c>&amp;&amp; b…)</c> / <c>.Trim();</c>, the
 ///     operator a level past the dot (#617, <c>BreakPlan.ReceiverLiftOf</c>).
+/// </param>
+/// <param name="ParenReceiverHeld">
+///     ⚠ With <see cref="ParenReceiver" />, a call with arguments (#598, SK-DIV-0575 round 8): while the receiver fits,
+///     <see cref="HeldCall" /> decides the dot; past it, the dot breaks only when the call's <c>(</c> does not fit on
+///     the receiver's last line, and the call's own level is held while the dot stays (<c>HeldLevel.WhileFlat</c>).
 /// </param>
 /// <param name="WhenOuterTail">
 ///     ⚠ The outermost type argument list of an arm's <c>when</c> condition (#576, SK-DIV-0399): the width from its
@@ -1995,6 +2011,7 @@ public readonly record struct GroupFacts(
     int HeldCall = 0,
     bool ParenReceiver = false,
     int ParenReceiverTail = 0,
+    bool ParenReceiverHeld = false,
     int WhenOuterTail = 0,
     int HeldCallHead = 0,
     int HeldCallRest = 0,
@@ -2010,6 +2027,9 @@ public readonly record struct GroupFacts(
     int HeldValueReceiver = 0,
     bool HeldValueCast = false,
     bool HeldValueParen = false,
+    bool HeldValueParenCall = false,
+    bool HeldValueProperty = false,
+    int HeldValueMember = 0,
     int HeldValueCastWidth = 0,
     int HeldValueFirstOperand = 0,
     int HeldValueOperatorTail = 0,

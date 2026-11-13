@@ -13502,6 +13502,8 @@ indent 16, is a property and not this shape. It is pre-existing and unchanged.
   under twelve columns, and for the inner `)` of `((…))`, pinned by `CastChainAndWhenLiftIssue598And576Tests`.
   ⚠ **Open** for typed locals and wide heads (the `o` triangle), and for the dot breaking beside a broken receiver.
   The cast form of the triangle is **partially fixed** in SK-DIV-0575; the uncast form is still open.
+  Calls with arguments and properties under a cast, `return` and compound assignments with arguments, and short typed
+  heads with a cast are wired in SK-DIV-0575's round 8 (2026-11-13). Typed `((…))` is still open there.
 
 ## SK-DIV-0530 — a parenthesised receiver's operator past the dot it broke before, and a lone argument the author chopped
 
@@ -14725,6 +14727,116 @@ it added `.Select(x)`, `.M(aaaa, bbbb)` and `.Length`. The misses split by the m
   this probe too, and leave it unchanged: 3 210 of 4 000 on master and on the branch.
 - status: unchanged, **partially fixed**. **Open**: calls with arguments and properties after a parenthesised operator,
   with or without a cast; and the earlier open items above.
+
+⚠ **Round 8 (2026-11-13): the cast form with arguments and properties is wired.** Every probe was built by script and
+asked with `Testing ask`: eight heads of 4 to 36 columns (`return`, `y +=`, typed, `var` and assignments), casts of 0 to
+26 columns, six operators, first operands of 2 to 34, eighteen members, indents 8 to 20, lines of 116 to 145. Rules were
+fitted on three grids and then checked on fresh probes, each built after the change it checks.
+
+- ⚠ **Refuted: "the next round needs the call's head and argument count as facts, not `tail`"** was half right. The
+  facts were needed, but round 7's 12 newly wrong statements came from admitting arguments into
+  `IsACallOnAParenthesisedOperator`, which also moved the dot's rule. Only the cast's unwrapping is widened now
+  (`BreakPlan.IsASingleCallOnAParenthesisedOperator`). The dot keeps the held call's rule while the receiver fits
+  (`GroupFacts.ParenReceiverHeld`).
+- **The cast is transparent for calls with arguments too.** Of 1 500 cast/uncast twins, 1 330 had the same layout. Every
+  difference was a receiver broken inside, where the cast stays on the first line.
+- **`return` and compound assignments** take the parenthesised call's dot, with arguments too
+  (`PlanReturnedParenthesisedCall`). Past the receiver, the arguments chop while the call's `(` fits on the receiver's
+  last line. ⚠ The call's level is held while the dot stays flat (`HeldLevel.WhileFlat`). Without it, pass one wrote the
+  chopped argument a level too deep: 6 non-idempotent rows of 3 000.
+- **Short heads, calls with arguments.** Once the `(` lands two columns or more past the margin, the dot breaks: 1 846
+  of 1 846 rows over eight probes. Where it fits beside, two arguments chop. One argument breaks the `=` by two
+  measured forms, with safe bounds that no kept row crosses (`Fitter.HeldValueBreaks`). A short typed head over a cast now takes this
+  table. ⚠ Uncast, it stays on the typed table: a fresh probe kept `long n = (a` / `?? b…).M(c, d);` where the short
+  table broke it.
+- **Wide heads.**
+  - Calls with arguments break the `=` from one column over. Past three, they break while
+    `10·s − 4·cast − 14·member + 12·callHead ≤ 1025` (`member` the dot through the `)`, `callHead` the dot through
+    the `(`), which holds 832 of 851 breaking rows and no kept one.
+  - Typed locals with two or more arguments are held under a cast too.
+  - A cast property gets the held value's facts. While its receiver fits beside the `=`, it breaks at
+    `10·s − 8·cast − member ≤ 962` and keeps at 990 or more. Between them master's ordering rule answers.
+  - ⚠ A property is not a no-argument call: the call's 1033 bound broke 28 `=` the oracle kept.
+  - Past the receiver, round 6's safe bound gets a second form:
+    `10·s + 8·min(a, 24) − 7·cast − 20·member − 4·head`. It breaks at 1 094 or less and keeps at 1 170 or more, with
+    nothing kept below or broken above over 1 477 rows.
+  - ⚠ Three thresholds were tightened after fresh probes kept an `=` at the fitted bound: 1 095 → 1 094, 972 → 962,
+    and 633 → 640 for a cast.
+
+Statements apart from the oracle, master `a2a6de72` → branch (non-idempotent in brackets). Not one statement that
+matched on master diverges on the branch, in any grid or probe:
+
+| Grid | Statements | Master | Branch |
+|---|---:|---:|---:|
+| mixed, seed 1001 (fit) | 3 000 | 1 070 [1] | 345 [1] |
+| short heads, one argument, seed 3101 (fit) | 1 500 | 1 056 | 76 |
+| wide heads, every member, seed 3102 (fit) | 3 000 | 1 557 | 199 |
+| **fresh**, seed 4207 | 3 000 | 1 017 [2] | 334 [2] |
+| **fresh**, seed 5309 | 3 000 | 1 365 | 267 |
+| **fresh**, seed 6411 | 3 000 | 1 524 [1] | 227 [1] |
+| **fresh**, seed 7723, with `((…))` and bare values | 4 000 | 1 597 [3] | 538 [3] |
+| **fresh**, seed 8837 | 4 000 | 1 645 | 289 |
+| **fresh after the last change**, seed 9941, every generator | 5 000 | 1 834 [3] | 640 [3] |
+
+The non-idempotent rows are the same rows on both sides: doubled parentheses (`x = (T)((a ?? b…)…`) and uncast
+`long n = (a && b…)…` at indent 16. They are pre-existing and still open.
+
+On the last probe (seed 9941), by class, master → branch:
+- one parenthesis under a cast: `.Select(x)` 774 → 34 of 1 144; `.M(a, b)` 256 → 42 of 456; no arguments 106 → 13
+  of 989; properties 144 → 22 of 419;
+- uncast, with a member: 148 → 123 of 458;
+- unchanged: `((…))` 336 of 824, and a bare `(T)(a + b…);` or `(a + b…);` with no member, 70 of 710.
+
+**Round 8, second pass: doubled parentheses, two non-idempotencies, uncast short heads.**
+
+- **A doubled parenthesis** takes a single one's rules (`BreakPlan.ParenthesisedOperatorOf`): `((a + b…)).M()`,
+  `.M(x)` and `.Length`, cast or not. ⚠ This also fixes a non-idempotency. Pass one gave `x = (T)((a` / `?? b…))` /
+  `.Count;` the property fill's dot with no receiver lift, so the operator sat on the dot's column. Pass two nested it.
+  Round 5's "treating `((a + b))` as `(a + b)` regressed a fresh probe" was the `=`'s collection rule. Here only the
+  receiver's rules read through, and no row regressed.
+- ⚠ **`long n =` / `(a && b…);` took two passes.** Pass one broke the `=` by the one-past-the-margin rule. Pass two read
+  that break as the author's, and `TailSpare`'s six spare columns, measured behind a head of 14, joined it. `TailSpare`
+  now applies only to heads the collection rule reads, 12 to 19 columns.
+- **Uncast, behind a short head,** a single parenthesis takes the cast's table (`HeldValueCast`), and so does a short
+  typed head over an uncast call. Behind a wide head the cast's forms, applied uncast, newly diverged 4 to 9 rows per
+  probe. Refitting them uncast, a band of master's table and the forms combined still left 7 newly wrong over nine
+  grids, so wide uncast heads stay on master's table. A doubled uncast parenthesis also stays there: its `=` breaks
+  past the receiver where a single one keeps it.
+- Past the receiver with the value fitting below, a third form answers, cast or not:
+  `10·s + 3·a − 8·cast − 19·member − head − 7·[cast]`. It breaks at 1 065 or less and keeps at 1 121 or more, over
+  3 325 rows.
+
+Statements apart, master `aee96b6f` → branch, after this pass:
+
+| Grid | Statements | Master | Branch |
+|---|---:|---:|---:|
+| seed 1001 | 3 000 | 1 070 [1] | 177 [0] |
+| seed 3101 | 1 500 | 1 056 | 39 |
+| seed 3102 | 3 000 | 1 557 | 192 |
+| seed 4207 | 3 000 | 1 017 [2] | 176 [0] |
+| seed 5309 | 3 000 | 1 365 | 194 |
+| seed 6411 | 3 000 | 1 524 [1] | 155 [0] |
+| seed 7723 | 4 000 | 1 597 [3] | 296 [0] |
+| seed 8837 | 4 000 | 1 645 | 205 |
+| seed 9941 | 5 000 | 1 834 [3] | 337 [0] |
+| **fresh after the last change**, seed 12011, every generator | 5 000 | 1 852 [1] | 338 [0] |
+
+No statement that matched on master diverges, and none takes two passes, in any grid. On seed 12011, by class
+(master → branch):
+- single parenthesis, cast: 1 321 → 114 of 3 031;
+- single parenthesis, uncast: 148 → 82 of 464;
+- doubled parenthesis: 299 → 58 of 650;
+- a bare value with no member: 84 → 84 of 855, untouched.
+
+- status: **partially fixed**, pinned by `CastParenMemberIssue598Tests`.
+  - With the first pass's planner and fitter, the second pass's three tests fail 3 of 3.
+  - With master's, the first pass's eight fail 8 of 8.
+  - ⚠ **Open:**
+    - a bare value with no member, cast or not;
+    - the uncast family behind wide heads;
+    - each wired form's band between its safe bounds. Splitting on whether the receiver fits below narrowed the band
+      past the receiver (round 6's form) from 1 076–1 185 to 1 098–1 128. The operator, the operator line and the
+      first operand's width separated nothing further.
 
 ## SK-DIV-0565 — a held single call behind a parenthesised receiver that is no operator: the dot's level
 
