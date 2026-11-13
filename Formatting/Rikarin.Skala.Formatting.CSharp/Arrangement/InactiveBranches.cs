@@ -45,7 +45,7 @@ public static class InactiveBranches {
     ///     ⚠ Past it the answer is "remove nothing from this file", never "ignore the branch": a branch
     ///     that could not be checked is a branch that might need the using.
     /// </remarks>
-    public const int MaxSymbolsPerBranch = 8;
+    public static readonly int MaxSymbolsPerBranch = 8;
 
     /// <summary>
     ///     One re-parse per configuration needed to make every inactive branch active at least once, or

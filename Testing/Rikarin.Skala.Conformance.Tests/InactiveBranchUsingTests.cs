@@ -461,16 +461,17 @@ public sealed class InactiveBranchUsingTests {
     static string[] CompilerAnswer(string source, string[] symbols) {
         var (model, tree) = Bind(source, symbols);
         var root = tree.GetRoot(TestContext.Current.CancellationToken);
-        return model.GetDiagnostics(null, TestContext.Current.CancellationToken)
-            .Where(static d => d.Id == "CS8019")
-            .Select(d => root.FindNode(d.Location.SourceSpan)
-                    .FirstAncestorOrSelf<Microsoft.CodeAnalysis.CSharp.Syntax.UsingDirectiveSyntax>()!
-            )
-            .Select(static directive => directive.Alias is { } alias
-                    ? alias.Name.Identifier.ValueText + "=" + directive.Name
-                    : directive.Name!.ToString()
-            )
-            .ToArray();
+        return [
+            ..model.GetDiagnostics(null, TestContext.Current.CancellationToken)
+                .Where(static d => d.Id == "CS8019")
+                .Select(d => root.FindNode(d.Location.SourceSpan)
+                        .FirstAncestorOrSelf<Microsoft.CodeAnalysis.CSharp.Syntax.UsingDirectiveSyntax>()!
+                )
+                .Select(static directive => directive.Alias is { } alias
+                        ? alias.Name.Identifier.ValueText + "=" + directive.Name
+                        : directive.Name!.ToString()
+                )
+        ];
     }
 
     static string[] Unused(string source, string[] symbols) {

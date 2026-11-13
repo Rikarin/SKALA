@@ -145,8 +145,8 @@ public sealed class ArgumentStyleOverloadIssue638Tests {
     ///     alone keeps the call where it was, and that one is added.
     /// </remarks>
     [Theory]
-    [InlineData("public int M() => Mixed(1, \"x\");", "Mixed(a: 1, \"x\")")]
-    [InlineData("public int M() => Swapped(1, \"x\");", "Swapped(a: 1, \"x\")")]
+    [InlineData("""public int M() => Mixed(1, "x");""", """Mixed(a: 1, "x")""")]
+    [InlineData("""public int M() => Swapped(1, "x");""", """Swapped(a: 1, "x")""")]
     public void ANameThatWouldSelectAnotherOverload_IsNotAdded(string member, string expected) =>
         Assert.Contains(Unspaced(expected), Unspaced(Arranged(member, Named)), StringComparison.Ordinal);
 
@@ -161,11 +161,11 @@ public sealed class ArgumentStyleOverloadIssue638Tests {
         "Equal(a, b, 1)"
     )]
     [InlineData("public int M() => Widen(b: 1, x: 2);", "Widen(1, 2)")]
-    [InlineData("public int M() => Put(item: \"s\", x: 2);", "Put(\"s\", 2)")]
+    [InlineData("""public int M() => Put(item: "s", x: 2);""", """Put("s", 2)""")]
     [InlineData("public int M(string s) => s.Size(narrow: 1, x: 2);", "s.Size(1, 2)")]
-    [InlineData("public Loader M() => new Loader(path: \"p\", depth: 1);", "new Loader(\"p\", 1)")]
-    [InlineData("public Loader M() => new(path: \"p\", depth: 1);", "new(\"p\", 1)")]
-    [InlineData("public Probe(int n) : base(path: \"p\", depth: n) { }", "base(\"p\", n)")]
+    [InlineData("""public Loader M() => new Loader(path: "p", depth: 1);""", """new Loader("p", 1)""")]
+    [InlineData("""public Loader M() => new(path: "p", depth: 1);""", """new("p", 1)""")]
+    [InlineData("""public Probe(int n) : base(path: "p", depth: n) { }""", """base("p", n)""")]
     [InlineData(
         "public int? M(Holder? h, Composition c) { return h?.Load(composition: c, token: CancellationToken.None); }",
         "h?.Load(c, CancellationToken.None)"
@@ -178,8 +178,8 @@ public sealed class ArgumentStyleOverloadIssue638Tests {
         Assert.Contains(expected, Arranged(member, Positional), StringComparison.Ordinal);
 
     [Theory]
-    [InlineData("public int M() => Lone(1, \"x\");", "Lone(a: 1, b: \"x\")")]
-    [InlineData("public Loader M() => new(\"p\", 1);", "new(path: \"p\", depth: 1)")]
+    [InlineData("""public int M() => Lone(1, "x");""", """Lone(a: 1, b: "x")""")]
+    [InlineData("""public Loader M() => new("p", 1);""", """new(path: "p", depth: 1)""")]
     public void ANameTheOverloadAllows_IsAdded(string member, string expected) =>
         Assert.Contains(Unspaced(expected), Unspaced(Arranged(member, Named)), StringComparison.Ordinal);
 
