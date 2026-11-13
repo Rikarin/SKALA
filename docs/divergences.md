@@ -10390,6 +10390,49 @@ and 20, an argument of four), so it was not taken.
   **resolved within the measured shapes** (#446 item 2). **Open**: the name line's `=` decision, and a value that
   fits neither beside nor below (`=` / chop, where Skala breaks the dot).
 
+⚠ **Round 7 (2026-11-13): "where Skala breaks the dot" is #528's one-column rule, and it is not about the `=`.**
+Round 6's 778 cells were all a value whose line runs exactly one column past the margin. That is where #528 moves a
+one-argument single call below at its dot (`HeldCall` 3, `m.Column + width == width + 1`), and it did so at any `(`.
+The oracle does it only while the `(` lands far right. It is the same beside a kept `=` (`var nnnn = r…` /
+`.M(a);`) and below a broken one (`T name =` / `r…` / `.M(a);`). Short of the bound it chops (`r….M(` / `a` / `);`).
+
+- **Measured** with `Testing ask` on two sweeps. The `(` moved a column at a time from 84 to 107, with methods of 2,
+  6 and 14 columns and indents 8, 12, 16 and 24. The first sweep (2 304 cells) was below a broken `=`, behind typed,
+  `string` and `var` heads. The second (1 728) was beside a kept `=`, behind `var`, assignment, `this.` and `string`
+  heads of 5 to 12 columns.
+  - The first column that moves the dot is 92 at indent 8, rising a column per level, to 96 at indent 24.
+  - Beside the `=` it is one or two columns later, by the head's width.
+  - ⚠ The method's width plays no part: the dot's column does not decide it, the `(`'s does.
+- **The rule** (`Fitter.OneOverMovesTheDot`): `10·paren − 3·column ≥ 871`. `paren` is the `(`'s 1-based column and
+  `column` the 0-based column the value starts on. This is the bound under which no measured cell moves the dot,
+  not a fitted boundary. It catches 1 362 of the 2 880 cells' 1 431 chops. The 69 above it are a column from the
+  boundary and stay as #528 had them. No linear form in the `(`, the indent, the head and the method separates the
+  two classes outright: the best one still misses 27.
+
+| probe | cells | master | now |
+|---|---:|---:|---:|
+| below a broken `=`, the `(` swept (fit) | 2 304 | 1 320 | 1 788 |
+| beside a kept `=`, the `(` swept (fit) | 1 728 | 920 | 1 700 |
+| six heads × receivers 2–98 × beside/below × 121/122 | 3 336 | 2 073 | 2 568 |
+| seven heads × names × receivers × 1/2 arguments × 121–123 | 2 766 | 1 903 | 1 945 |
+| typed locals × values ending 116–126 below | 6 380 | 5 873 | 5 915 |
+| **fresh random (seed 81723, written after the rule: six heads, receivers 1–90, methods 2–24, ends 121–123, a third of the arguments calls)** | 4 000 | 2 474 | 3 108 |
+| **fresh random (seed 90411: types, lists and dictionaries, 1–3 arguments, ends 120–124)** | 4 000 | 2 728 | 2 930 |
+
+No cell is newly wrong and none takes two passes, on master or now. Pinned by `HeldCallOneOverIssue446Tests`; with
+the rule switched off, 3 of its 6 cells fail.
+
+Still open:
+- **The `=` decision itself.** Most of what the fresh probes still miss is here (seed 81723's largest classes):
+  - Behind `var`, assignment and `this.` heads the oracle keeps the `=` and chops (`x = r.M(` / `a` / `);`) where
+    Skala breaks it: 198 cells. For heads under twelve that is #528's `below <= width + 1`. In the 3 336-cell sweep
+    the oracle breaks such an `=` only where the dot breaks too: from a `(` of 97 at indent 8, against 92 under a
+    typed local.
+  - It breaks the `=` before a call whose argument is a call (`= r.M(x.Y(z))`), which Skala keeps and chops: 227.
+  - A typed local of two arguments beside its `=`: the oracle keeps the `=` and chops where Skala breaks it.
+- **A typed local's type/name gap at one column over** (`T` / `name = r.M(a);`): 39.
+- ⚠ status: the dot after a one-column overflow is **fixed** (#446 item 2). **Open**: the `=` decisions listed above.
+
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
 Measured beside SK-DIV-0206 (`SearchValuesAnalyzer.cs`) and probed for #444, with `jb cleanupcode`
@@ -13788,6 +13831,61 @@ held decision under the `=` hides the rule in every random probe. Wired as `Fitt
   `eg`'s 40 and 32 of `f8`'s 57. Measured, not wired.
 - status: #619 **fixed** for the value that does not fit below; the band past the held limit **open**.
 
+⚠ **Round 3 (2026-11-13): a held line past the margin is read as the margin.** Group I's probes kept the call's line
+below at 121 or less. Past that — `T n… = r.Where(x => …)` too wide even for a line of its own — the oracle still
+breaks the `=` for most of group I's names and receivers: `=` / `r.Where(x =>` / the body two levels in / `)` /
+`.T…();`. Skala kept the `=` and broke the arrow beside it. On a grid of 20 790 statements (five heads, receivers of 1
+to 6, names under group I's bounds, lines below of 120 to 133) it missed 6 852.
+
+- **The line's width plays no part there; the rest's does.** From a line of 122 up, every statement answers the same at
+  every width, so it is not a limit on the line. With the rest after the call swept from 10 to 40 columns (6 016
+  statements), the `=` never breaks under a rest of 20 and breaks for every name group I allows from about 30. It is
+  group I's rule, read where the held call would move.
+- **The held call itself, behind a kept `=`** (4 374 statements: names past group I's bounds, lines of 117 to 129,
+  rests 14 to 40). The rest from which the oracle moves it below is the same at every line from 120 to 129, and #605's
+  limit with its rest term already gives it at 120. Skala asked one to eleven columns more rest per column of line past
+  the margin. So past the margin the line is read as 120 (`Fitter.HeldLambdaLine`), in the held call's decision and in
+  `HeldChainBreaksTheEquals`. Past the margin the `=` no longer needs `r.Where(…)` to fit below.
+- **The call's head turns over past the margin.** The first fresh probe (seed 70913) newly diverged 78 statements, all
+  under `.Select(`, `.OrderBy(` and `.SkipWhile(`. Measured then on 1 728 statements under `.Any(`, `.Select(`,
+  `.OrderBy(` and `.SkipWhile(`: the oracle needs two thirds of a column more rest per column of head. That is −0.4 a
+  column on the limit where #605 has +0.6 (`Fitter.HeldLambdaLimitPast`), and it gives all 32 thresholds measured at a
+  line of 130.
+- ⚠ **Scoped, not general.**
+  - It applies only at two columns over or more. One column over is #605's lone `)`.
+  - It applies only under heads of 7 to 9 columns. Under `.SkipWhile(` and `.Any(` the head term still newly diverged
+    25 statements across two probes (seeds 70913 and 52207), so those keep #605's reading.
+  - It does not apply behind a head and receiver of 11 columns or fewer (`nnnnnnn = r`), where the oracle never moved
+    an overflowing call at any rest.
+
+| probe | statements | master | now |
+|---|---:|---:|---:|
+| the rest swept, 10–40 (fit) | 6 016 | 2 885 | 4 668 |
+| five heads × lines 120–133, a 24-column rest | 20 790 | 13 938 | 15 444 |
+| ten heads × three tails × lines 124/130 | 17 820 | 15 710 | 16 228 |
+| group I's names × lines 112–126 | 22 275 | 18 514 | 18 956 |
+| four callees × rests 14–40 (fit of the head term) | 1 728 | 1 239 | 1 454 |
+| kept `=`, lines 117–129 × rests 14–40 | 4 374 | 3 208 | 3 208 |
+| fresh, seed 70913 (fed the scoping above) | 5 000 | 4 247 | 4 444 |
+| fresh, seed 52207 (fed the scoping above) | 4 000 | 3 657 | 3 754 |
+| **fresh, seed 33187, written after the final rule: five heads, indents 8–20, receivers 1–12, names 3–40, lines 118–134, rests 8–42, five callees** | 5 000 | 4 235 | 4 434 |
+| **fresh, seed 48829: ten heads, six tails, six callees, lines 118–136** | 4 000 | 3 684 | 3 773 |
+| group I's random probe (seed 4242) and a 3 888-statement band grid | 5 000 / 3 888 | 4 945 / 3 785 | 4 945 / 3 785 |
+
+No statement in any of these is newly wrong in the final rule, and none takes two passes. Pinned by
+`EqualsBeforeAnOverflowingHeldCallIssue619Tests`. With `ReadsPastTheMargin` switched off, 2 of its 3 cells fail.
+
+Still open:
+- **Below a kept `=`, a moved call that still overflows.** The new reading moves it at the oracle's rest, but the
+  oracle then keeps `.Where(x => a` on one line and chops the `&&` operands: `.Where(x => a` / `&& b` / `&& c` / `)`.
+  Skala breaks after the arrow. So the 4 374-statement grid gains nothing yet, though the move now agrees.
+- **The band past the held limit, below the margin** (group I's open item). The oracle's `=` boundary sits 0 to 2
+  columns past the held limit: a plateau, then a slope of about 0.4 a column of the receiver's column where the limit
+  has 0.14. No form with one rounded threshold reproduced it (1 105 of 1 359 boundaries at best).
+- **`.SkipWhile(`, `.Any(` and other heads past the margin**, and the one-column-over row, which keep #605's reading.
+- status: #619 **fixed** past the margin for heads of 7 to 9 columns; the band below the margin and the moved
+  call's own layout **open**.
+
 ## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
 
 Found by group C's #602 probes (2026-10-14), not attempted. A sole lambda argument whose whole body is a type test the
@@ -14599,6 +14697,34 @@ of 26 to 40 grid was built for it, and the form became `s`.
 - **Typed `((…))`:** not attempted this round. Still SK-DIV-0491's.
 
 - status: **partially fixed**, pinned by `CastParenBehindAWideHeadIssue598Tests`.
+
+⚠ **Round 7 (2026-11-13): measured, not wired. The residue is a call with arguments or a property, not the `=`.**
+Rounds 5 and 6 measured `.M()`, `.Trim()`, `.ToUpperInvariant()` and `.GetEnumerator()`, calls with no arguments.
+A random probe was then run with `Testing ask` (seed 61207, 4 000 statements). It used eight heads (`return`
+included), five casts or none, four operators, first operands of 2 to 34, lines of 116 to 140 and indents 8 to 20, and
+it added `.Select(x)`, `.M(aaaa, bbbb)` and `.Length`. The misses split by the member after the parenthesis:
+
+| after the `)` | cast: apart / statements | uncast: apart / statements |
+|---|---:|---:|
+| a call with no arguments | 87 / 1 890 | 79 / 414 |
+| `.Select(x)` | 205 / 477 | 25 / 100 |
+| `.M(aaaa, bbbb)` | 200 / 450 | 24 / 107 |
+| `.Length` | 149 / 468 | 21 / 94 |
+
+- **Why.** `BreakPlan.IsACallOnAParenthesisedOperator` admits a call with no arguments only. So under a cast,
+  `CastOverAParenthesisedCall` hands nothing to the held call, and the parentheses break inside. The largest single
+  class is the oracle's `=` / `(T)(a + b…).Select(x);` (109), and then the same with `.Length` (80).
+- **Tried and reverted.**
+  - Admitting one argument fixed `.Select(x)` under a cast: 205 → 41 apart. It newly diverged 12 statements. Each
+    was a line whose `(` still fits, where the oracle chops `x` and Skala then broke the dot.
+  - A dot rule to match ("an argument keeps its dot while its `(` fits") read the call's width from `tail`. That is
+    not the call's width under every planner that sets `ParenReceiver`: no-argument calls and `.Length` broke too,
+    with 239 newly diverging statements and 17 that took two passes.
+  - Neither is in the tree. The next round needs the call's own head and argument count as facts, not `tail`.
+- ⚠ This round's commits for #446 (`Fitter.OneOverMovesTheDot`) and #619 (`Fitter.HeldLambdaLine`) were measured on
+  this probe too, and leave it unchanged: 3 210 of 4 000 on master and on the branch.
+- status: unchanged, **partially fixed**. **Open**: calls with arguments and properties after a parenthesised operator,
+  with or without a cast; and the earlier open items above.
 
 ## SK-DIV-0565 — a held single call behind a parenthesised receiver that is no operator: the dot's level
 
