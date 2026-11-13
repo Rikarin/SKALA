@@ -415,8 +415,10 @@ public sealed class RedundantParenthesesRule : ArrangementRule {
                 return visited;
             }
 
+            // ⚠ The neighbours are read from `subject`, which stands in a tree: `visited` is a rebuilt
+            // node with no parent, so it has no token before its `(` to be joined to (#640).
             return ParenthesesRedundancy.RemovalPreservesParse(subject)
-                ? ParenthesesRedundancy.Strip(visited)
+                ? ParenthesesRedundancy.Strip(visited, subject)
                 : visited;
         }
     }
@@ -635,15 +637,63 @@ public static class ParenthesesRedundancy {
     ///     with them, so <c>return (/* why */ a + b);</c> arranged to <c>return a + b;</c> and the
     ///     sentence was gone. The oracle keeps it (<c>/* why */a + b</c>). Only a comment carries the
     ///     inner trivia across; plain whitespace there is the parentheses' own and goes with them.
+    ///     <para>
+    ///         ⚠ A parenthesis is also a token boundary, and with nothing else between them its removal
+    ///         lets the tokens either side lex as one (#640): <c>return(a + 1);</c> arranged to
+    ///         <c>returna + 1;</c>, and <c>throw(e)</c>, <c>yield return(a)</c>, <c>goto case(1)</c> and
+    ///         <c>return ref(a[0])</c> the same way. The proof could not see it, because it re-parses the
+    ///         outermost <em>expression</em> and a statement keyword — or the <c>ref</c> the climb stops
+    ///         at — lies outside it. So a single space is kept wherever the two tokens would join, on
+    ///         either side. Inside the expression the same join (<c>a-(-b)</c> to <c>a--b</c>) used to
+    ///         be refused by the re-parse; with the space it proves, and the result no longer depends on
+    ///         whether the input happened to carry whitespace.
+    ///     </para>
     /// </remarks>
-    public static ExpressionSyntax Strip(ParenthesizedExpressionSyntax node) {
+    public static ExpressionSyntax Strip(ParenthesizedExpressionSyntax node) => Strip(node, node);
+
+    /// <param name="node">The parentheses to remove.</param>
+    /// <param name="placed">
+    ///     The same parentheses standing in a tree, from which the tokens either side are read.
+    /// </param>
+    public static ExpressionSyntax Strip(ParenthesizedExpressionSyntax node, ParenthesizedExpressionSyntax placed) {
         var left = InsideLeft(node);
         var right = InsideRight(node);
-        return node.Expression
-            .WithLeadingTrivia(HasComment(left) ? node.GetLeadingTrivia().AddRange(left) : node.GetLeadingTrivia())
-            .WithTrailingTrivia(
-                HasComment(right) ? right.AddRange(node.GetTrailingTrivia()) : node.GetTrailingTrivia()
-            );
+        var leading = HasComment(left) ? node.GetLeadingTrivia().AddRange(left) : node.GetLeadingTrivia();
+        var trailing = HasComment(right) ? right.AddRange(node.GetTrailingTrivia()) : node.GetTrailingTrivia();
+
+        if (leading.Count == 0
+            && placed.OpenParenToken.GetPreviousToken() is { RawKind: not 0, TrailingTrivia.Count: 0 } before
+            && Joins(before, node.Expression.GetFirstToken())) {
+            leading = SyntaxFactory.TriviaList(SyntaxFactory.Space);
+        }
+
+        if (trailing.Count == 0
+            && placed.CloseParenToken.GetNextToken() is { RawKind: not 0, LeadingTrivia.Count: 0 } after
+            && Joins(node.Expression.GetLastToken(), after)) {
+            trailing = SyntaxFactory.TriviaList(SyntaxFactory.Space);
+        }
+
+        return node.Expression.WithLeadingTrivia(leading).WithTrailingTrivia(trailing);
+    }
+
+    /// <summary>
+    ///     Whether <paramref name="left" /> and <paramref name="right" /> written with nothing between
+    ///     them stop being those two tokens.
+    /// </summary>
+    /// <remarks>
+    ///     Asked of the lexer rather than of a table of characters: a word against a word
+    ///     (<c>returna</c>), an operator against an operator (<c>--</c>, <c>&lt;=</c>, <c>??</c>,
+    ///     <c>/*</c>), a number against a dot — the lexer knows every one of them and a table would
+    ///     have to be kept in step with it.
+    /// </remarks>
+    static bool Joins(SyntaxToken left, SyntaxToken right) {
+        using var tokens = SyntaxFactory.ParseTokens(left.Text + right.Text).GetEnumerator();
+        return !(tokens.MoveNext()
+            && tokens.Current.Text == left.Text
+            && !tokens.Current.HasTrailingTrivia
+            && tokens.MoveNext()
+            && tokens.Current.Text == right.Text
+            && !tokens.Current.HasLeadingTrivia);
     }
 
     /// <summary>The trivia between <c>(</c> and the expression's first token.</summary>
