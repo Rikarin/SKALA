@@ -14272,10 +14272,78 @@ Across all sixteen probes, 605 of 38 220 members differ. ⚠ The no-argument fir
 not the arrow. Fixing it would move `ChainLinks`' trailing property run, which other issues' chains share. It was not
 attempted.
 
+**#618 round five (2026-11-13): what the kept arrow's first line would hold.** Re-read on round four's sixteen probes
+and the coordinator's probe (seed 990618), split by the layout the kept arrow would take rather than by the operand's
+calls. With `c` the head through the outer call's `(`, `p` the parameters, `i` the line's start and the operand written
+a level in ending at `i + 4 + w`:
+
+- **Where the arrow's line holds the operand through its first call that takes an argument** (no such call, or a later
+  call, counts as holding: the kept arrow can then break the operand only between links), two rules hold without an
+  exception in any operand class, over 4 819 members of twenty-three probes: the arrow stays where it ends less than
+  twelve columns past the line's start, `c + p < 9`, and breaks where the operand fits a level in with eleven columns to
+  spare. ⚠ The second is the term round four's lines were missing: it is why typed and `static` parameter lists "keep
+  the arrow at random" behind narrow heads. They keep it only when the operand would sit near the margin a level in.
+  ⚠ For parameters of five columns or fewer the arrow then breaks in every member (5 538, every class). The bare-name
+  `k ≥ 12` of rounds one and four is this rule, and its exceptions were `(x, y)` behind `Do(` at indent 8 and wider
+  lists of three names. Those are not bare-name exceptions but the typed lists' line.
+- **Past those two**, a line per operand class, refitted on the members left: a later call
+  `21·c + 4·i − 7·p − f − 2·o ≥ −22` (`f` the first call through its `)`, `o` the overflow beside the arrow, at most
+  12), a first call with links `10·c + i − 3·p − f ≥ −67`, a property chain `14·c + 3·i − 4·p − o + [fits below] ≥ 39`, a
+  property run ending in a call of no arguments `9·c + 2·i − 3·p − 3·o ≥ −23`, a first call of no arguments with
+  properties after it `15·c + 3·i − 4·p − w − f ≥ −106`, and a one-argument call `5·c + 2·i − w ≥ −64`. Each decides
+  only beyond a margin (6, 11, 6, 11, 8 and 3 points). Nearer, the earlier rounds' lines decide. The margins are the
+  smallest at which no member any probe's master agreed with moves.
+- **Where the arrow's line cannot hold a one-argument call** (only properties after it), the members separate per
+  column of the argument's line under the kept arrow, `e = i + 8 + a`, at one threshold each. The arrow breaks where
+  `5·(c + t) − 3·(p + h) ≥ min(9, 7·e − 790)`, one more where the operand does not fit a level in. ⚠ Round three's
+  `< 7` was two points short at `e ≥ 114`, and parameters of ten columns or more break a point earlier (two from
+  seventeen). Below column 114 it decides two points or more from the line.
+- **A property run past the margin by its last `()` alone** (`x.Long.Name.Build()` ending at 121 or 122) breaks the
+  arrow behind any head, the run kept whole. Round four had 23 such members wrong.
+- **A chain's trailing property run that ends in a call of no arguments** (`root.Descendants()` / `.A.B.ToList()` past
+  the margin) breaks before the call as well, at the run's column (`BreakPlan.PlanTrailingRunCall`, a fill point of its
+  own). This is the `.Build()` run of round four. A probe of 600 such chains in eight other contexts (`var`, `return`,
+  an assignment, an argument, `??`, a condition; indents 8 to 16; lines ending at 110 to 134) agrees in all 600 (599 on
+  master), and Conformance and Lint's self-format do not move.
+
+| probes (members agreeing) | master | round four | now | newly wrong vs master |
+|---|---:|---:|---:|---:|
+| round four's sixteen (38 220) | 29 539 | 37 615 | 37 965 | 0 |
+| L, M, grid F (seeds 990700–990702; margins tuned after them) | 5 847 | 7 097 | 7 154 | 4, all round four's |
+| **coordinator's (990618) and N, O, grid G (990800–990802, written after the last change; 9 600)** | **7 915** | **9 503** | **9 552** | **2, both round four's** |
+
+On the four fresh probes, members wrong master → round four → now, per class: later calls 122 → 14 → 4, first calls
+with links 169 → 44 → 27, property runs ending in a call 250 → 4 → 1, first calls of no arguments 2 → 2 → 1,
+one-argument calls 125 → 4 → 2, one-argument calls too wide 467 → 12 → 2, property chains 540 → 11 → 5, calls of two
+or more with nothing after them 10 → 6 → 6. On the coordinator's probe the classes it named go: links 13 → 10,
+one-argument too wide 3 → 1, two-argument 2 → 2, one-argument 1 → 1. Every probe re-formats to itself. Pinned by
+`SoleLambdaTestRoundFiveIssue618Tests` (6 tests). Switching off the short-head keep, the room, the class lines, the
+too-wide line, the `()` overflow or the trailing run's point fails one each.
+
+⚠ **Refuted:** that the residue is noise around round four's lines. Half of it was a missing term (the room a level in),
+and 27 of the fresh probes' remaining 48 are one shape. ⚠ **Refuted:** a parameter-list rule `p ≤ 5`. It holds in every
+member, but every class line already implies it, and with it removed nothing moves on any probe. Not wired.
+
+⚠ **Still not closed:**
+- **A first call of two or more with links that the arrow's line cannot hold** (`Use(x => Get(a, b, c, d)` / … / `.Kind`
+  when the call does not fit beside the arrow): 27 of the 48 fresh members. No separating line was found in the
+  operand's widths. Per column of where the call ends a level in the thresholds are not monotonic, and a linear fit leaves
+  213 of 2 250 members apart. ⚠ Round four's own line there makes two fresh members (probe O, `(string s, int i)`)
+  newly wrong against master, and four of grid F. They were found by this round's probes. They are not moved by this
+  round and are left as round four's.
+- Members within a few points of a class line, kept by the margins: 15 of the 48.
+- A two-argument call with nothing after it: 6, unchanged.
+- A held first call behind a path receiver under a sole lambda's broken test (`this.cache.Read(a…)` / `.Value`): the
+  oracle chops the argument where Skala moves the call down, measured in its own probe of 960 calls in eight contexts.
+  ⚠ Measuring the call's line a level further in, where it stacks, fixed 7 members and broke 6 whose tail
+  (`.Name.Length`) overflows. It is #528's held-call table (SK-DIV-0331), not this entry's arrow. Not wired.
+
 - status: **partly resolved** (#618): the three classes above, pinned by `SoleLambdaTestArrowIssue618Tests`, the later
   call of two or more (round two), pinned by `SoleLambdaTestLaterCallArrowIssue618Tests`, round three's classes, pinned
-  by `SoleLambdaTestRoundThreeIssue618Tests`, and round four's head-width lines, pinned by
-  `SoleLambdaTestRoundFourIssue618Tests`; the boundary cells listed above **open**.
+  by `SoleLambdaTestRoundThreeIssue618Tests`, round four's head-width lines, pinned by
+  `SoleLambdaTestRoundFourIssue618Tests`, and round five's kept-line rules and the trailing run's call, pinned by
+  `SoleLambdaTestRoundFiveIssue618Tests`. **Open:** a first call with links too wide beside the arrow, and the boundary
+  members listed above.
 
 ## SK-DIV-0540 — a constant pattern that is a member access breaks before its own dot
 

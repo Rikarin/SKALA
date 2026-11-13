@@ -1471,7 +1471,20 @@ public sealed class Document {
 ///     <c>Lookup(a)</c> in <c>Lookup(a).Merge(b, c)</c> (#618, SK-DIV-0520 round four). In
 ///     <see cref="LambdaTestArgument" />'s terms the arrow stays where <c>f ≥ 22</c>, <c>9·c + 2·i − 2·p &lt; 28</c>
 ///     and the operand overflows beside the arrow by ten columns or more, and breaks where
-///     <c>9·c + 2·i − 3·p − f ≥ −5</c>; elsewhere round two's line decides.
+///     <c>9·c + 2·i − 3·p − f ≥ −5</c>; elsewhere round two's line decides. ⚠ Since round five it is set for every
+///     class of a broken test's operand, and its whole width where the operand has no call.
+/// </param>
+/// <param name="LambdaTestHeldCall">
+///     ⚠ With <see cref="LambdaTestCall" />: the operand through the <c>)</c> of its first call that takes an argument,
+///     or zero where none does (#618, SK-DIV-0520 round five). Where the arrow's line holds through it — or there is
+///     no such call, or the operand ends in a later call — the kept arrow's first line breaks only between links. There
+///     the oracle keeps the arrow wherever it ends less than twelve columns past the line's start, <c>c + p &lt; 9</c>,
+///     and breaks it wherever the operand fits a level in with eleven columns to spare; past that a line per operand
+///     class decides, in <c>c</c>, <c>i</c>, <c>p</c> and the overflow, and breaks for every parameter list of five
+///     columns or fewer.
+///     Where the line does not hold it, a one-argument call breaks the arrow by
+///     <c>5·(c + t) − 3·(p + h) ≥ min(9, 7·e − 790)</c>, <c>e = i + 8 + a</c>. See
+///     <c>Fitter.KeptLineBreaksTheTestArrow</c>.
 /// </param>
 /// <param name="LambdaTestProperties">
 ///     ⚠ With <see cref="LambdaTestCallHead" /> −1: the operand is a property chain with no call on it (#618,
@@ -2182,6 +2195,7 @@ public readonly record struct GroupFacts(
     int LambdaTestArgumentHead = 0,
     int LambdaTestFirstLink = 0,
     int LambdaTestFirstCall = 0,
+    int LambdaTestHeldCall = 0,
     bool LambdaTestProperties = false,
     LambdaBodyKind LambdaBodyKind = LambdaBodyKind.BrokenTest,
     int SoleCallHead = 0,

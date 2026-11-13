@@ -3485,6 +3485,7 @@ public sealed class BreakPlan {
         );
 
         PlanHeldFirstCall(dots, first, fill ? root : null, root);
+        PlanTrailingRunCall(root, dots);
 
         bool Link(SyntaxToken gap) {
             var broke = BreaksBefore(gap);
@@ -3496,6 +3497,36 @@ public sealed class BreakPlan {
 
             return broke;
         }
+    }
+
+    /// <summary>
+    ///     A chain's last link that is a run of properties ending in a call of no arguments —
+    ///     <c>.Alpha.Beta.ToList()</c> — breaks before that call as well, where the run's line runs past the margin
+    ///     (#618, SK-DIV-0520 round five).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The run is one link (#454): the chain breaks before its first dot. Past the margin the oracle then writes
+    ///     <c>root.Descendants()</c> / <c>.Alpha.Beta</c> / <c>.ToList()</c>, the call on a line of its own at the
+    ///     run's column, where Skala kept the run whole and over the margin. A fill point of its own at the call's dot,
+    ///     taken only when the call does not fit after the run.
+    /// </remarks>
+    void PlanTrailingRunCall(SyntaxNode root, List<SyntaxToken> dots) {
+        if (options.WrapAfterPropertyInChainedMethodCalls
+            || dots.Count == 0
+            || root is not InvocationExpressionSyntax {
+                ArgumentList.Arguments.Count: 0,
+                Expression: MemberAccessExpressionSyntax { Expression: MemberAccessExpressionSyntax } call
+            }
+            || dots[0] == call.OperatorToken
+            // ⚠ An author's break before the call is kept as it stands, as the oracle keeps `.Baz` / `.Qux()`
+            // (ChainWithACallRootIssue380Tests); and it is pass one's own break read back on pass two.
+            || BreaksBefore(call.OperatorToken)) {
+            return;
+        }
+
+        var group = NewGroup();
+        Point(call.OperatorToken, group, true);
+        Describe(root, group, GroupMode.Preserve, new(BreaksIfTooLong: true));
     }
 
     /// <summary>
@@ -9521,7 +9552,11 @@ public sealed class BreakPlan {
                 WithTheSoleCall(
                     lambda,
                     body,
-                    WithTheLinkedCall(lambda, body, WithTheLaterCall(lambda, body, ArrowFactsOf(lambda, body)))
+                    WithTheHeldCall(
+                        lambda,
+                        body,
+                        WithTheLinkedCall(lambda, body, WithTheLaterCall(lambda, body, ArrowFactsOf(lambda, body)))
+                    )
                 )
             )
         );
@@ -9663,6 +9698,44 @@ public sealed class BreakPlan {
             } => first,
             _ => null
         };
+    }
+
+    /// <summary>
+    ///     <paramref name="facts" /> with <see cref="GroupFacts.LambdaTestHeldCall" /> and
+    ///     <see cref="GroupFacts.LambdaTestFirstCall" /> set where the body is a type test the author broke before its
+    ///     keyword and an earlier class already read the operand (#618, SK-DIV-0520 round five).
+    /// </summary>
+    GroupFacts WithTheHeldCall(LambdaExpressionSyntax lambda, ExpressionSyntax body, GroupFacts facts) =>
+        facts.LambdaTestCall > 0
+        && facts.LambdaBodyKind == LambdaBodyKind.BrokenTest
+        && BrokenTestedOperandOf(lambda, body) is { } operand
+            ? facts with {
+                LambdaTestHeldCall = HeldCallWidth(operand),
+                LambdaTestFirstCall =
+                    facts.LambdaTestFirstCall > 0 ? facts.LambdaTestFirstCall : FirstCallWidth(operand)
+            }
+            : facts;
+
+    /// <summary>
+    ///     The width of <paramref name="operand" /> through the <c>)</c> of its first call that takes an argument —
+    ///     <c>Lookup(a)</c> in <c>Lookup(a).Merge(b, c)</c>, <c>Get().First().Merge(a, b)</c> whole — or zero where no
+    ///     call on its spine takes one (#618, <see cref="GroupFacts.LambdaTestHeldCall" />).
+    /// </summary>
+    int HeldCallWidth(ExpressionSyntax operand) {
+        InvocationExpressionSyntax? first = null;
+        for (var spine = operand; spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax;) {
+            if (spine is InvocationExpressionSyntax invocation) {
+                if (invocation.ArgumentList.Arguments.Count > 0) {
+                    first = invocation;
+                }
+
+                spine = invocation.Expression;
+            } else {
+                spine = ((MemberAccessExpressionSyntax)spine).Expression;
+            }
+        }
+
+        return first is null ? 0 : FormattedWidth(operand.GetFirstToken(), first.ArgumentList.CloseParenToken);
     }
 
     /// <summary>
