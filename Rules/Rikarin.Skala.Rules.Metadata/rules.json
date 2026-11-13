@@ -489,12 +489,12 @@
       "since": "2.0",
       "languageVersion": null,
       "summary": "`skala arrange` would add or remove argument names under the configured style.",
-      "rationale": "Adding a name requires the resolved parameter; removing one is safe only when the argument already occupies that parameter's position. The rule binds the selected overload and preserves names that carry ordering semantics.",
+      "rationale": "Adding a name requires the resolved parameter; removing one is safe only when the argument already occupies that parameter's position. The rule binds the selected overload and preserves names that carry ordering semantics, and it binds the rewritten call against the whole method group: a name is added or removed only where overload resolution still selects the same member, so a name that picks the overload, or would pick another one, stays as written.",
       "examples": {
         "bad": "Move(x: 1, y: 2);",
         "good": "Move(1, 2);"
       },
-      "falsePositives": "Unresolved calls, out-of-position arguments and expanded `params` arguments that cannot legally be named are left alone.",
+      "falsePositives": "Unresolved calls, out-of-position arguments, expanded `params` arguments that cannot legally be named, and names overload resolution depends on are left alone.",
       "configuration": [
         "skala_arguments_literal",
         "skala_arguments_string_literal",

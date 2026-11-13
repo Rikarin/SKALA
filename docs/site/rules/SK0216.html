@@ -27,14 +27,14 @@
 </tbody>
 </table>
 <h2 id="why">Why</h2>
-<p>Adding a name requires the resolved parameter; removing one is safe only when the argument already occupies that parameter's position. The rule binds the selected overload and preserves names that carry ordering semantics.</p>
+<p>Adding a name requires the resolved parameter; removing one is safe only when the argument already occupies that parameter's position. The rule binds the selected overload and preserves names that carry ordering semantics, and it binds the rewritten call against the whole method group: a name is added or removed only where overload resolution still selects the same member, so a name that picks the overload, or would pick another one, stays as written.</p>
 <h2 id="example">Example</h2>
 <p>Instead of:</p>
 <pre class="bad"><code>Move(x: 1, y: 2);</code></pre>
 <p>Write:</p>
 <pre class="good"><code>Move(1, 2);</code></pre>
 <h2 id="false-positives">When it does not fire</h2>
-<p>Unresolved calls, out-of-position arguments and expanded <code>params</code> arguments that cannot legally be named are left alone.</p>
+<p>Unresolved calls, out-of-position arguments, expanded <code>params</code> arguments that cannot legally be named, and names overload resolution depends on are left alone.</p>
 <h2 id="configuration">Configuration</h2>
 <ul class="config">
 <li><a href="../options/arguments.html#skala_arguments_literal"><code>skala_arguments_literal</code></a></li>
