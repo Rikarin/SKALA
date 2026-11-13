@@ -1172,17 +1172,6 @@ public sealed class BreakPlan {
                 PlanAroundEquals(assignment, assignment.OperatorToken, assignment.Right);
                 return;
 
-            // ⚠ Not a short parameter's default behind its one attribute section (#556): the oracle chops the
-            // section's arguments when the joined line overflows, `int a = 5` included, and a point at the
-            // `=` ended the arguments' measure first — Skala joined the section and broke after the `=`. A
-            // parameter of eleven columns has nothing to gain from that break. See
-            // CSharpDocumentBuilder.IsAShortParameterBehindItsSection.
-            case EqualsValueClauseSyntax { Parent: ParameterSyntax parameter } initializer
-                when CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter):
-                Flat(initializer.EqualsToken);
-                Flat(initializer.Value.GetFirstToken());
-                return;
-
             case EqualsValueClauseSyntax { Value: not null } initializer:
                 PlanAroundEquals(initializer, initializer.EqualsToken, initializer.Value);
                 return;
@@ -5510,7 +5499,6 @@ public sealed class BreakPlan {
                 Parent: ParameterListSyntax, AttributeLists: [_], Default: not null
             } parameter
             || section.Attributes[0].ArgumentList is not { Arguments.Count: > 0 } arguments
-            || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)
             || options.KeepExistingInvocationParensArrangement) {
             return facts;
         }
@@ -7516,14 +7504,16 @@ public sealed class BreakPlan {
     int FormattedWidth(SyntaxNode node) => FormattedWidth(node.GetFirstToken(), node.GetLastToken());
 
     /// <summary>
-    ///     The arguments of a parameter's one attribute section, two or more of them, in front of a parameter
-    ///     wider than eleven columns: they chop by the measured rule rather than by their own fit (#476,
-    ///     SK-DIV-0352). See <see cref="GroupFacts.ParameterAfterSection" />.
+    ///     The arguments of a parameter's one attribute section, in front of a parameter of any width: they chop by
+    ///     the measured rule rather than by their own fit (#476, SK-DIV-0352). See
+    ///     <see cref="GroupFacts.ParameterAfterSection" />.
     /// </summary>
     /// <remarks>
-    ///     ⚠ Eleven columns and narrower is
-    ///     <see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />'s
-    ///     rule, which reads the parameter through. A one-argument section is the same rule with its own constants
+    ///     ⚠ Eleven columns and narrower were left out once, chopped whenever the joined line overflowed
+    ///     (<see cref="CSharpDocumentBuilder.IsAShortParameterBehindItsSection(ParameterSyntax)" />). That was this
+    ///     rule's answer at the two indents it was measured at and not at 16 and deeper, where the oracle keeps
+    ///     <c>[A("…")]</c> whole above <c>int value</c> and joins <c>[A(1, "…")] T va =</c> above its default
+    ///     (#603 round eleven, SK-DIV-0730). A one-argument section is the same rule with its own constants
     ///     (#603): see <see cref="GroupFacts.SectionSingle" />. ⚠ So does any section with one positional argument or
     ///     none, a property's <c>Name =</c> uncounted (<see cref="TakesTheOneArgumentConstants" />). A parameter with a
     ///     default
@@ -7548,8 +7538,7 @@ public sealed class BreakPlan {
         if (options.KeepExistingInvocationParensArrangement
             || arguments.Arguments.Count < 1
             || arguments.Parent is not AttributeSyntax { Parent: AttributeListSyntax { Attributes.Count: 1 } section }
-            || section.Parent is not ParameterSyntax { Parent: ParameterListSyntax, AttributeLists: [_] } parameter
-            || CSharpDocumentBuilder.IsAShortParameterBehindItsSection(parameter)) {
+            || section.Parent is not ParameterSyntax { Parent: ParameterListSyntax, AttributeLists: [_] } parameter) {
             return;
         }
 

@@ -11182,7 +11182,8 @@ Every output is stable on a second pass. Pinned by `LongParameterSectionChopIssu
 
 - options: `skala_wrap_arguments_style`; no key for the join.
 - ⚠ status: **resolved** for parameters of up to eleven columns, defaults included (#476, #556), pinned by
-  `AttributeArgumentChopIssue476Tests`, and for longer parameters behind a section of two or more positional
+  `AttributeArgumentChopIssue476Tests` — ⚠ at indents 8 and 12 only; deeper they take the measured rule too
+  (SK-DIV-0730) — and for longer parameters behind a section of two or more positional
   arguments, pinned by `LongParameterSectionChopIssue476Tests`, and behind a one-argument section (#603), pinned by
   `OneArgumentSectionChopIssue603Tests`, and with a named argument or a default value (#603, round seven), pinned by
   `NamedArgumentAndDefaultSectionChopIssue603Tests` and `DefaultValueEqualsBandIssue603Tests`.
@@ -14587,7 +14588,76 @@ No cell on any of the four matched on master and does not now, and every output 
 - options: `skala_wrap_arguments_style`; no key for the join.
 - status: **partially fixed**, pinned by `DefaultBandAndEdgeSectionChopIssue603Tests` and
   `SecondConditionPlaneIssue603Tests` (`Fitter.SectionChops`); the two-argument edge outside a default's band is fixed
-  on every probe above. Still open: the second condition inside a default's band, which was not re-measured.
+  on every probe above. The second condition inside a default's band: **fixed in round eleven**, SK-DIV-0730.
+
+## SK-DIV-0730 — inside a default's band the section rule reads a wider parameter, and a short parameter takes it too
+
+#603, round eleven (2026-11-13). Round ten left the band's second condition, `5·w + 2·i − h ≤ 155`, unmeasured with
+defaults present. Measured with `Testing ask` on probes written for it — random sections in and around the band,
+defaults of 1 to 60 columns, `k = w − v` (the parameter through its ` = `) from 6 to 26 columns, indents 8 to 56,
+two and three positional arguments, constructor `name:` arguments, one-argument and property-only sections, last
+parameters, parameters of 3 to 40 columns, and methods, constructors, local functions and delegates — each rule
+confirmed on probes written after it.
+
+⚠ **Refuted: the residue was the band's second condition.** `5·w + 2·i − h ≤ 155` cannot bind inside a band short of
+indent 44 behind a six-column `T a =`: the band ends at `E = 120 − k`, and the first condition is out of reach there for
+any wider parameter (enumerated over every integer cell). What master missed was elsewhere:
+
+| class (master, the first seven probes, 10 342 cells) | cells apart | what the oracle does |
+|---|---:|---|
+| band, two or more arguments, a column either side of round nine's first condition | 66 | chops one column earlier or later |
+| band, the band's real edge (`5·w + 2·i − h` from 141 up) | 15 | keeps the section joined where `≤ 155` chopped it |
+| a parameter of eleven columns or fewer, from indent 12 | 180 | the measured rule: whole above it (A), or joined over the `=` (D) |
+
+**Inside the band each condition is the rule outside it, on a parameter about `3·k/13` wider** — for two arguments and
+for one.
+- Two or more arguments: `148·E ≥ 10424 + 198·w + 46·k + 71·(i + h)`, i.e. `E ≥ 70.4 + 1.338·w + 0.311·k +
+  0.480·(i + h)` (outside: `1.34·w`, `0.48`), and `11·E ≥ 78·w + 18·k + 28·i − 19·h − 1051`, the steep plane with
+  `78·(3/13)·k` added. Which arguments, the default's form, the type and a trailing comma do not enter: 483
+  `(i, h, w, v, E)` cells asked more than once, with different forms, never disagree. Outside cells (`k = 0`) fall on
+  the same first plane, but the outside rule stays as round ten wired it.
+- ⚠ **Refuted: a one-argument section never chops in a band** (round nine, 885 of 885). At indents 8 to 20, mostly
+  behind heads of 2 to 9 columns, it chops near the band's last column — `[A("…")] T x = default` from 113 at indent 8 (grid s2, 7 488 cells, 286
+  chop). Its rule is the one outside, on `13·w + 3·k`.
+- **The one-argument rule outside a band, refitted** with the short parameters and heads up to 17 columns in: the
+  first condition puts the indent and the head on one coefficient, as round ten found for two arguments —
+  `48·E ≥ 4196 + 64·w + 23·(i + h)` where `24·E ≥ 2106 + 32·w + 11·i + 11·h` chopped a column early behind
+  `[Describe(` and `[NotNullIfNotNull(` — and the near-margin steep plane is `20·E ≥ 136·w + 49·i − 34·h − 22`.
+  ⚠ Round nine's `4·E ≥ 28·w + 10·i − 7·h − 16` kept `[Bind(name: "…")] long valuea = ""` at indent 8 whole a column
+  too long (fresh probe f12) and cannot separate `i8 w13 E113` (chops) from `i16 w10 E112` (does not) in a band, which
+  it puts on the same value. Named arguments needed nothing of their own: `name:` counts as positional and
+  `Name =` does not, as round eight found.
+- **A short parameter takes the measured rule.** `CSharpDocumentBuilder.IsAShortParameterBehindItsSection` (#476,
+  #556) chopped whenever the joined line overflowed, measured at two indents. From indent 12 the oracle keeps a
+  one-argument section whole above `int value`, and above a short default it joins and breaks the `=`, exactly as the
+  measured rule says; at indent 8 the rule agrees with the old behaviour. Both `BreakPlan` exclusions and the `=`'s
+  `Flat` for a short parameter's default are gone; the measure flag stays.
+
+⚠ **The margins are thin**, a hundredth to a fifth of a column, and each refit was driven by a cell a fresh probe found:
+- two arguments: `650·E ≥ 45757 + 871·w + 201·k + 312·(i + h)` broke two cells of f1 by zero; `117·E ≥ 8256 + 156·w +
+  36·k + 56·(i + h)` one of f6 by `−1/117`; the form above matched all of f9 to f11;
+- one argument: the first wiring left one cell of f12 (wrong on master too) and one newly wrong of c1 at round nine's
+  "never in a band"; the steep plane's first refit, `13·E ≥ 86·w + 31·i − 21·h + 25`, broke one cell each of f15 and
+  f16 by `6/169`; the form above matched all of f18 to f20 and c4.
+
+| probe (cells matching the oracle) | master | now |
+|---|---:|---:|
+| b1 to b5, g1, g2: band, band edge, indents 28 to 56, near the margin, mixed, swept families, dense grid (fit) | 10 081 / 10 342 | 10 342 |
+| f1 to f8 (fresh after the first wirings, then folded into the two-argument fit) | 13 950 / 14 303 | 14 303 |
+| **f9 to f11, after the last two-argument fit** | 6 409 / 6 504 | **6 504** |
+| s1, s2: one argument before short parameters, and inside a band (fit) | 10 060 / 11 814 | 11 814 |
+| c1, c2, f12 to f14: contexts, one argument, mixed (fresh after the short-parameter change, then fit) | 10 941 / 11 500 | 11 500 |
+| f15 to f17, c3: one argument, edge, contexts (fresh after the steep plane's first refit, then fit) | 9 492 / 10 000 | 10 000 |
+| **f18 to f20, c4: one argument, edge, contexts, after the last refit (seeds 6030761–64)** | 9 437 / 10 000 | **10 000** |
+
+No cell on any probe matched on master and does not now, and every output is stable on a second pass. Pinned by
+`DefaultBandWiderParameterIssue603Tests`: round nine's two-argument band rule fails 4 of its 7 band cells, the
+short-parameter exclusions restored fail 4 of its 5 short cells, and round nine's one-argument rule fails 7 of its 12
+one-argument cells.
+
+- options: `skala_wrap_arguments_style`; no key for the join.
+- status: **fixed** (`Fitter.SectionChops`): sections with named arguments, one argument and defaults match the oracle on
+  every fresh probe.
 
 ## SK-DIV-0571 — a line break inside a long parameter behind its section: read off the source, and pass-stable
 

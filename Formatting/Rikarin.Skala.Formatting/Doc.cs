@@ -1833,8 +1833,9 @@ public sealed class Document {
 /// <param name="SectionSingle">
 ///     With <see cref="ParameterAfterSection" />: the section has one positional argument or none (a property's
 ///     <c>Name =</c> uncounted, a constructor's <c>name:</c> counted), whose threshold sits 17 columns later
-///     — <c>24·E ≥ 2106 + 32·w + 11·i + 11·h</c> and <c>4·E ≥ 28·w + 10·i − 7·h − 16</c> (#603, SK-DIV-0570), and which
-///     never chops inside a default's band.
+///     — <c>48·E ≥ 4196 + 64·w + 23·(i + h)</c> and <c>20·E ≥ 136·w + 49·i − 34·h − 22</c> (#603, SK-DIV-0730), read
+///     inside a default's band on <c>w + 3·k/13</c>. ⚠ Not "never chops inside a band" (SK-DIV-0570): at indents 8 to 20
+///     it chops near the band's last column, the more often the shorter the head.
 /// </param>
 /// <param name="SectionJoinedOverDefault">
 ///     ⚠ On the gap after a parameter's one attribute section, in front of a long parameter with a default: the joined
