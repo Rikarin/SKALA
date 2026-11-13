@@ -89,6 +89,12 @@ public sealed class UsingsRule : ArrangementRule {
     ///     empty only where no compilation reaches the caller: <c>arrange --load=none</c>,
     ///     <c>format --arrange=syntactic</c>, and <c>verify</c>'s arrange stage under a loose load, which
     ///     passes none on purpose (<c>ArrangementFindings</c>).
+    ///     <para>
+    ///         ⚠ <b>Superseded by #395, and stale until #637 read it:</b> <c>ArrangementCompilations.For</c>
+    ///         now hands <em>every</em> verb no compilation under a loose load, <c>skala arrange</c>
+    ///         included, so a loose file gets sorting only after all. Removal runs under a binlog or a
+    ///         workspace load, both through <see cref="Unused" />.
+    ///     </para>
     /// </remarks>
     public override bool NeedsSemantics => false;
 
@@ -353,8 +359,21 @@ public sealed class UsingsRule : ArrangementRule {
     ///     ⚠ Roslyn already answers this, and answers it better than a hand-rolled reference walk would:
     ///     <c>CS8019</c> is the "unnecessary using directive" diagnostic the compiler itself emits, so
     ///     the set below is the compiler's own opinion about its own binding rather than Skala's model
-    ///     of it. A using needed only by a disabled <c>#if</c> branch is *not* reported, which is
-    ///     correct for that compilation and is exactly why the caller intersects across all of them.
+    ///     of it.
+    ///     <para>
+    ///         ⚠
+    ///         <b>
+    ///             One compilation is one configuration, and the caller's intersection does not fix
+    ///             that (#637).
+    ///         </b>
+    ///         This said a using needed only by a disabled <c>#if</c> branch "is
+    ///         exactly why the caller intersects across all of them" — true only of a configuration
+    ///         that was loaded, and none of the loaders ever loads both Debug and Release of one
+    ///         project. A Release binlog removed <c>using System.Diagnostics;</c> whose only use sat
+    ///         under <c>#if DEBUG</c>, and the Debug build failed <c>CS0246</c>. So the answer is
+    ///         intersected here, per file, with the compiler's answer under each configuration that
+    ///         activates one of the file's inactive branches — see <see cref="InactiveBranches" />.
+    ///     </para>
     ///     <para>
     ///         ⚠ <b>Removable is two predicates, and <c>CS8019</c> is only the first.</b> #381: Roslyn
     ///         reports <c>CS8019</c> for a directive that does not <em>resolve</em> as well — beside the
@@ -375,6 +394,32 @@ public sealed class UsingsRule : ArrangementRule {
         SemanticModel model,
         SyntaxTree tree,
         CancellationToken cancellation = default
+    ) {
+        var unused = UnusedIn(model, tree, cancellation);
+        if (unused.IsEmpty) {
+            return unused;
+        }
+
+        if (InactiveBranches.Variants(tree, cancellation) is not { } variants) {
+            return [];
+        }
+
+        foreach (var variant in variants) {
+            var bound = model.Compilation.ReplaceSyntaxTree(tree, variant);
+            unused = unused.Intersect(UnusedIn(bound.GetSemanticModel(variant), variant, cancellation));
+            if (unused.IsEmpty) {
+                break;
+            }
+        }
+
+        return unused;
+    }
+
+    /// <summary>The names one parse of the file, bound in one compilation, does not need.</summary>
+    static ImmutableHashSet<string> UnusedIn(
+        SemanticModel model,
+        SyntaxTree tree,
+        CancellationToken cancellation
     ) {
         var root = tree.GetRoot(cancellation);
         var unnecessary = new List<UsingDirectiveSyntax>();
