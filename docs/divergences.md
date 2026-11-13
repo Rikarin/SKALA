@@ -13886,6 +13886,99 @@ Still open:
 - status: #619 **fixed** past the margin for heads of 7 to 9 columns; the band below the margin and the moved
   call's own layout **open**.
 
+⚠ **Round 4 (2026-11-13): the moved call's layout was three facts read from the source, round 3's head scoping was
+that layout, and the `=` before a value that fits below has a table of its own.**
+
+- **A sole lambda's arrow floor is twelve columns past the line's start, not column 20.**
+  `EqualsFloor.BreaksTheOperandArrow` was fitted on lines starting at indent 8, where the two coincide. On 1 344 cells
+  (`U…(p => …);`, `r….Where(p => …);`, `return U…(p => …);`, indents 8 to 20, the arrow 8 to 20 columns past the line's
+  start, lines of 124 to 190) the oracle never breaks an arrow ending eleven columns or fewer past its line's start:
+  109 → 3 apart. It is #618's "twelve columns past the line's start", and it is what keeps `.Where(x => a` and
+  `.Any(x => a` on a moved call's line while `.Select(x =>` and wider break: round 3's open "the oracle keeps
+  `.Where(x => a` and chops the `&&` operands".
+- **The operands then sit one level past the moved line.** A receiver lambda's operand chain takes a level of its own
+  only while the call's dot stays on its line (SK-DIV-0420), and the planner read that from the source: pass one put
+  `&& b` two levels past `.Where(` and pass two, reading the dot's break as the author's, one (103 of 5 000 statements
+  unstable once the arrow stayed). The level is now also held against the held call's group
+  (`BreakPlan.MovedCallHeldAgainst`). A pattern chain gives both its levels back the same way, but only while the arrow
+  stays — once it breaks, `x is A` / `or B` one level past the body's line (`BreakPlan.HoldWhileTheCallMoves`, released by
+  the arrow's group through `Document.ReleaseOf`); behind a dot the author broke it is #566's while-the-arrow-stays hold.
+- ⚠ **Round 3's head scoping is refuted as a head question.** `.SkipWhile(` and `.Any(` newly diverged under the
+  margin's reading because the moved call's layout was wrong, not the move. With the layout fixed every call head reads
+  the margin (`Fitter.ReadsPastTheMargin`), together with #605's limit on the line as it is: the call moves when either
+  reading says so (`Fitter.HeldLambdaMovesAsItIs`). On 6 000 cells under heads of 4 to 14 (`.Ab(` to `.Abcdefghijkl(`),
+  lines of 121 to 132 and rests of 10 to 42, with two random probes, the margin's reading alone missed 48 of 10 200
+  decisions past the margin, 41 of them under heads of 10 to 14 at lines of 122 to 125, and both together 10.
+- **A call that would overflow below too never moves behind a head and receiver of eleven columns or fewer** (round 3's
+  own finding, now a rule of the held call itself): below a broken `=` the receiver is the line's start, and
+  `r.OrderBy(x =>` / the body / `)` keeps its call where the rest's term had moved it below `r` again.
+- **The `=` before a value that fits below whole is the held chain's own table, not #590's read a column short.** Swept
+  a column at a time (names of 3 to 40, receivers of 1 to 14, `var`, assignment and `IEnumerable<int>` heads, 12 964
+  cells; `.Where(` and `.SkipWhile(`, rests of 10 and 24, 20 800; and 9 708 at group I's edge, six heads, indents 8 and
+  16), the oracle's table is three regions, and none reads the indent or the rest:
+  - where group I's fragment is short, the `=` breaks unless the value ends far right below:
+    `below + 0.14·equals + 0.24·name − 0.65·receiver − (callHead − 7) > 132.7`;
+  - where `9·name + 8·head − 3·receiver ≤ 153` (head the columns in front of the name), it never breaks;
+  - between them it breaks up to `min(112, ⌊min(121.05 − 0.245·name, 113 + 0.12·name) − 0.382·receiver⌋)`.
+  ⚠ An assignment's name is its whole target, `this.n…` included, and its head none — read that way the fit holds
+  under every head the probes have. Wired as `Fitter.HeldChainValueBreaksTheEquals`.
+- **Group I's `=` no longer needs `r.Where(…)` to fit below** within the held limit: there the oracle breaks the `=` and
+  then the arrow below it (34 statements of two random probes, none newly wrong).
+
+| probe | statements | master | now |
+|---|---:|---:|---:|
+| arrow floor grid (fit) | 1 344 | 1 235 | 1 341 |
+| heads 4–14 past the margin (fit) | 6 000 | 5 172 | 5 979 |
+| fits-below sweep, three heads (fit) | 12 964 | 12 405 | 12 955 |
+| fits-below sweep, two callees, two rests | 20 800 | 19 581 | 20 063 |
+| group I's edge, six heads, indents 8 and 16 (fit) | 9 708 | 8 090 | 9 576 |
+| random, seed 61901 (five heads, five callees, fed the round) | 5 000 | 4 696 | 4 975 |
+| random, seed 72417 (six heads, eight callees, four tails, three bodies, fed the round) | 6 000 | 5 589 | 5 960 |
+| fresh, seed 90619 (nine callees, written before the `=` table) | 6 000 | 5 579 | 5 957 |
+| fresh, seed 31337 (ten callees of 4 to 15 columns, lines 112–136) | 5 000 | 4 376 | 4 931 |
+| **fresh, seed 20261113, written after the final rule: six heads, ten callees, four tails, three bodies, indents 8–20** | 6 000 | 5 583 | 5 947 |
+
+Round 4's last fresh probe had one statement newly wrong: `.All(` past the margin, behind a 37-column name and a
+13-column receiver. Round 5 below fixed it. None takes two passes on any probe.
+
+⚠ **Round 5 (2026-11-13): past the margin the head term is the cap's alone.** #605's limit is the larger of a cap and a
+floor, and the floor decides where the receiver ends far right. Round 3's −0.4 a column of head was measured where the
+cap decides. Where the floor decides, past the margin the floor sits 0.3 below its own reading at `.Where(` and rises
+only 0.15 a column of head (`Fitter.HeldLambdaLimitPast`, `HeldLambdaCap`, `HeldLambdaFloor`). Measured on 8 000 cells:
+names of 20 to 40, receivers of 6 to 14, heads of 4 to 15, lines 121 to 132, rests 10 to 42. With seven probes, the
+head term on the whole limit missed 56 decisions past the margin and the two pieces miss 16.
+
+- ⚠ **Group I's band, measured and not wired.** The grid holds 22 280 statements: names of 6 to 30, receivers of 1 to 6,
+  `var`, assignment and `IEnumerable<int>` heads, indents 8 and 16, `.Where(` and `.Any(`, rests of 10 and 24, and the
+  moved line swept a column at a time from 110 to 121. The oracle's `=` boundary there does not fall with the name the
+  way the held limit does. It is a plateau the receiver, indent, head, callee and rest set, cut by the limit only for
+  long names; under a rest of 24 the `=` breaks at every line inside group I's region. Several models were fitted:
+  - a linear boundary: 545 of 13 520 grid decisions apart, against the held limit's 1 142;
+  - the held limit plus a column and a half: 757 apart;
+  - the plateau capped by the held limit plus 1.5: 605 apart, and 41 apart against 64 on five random probes, counting
+    the `=` alone.
+  Wired, the capped plateau made 519 grid statements and 9 to 28 per random probe newly wrong, because a small name
+  stopped breaking where it had. So nothing is wired. The boundary is not a single linear cut in these features.
+- Pinned by one more cell in `HeldLambdaCallLayoutIssue619Tests` (13 cells). With the floor's term switched off, that
+  cell fails.
+
+| probe (against master aee96b6f8) | statements | master | now | newly wrong |
+|---|---:|---:|---:|---:|
+| floor branch past the margin (fit) | 8 000 | 7 081 | 7 977 | 0 |
+| group I's band grid | 22 280 | 20 574 | 20 756 | 0 |
+| fresh, seed 20261113 (round 4's last) | 6 000 | 5 583 | 5 953 | 0 |
+| **fresh, seed 1311619, written after the final rule: six heads, nine callees, four tails, three bodies, indents 8–20** | 6 000 | 5 577 | 5 964 | 0 |
+
+Every other probe in round 4's table is unchanged, with none newly wrong against aee96b6f8 either.
+
+Still open, from the last fresh probe's 36:
+- **group I's band, with the value too wide below** (20);
+- **moves within the margin** (5) and **one column over** (2): #605's and #528's own residue;
+- **arrow or chop** (5), **the value that fits below** (3) and **past the margin** (1), each within a column of the
+  boundaries above.
+- status: #619 **fixed** for the moved call's layout, every head past the margin and the value that fits below. Group
+  I's band past the held limit **open**: measured, no model wired.
+
 ## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
 
 Found by group C's #602 probes (2026-10-14), not attempted. A sole lambda argument whose whole body is a type test the

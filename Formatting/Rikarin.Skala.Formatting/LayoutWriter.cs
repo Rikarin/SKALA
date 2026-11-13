@@ -450,11 +450,14 @@ public sealed class LayoutWriter {
         // ⚠ And the mirror: the gap after an `is`, resolved before the pattern chain it heads, spends the
         // chain's level when it breaks — so the chain's own is spent only while it stays flat.
         // ⚠ Or a switch arm's lift, for the first level spent inside it, and the lift around it (SK-DIV-0607).
+        // ⚠ Unless the group's release broke (#619, Document.ReleaseOf).
         if ((conditions & IndentFlags.HeldWhileGroupBroken) != 0) {
             return chainGroup >= 0
                 && (fitter.ModeOf(chainGroup) == ResolvedMode.Broken
                     || document.SecondHoldOf(chainGroup) is >= 0 and var outerLift
                     && fitter.ModeOf(outerLift) == ResolvedMode.Broken)
+                && !(document.ReleaseOf(chainGroup) is >= 0 and var release
+                    && fitter.ModeOf(release) == ResolvedMode.Broken)
                     ? IndentKind.None
                     : kind;
         }
