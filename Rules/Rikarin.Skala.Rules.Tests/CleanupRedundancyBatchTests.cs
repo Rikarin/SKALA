@@ -29,11 +29,11 @@ public sealed class CleanupRedundancyBatchTests {
     ];
 
     [Theory]
-    // SK0230 — the empty `with`, which is the shape that makes the fix unsafe.
+    // SK0230 — a `new()`-constrained type parameter grows its argument list like any other creation.
     [InlineData(
         "SK0230",
-        "record P(int X); static class C { static P M(P p) => p with { }; }",
-        "record P(int X); static class C { static P M(P p) => p; }"
+        "static class C { static T M<T>() where T : new() => new T { }; }",
+        "static class C { static T M<T>() where T : new() => new T(); }"
     )]
     // SK0230 — an object initializer with no argument list has to grow one.
     [InlineData(
@@ -195,6 +195,30 @@ public sealed class CleanupRedundancyBatchTests {
     )]
     public void TheFix_ProducesExactlyThisText(string rule, string before, string after) =>
         Assert.Equal(after, Fix(rule, before));
+
+    /// <summary>
+    ///     ⚠ An empty <c>with</c> is a copy, never a no-op, on everything <c>with</c> applies to (#636).
+    /// </summary>
+    /// <remarks>
+    ///     The first row is the issue's own: the fix wrote <c>layer</c>, and <c>Copy(layer)</c> became the
+    ///     same object as <c>layer</c>.
+    /// </remarks>
+    [Theory]
+    [InlineData(
+        "using System.Collections.Generic; public sealed record Layer(string Name, List<int> Items); static class C { public static Layer Copy(Layer layer) => layer with { }; }"
+    )]
+    [InlineData("record P(int X); static class C { static P M(P p) => p with { }; }")]
+    [InlineData("record struct P(int X); static class C { static P M(P p) => p with { }; }")]
+    [InlineData(
+        "struct S { public int X; public void Bump() => X++; } static class C { static int M(S s) { (s with { }).Bump(); return s.X; } }"
+    )]
+    [InlineData("static class C { static object M() { var a = new { X = 1 }; return a with { }; } }")]
+    [InlineData(
+        "record P(int X) { protected P(P o) { X = o.X + 1; } } static class C { static P M(P p) => p with { }; }"
+    )]
+    [InlineData("record P(int X); static class C { static P M(P? p) => p! with { }; }")]
+    public void AnEmptyWith_IsNeverReported(string source) =>
+        Assert.DoesNotContain(Analyze(source), static diagnostic => diagnostic.Id == "SK0230");
 
     /// <summary>Applies every edit the rule carries, so the assertion is about the text, not the span.</summary>
     static string Fix(string rule, string source) {

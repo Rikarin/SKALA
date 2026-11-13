@@ -28,9 +28,9 @@ namespace Rikarin.Skala.Rules.Correctness;
 ///         about how the code looks.
 ///     </para>
 ///     <para>
-///         ⚠ <b>Disjoint from <c>SK0230</c> by construction.</b> <c>SK0230</c> reports
-///         <c>x with { }</c>; this requires an assignment for every positional parameter of a record
-///         that has at least one, so the two can never see the same expression.
+///         ⚠ <b>An empty <c>with</c> is outside this rule by construction</b>: it requires an
+///         assignment for every positional parameter of a record that has at least one. No rule reports
+///         <c>x with { }</c> — it is a copy, not a no-op, and <c>SK0230</c> stopped reading it (#636).
 ///     </para>
 ///     <para>
 ///         ⚠
@@ -70,7 +70,7 @@ public sealed class WithExpressionRewritesAllAnalyzer : DiagnosticAnalyzer {
 
         // ⚠ A simple name, and nothing else. `GetPoint() with { X = a, Y = b }` rewrites to
         // `new Point(a, b)`, which drops the call the original made — an evaluation the replacement
-        // does not perform. `SK0230` reports the empty initializer and this rule never sees one.
+        // does not perform. An empty initializer is a copy that sets nothing, and never this rule's.
         if (with.Expression is not IdentifierNameSyntax receiver || with.Initializer.Expressions.Count == 0) {
             return;
         }

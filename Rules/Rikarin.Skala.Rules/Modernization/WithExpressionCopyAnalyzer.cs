@@ -42,12 +42,13 @@ namespace Rikarin.Skala.Rules.Modernization;
 ///     <para>
 ///         ⚠
 ///         <b>
-///             At least one argument has to be replaced, which is also what keeps this rule and
-///             <c>SK0230</c> off each other's ground.
+///             At least one argument has to be replaced.
 ///         </b>
 ///         A call carrying every member across unchanged
-///         rewrites to <c>x with { }</c> — an empty <c>with</c>, which is exactly what <c>SK0230</c>
-///         reports. Requiring a replacement means the two rules never see the same code.
+///         rewrites to <c>x with { }</c> — a bare copy that sets nothing, which this rule's subject (a
+///         copy <em>with a change</em>) is not. <c>SK0230</c> used to report that shape and fix it to
+///         <c>x</c>, which would have closed a loop through this rule; it no longer reports any empty
+///         <c>with</c> (#636), and the requirement stands on its own.
 ///     </para>
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -144,8 +145,8 @@ public sealed class WithExpressionCopyAnalyzer : DiagnosticAnalyzer {
             pending.Add(argument.Expression);
         }
 
-        // ⚠ One carried member is what makes this a copy; one replaced member is what keeps the fix
-        // off `SK0230`'s ground — a call carrying everything across rewrites to `x with { }`.
+        // ⚠ One carried member is what makes this a copy; one replaced member is what makes it a copy
+        // with a change — a call carrying everything across would rewrite to a bare `x with { }`.
         if (receiver is null || replaced.Count == 0) {
             return;
         }

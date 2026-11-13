@@ -217,8 +217,12 @@ dereference is the call, and `s;` is not an expression statement at all. And `x 
 not the pure deletion that `new Foo { }` → `new Foo()` is: `with` invokes the record's
 compiler-generated copy constructor, so it allocates a distinct instance and dereferences its
 operand, and removing it aliases a clone somebody wrote in order to mutate it. `SK0230` therefore
-takes the conservative reading — an unsafe fix — for the whole concept rather than splitting one
-concept into two safety classes.
+took the conservative reading — an unsafe fix — for the whole concept rather than splitting one
+concept into two safety classes. ⚠ **That was not conservative enough, and #636 measured it**: an
+unsafe fix is still applied by `skala fix --include SK0230`, and on Vixen it removed four record
+copies that tests and a texture-layer extraction depended on. The empty `with` is a copy, never a
+no-op, so `SK0230` no longer reports it at all; the fix stays unsafe for the object-initializer half
+because `new Foo { }` and `new Foo()` are different expression trees.
 
 ⚠ **`SK0234`'s nullability comparison was wrong twice, in opposite directions, and only measurement
 said so either time.** The first draft compared the cast's operand and target with
@@ -254,7 +258,7 @@ issue; what was declined and why is in each rule's `falsePositives` in `rules.js
 
 | ID | Rule | Scope | Issue | Inspections retired |
 |---|---|---|---|---|
-| `SK0230` | The `with` expression or object initializer is empty | Syntax | [#137](https://github.com/Rikarin/SKALA/issues/137) | 3 of 3 |
+| `SK0230` | The object initializer is empty | Syntax | [#137](https://github.com/Rikarin/SKALA/issues/137) | 3 of 3 |
 | `SK0231` | The string call produces the string it was given | Semantic | [#132](https://github.com/Rikarin/SKALA/issues/132) | 5 of 8 |
 | `SK0232` | The argument or signature element is redundant | Semantic | [#134](https://github.com/Rikarin/SKALA/issues/134) | 4 of 7 |
 | `SK0233` | The syntax is redundant | Syntax | [#133](https://github.com/Rikarin/SKALA/issues/133) | 9 of 13 |
