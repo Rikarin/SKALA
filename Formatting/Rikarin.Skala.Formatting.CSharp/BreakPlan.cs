@@ -9469,8 +9469,155 @@ public sealed class BreakPlan {
         PlanArrowBody(
             lambda,
             body,
-            WithTheLinkedCall(lambda, body, WithTheLaterCall(lambda, body, ArrowFactsOf(lambda, body)))
+            WithThePropertyChain(
+                lambda,
+                body,
+                WithTheSoleCall(
+                    lambda,
+                    body,
+                    WithTheLinkedCall(lambda, body, WithTheLaterCall(lambda, body, ArrowFactsOf(lambda, body)))
+                )
+            )
         );
+
+    /// <summary>
+    ///     <paramref name="facts" /> with <see cref="GroupFacts.SolePropertyChain" /> set where a sole lambda's whole
+    ///     body is a chain of properties: a name, <c>this</c> or <c>base</c>, then names only (#620, SK-DIV-0762).
+    /// </summary>
+    GroupFacts WithThePropertyChain(LambdaExpressionSyntax lambda, ExpressionSyntax body, GroupFacts facts) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine
+            || !IsTheBodyOfASoleLambda(body)
+            || body is not MemberAccessExpressionSyntax) {
+            return facts;
+        }
+
+        var names = new List<int>();
+        var spine = body;
+        while (spine is MemberAccessExpressionSyntax {
+                   RawKind: (int)SyntaxKind.SimpleMemberAccessExpression, Name: IdentifierNameSyntax name
+               } access) {
+            names.Add(name.Identifier.Span.Length);
+            spine = access.Expression;
+        }
+
+        if (spine is not (IdentifierNameSyntax or ThisExpressionSyntax or BaseExpressionSyntax) || names.Count < 2) {
+            return facts;
+        }
+
+        names.Add(spine.Span.Length);
+        names.Reverse();
+
+        // ⚠ `this.f` and `base.f` are one root: the fill never breaks before the first name after them.
+        if (spine is ThisExpressionSyntax or BaseExpressionSyntax) {
+            names[1] += names[0] + 1;
+            names.RemoveAt(0);
+        }
+
+        return facts with {
+            SolePropertyChain = [..names],
+            SolePropertyChainKept = HasLineBreakIn(body),
+            SoleCallLambda = FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
+        };
+    }
+
+    /// <summary>
+    ///     <paramref name="facts" /> with <see cref="GroupFacts.SoleCallHead" /> and its widths set where the body is a
+    ///     call of one argument or more with or without links after it (<see cref="SoleCallOf" />).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read from the tree and the formatted widths, so pass two asks what pass one asked; the author's breaks
+    ///     inside the body are <see cref="GroupFacts.SoleCallKept" />, which pass one's chop is on pass two, and which
+    ///     keeps the arrow there as the oracle keeps it.
+    /// </remarks>
+    GroupFacts WithTheSoleCall(LambdaExpressionSyntax lambda, ExpressionSyntax body, GroupFacts facts) {
+        if (SoleCallOf(body) is not { } call) {
+            return facts;
+        }
+
+        var head = FormattedWidth(body.GetFirstToken(), call.ArgumentList.OpenParenToken);
+        var through = FormattedWidth(body.GetFirstToken(), call.ArgumentList.CloseParenToken);
+        return facts with {
+            SoleCallHead = head,
+            SoleCallArguments = through - head - 1,
+            SoleCallLinks = FormattedWidth(body) - through,
+            SoleCallLambda = FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+            SoleCallSingle = call.ArgumentList.Arguments.Count == 1,
+            SoleCallKept = HasLineBreakIn(body)
+        };
+    }
+
+    /// <summary>
+    ///     The call a sole lambda's whole body starts with — <c>Head(a, b)</c>, <c>this.model.Get(a).Value</c>,
+    ///     <c>recv.Read&lt;T&gt;(a).Select(y =&gt; y.Name).ToList()</c>, or the operand of a type test written on one line,
+    ///     <c>Head(a) as Node</c> — where it takes one argument or more, none of
+    ///     them a lambda, every later call takes one argument or none, the links are member accesses and calls only,
+    ///     and the call's receiver is at most a name, <c>this</c> or <c>base</c> and a name; null otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> (#620, SK-DIV-0760): the probes behind
+    ///     <c>Fitter.BreaksTheSoleCallArrow</c> held exactly these heads — a name, generic or not, <c>recv.</c>,
+    ///     <c>this.</c>, <c>base.</c>, <c>Helpers.</c>, <c>this.model.</c> — over identifiers, member accesses, calls,
+    ///     casts, strings and <c>!</c> as arguments. ⚠ Not behind a receiver of two names (SK-DIV-0560: the oracle
+    ///     breaks before the call's own dot there), nor a later call of two arguments (<c>open(x).Analyze(a, b)</c>,
+    ///     SK-DIV-0520's), nor a body under a <c>!</c>, an <c>await</c> or a cast, which the probes never held.
+    /// </remarks>
+    InvocationExpressionSyntax? SoleCallOf(ExpressionSyntax body) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine || !IsTheBodyOfASoleLambda(body)) {
+            return null;
+        }
+
+        // ⚠ And the operand of a type test written on one line (`Head(a) as Node`, `Head(a, b) is { IsStatic: true }`):
+        // the test is read as one more link, its width with the rest (#620 — the test's kind, which SK-DIV-0561 found
+        // deciding the arrow, is only its width). A test the author broke before its keyword is #618's.
+        var operand = body switch {
+            BinaryExpressionSyntax binary when IsTypeTest(binary) && !BreaksBefore(binary.OperatorToken) => binary.Left,
+            IsPatternExpressionSyntax test when !BreaksBefore(test.IsKeyword) => test.Expression,
+            _ => body
+        };
+
+        if (operand is not (InvocationExpressionSyntax or MemberAccessExpressionSyntax)) {
+            return null;
+        }
+
+        InvocationExpressionSyntax? first = null;
+        SyntaxNode spine = operand;
+        while (spine is MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression }
+               or InvocationExpressionSyntax) {
+            if (spine is InvocationExpressionSyntax invocation) {
+                if (first is not null && first.ArgumentList.Arguments.Count > 1) {
+                    return null;
+                }
+
+                first = invocation;
+                spine = invocation.Expression;
+            } else {
+                spine = ((MemberAccessExpressionSyntax)spine).Expression;
+            }
+        }
+
+        if (first is not { ArgumentList.Arguments.Count: > 0 }
+            || first.ArgumentList.Arguments.Any(static argument => argument.NameColon is not null
+                || argument.RefKindKeyword.RawKind != 0
+                || argument.Expression.DescendantNodesAndSelf()
+                    .Any(static node => node is AnonymousFunctionExpressionSyntax)
+            )) {
+            return null;
+        }
+
+        return first.Expression switch {
+            IdentifierNameSyntax or GenericNameSyntax => first,
+            MemberAccessExpressionSyntax {
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+                Expression: IdentifierNameSyntax
+                or ThisExpressionSyntax
+                or BaseExpressionSyntax
+                or MemberAccessExpressionSyntax {
+                    Expression: ThisExpressionSyntax or BaseExpressionSyntax, Name: IdentifierNameSyntax
+                }
+            } => first,
+            _ => null
+        };
+    }
 
     /// <summary>
     ///     <paramref name="facts" /> with <see cref="GroupFacts.LambdaTestLaterCall" /> set where the body is a type test

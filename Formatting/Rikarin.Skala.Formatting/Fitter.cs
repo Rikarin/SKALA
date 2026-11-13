@@ -364,6 +364,13 @@ public sealed class Fitter {
                             : ResolvedMode.Flat;
                 }
 
+                // ⚠ A break the author wrote after a sole lambda's arrow over a call is kept (#620, SK-DIV-0760): the
+                // oracle keeps `Use(x =>` / `Head(…).Name` even where it keeps the arrow over the same body written on
+                // one line, and it is pass two's answer to the measured line's break.
+                if (facts.SourceBroken && (facts.SoleCallHead > 0 || facts.SolePropertyChain is not null)) {
+                    return ResolvedMode.Broken;
+                }
+
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
                 }
@@ -948,6 +955,37 @@ public sealed class Fitter {
 
                 if (!facts.BreaksIfTooLong || Fits(m.Column, m.BreakWidth, m.Trailing)) {
                     return ResolvedMode.Flat;
+                }
+
+                // ⚠ A sole lambda over a chain of properties that fits neither beside its arrow nor below it (#620,
+                // SK-DIV-0762): by the measured line. One the author broke inside keeps the arrow.
+                if (facts.SolePropertyChain is { } chain
+                    && m.ContinuationColumn + chain.Sum() + chain.Length - 1 > width) {
+                    return !facts.SolePropertyChainKept
+                        && m.Column - lineStart >= 12
+                        && BreaksThePropertyChainArrow(chain, facts.SoleCallLambda, m)
+                            ? ResolvedMode.Broken
+                            : ResolvedMode.Flat;
+                }
+
+                // ⚠ A sole lambda over a call that does not fit beside its arrow (#620, SK-DIV-0760): by the measured
+                // line, ahead of every older rule for the same bodies. One the author broke inside keeps the arrow.
+                // ⚠ Except a keep behind an arrow ending sixty columns or more in, over a call that fits on the line
+                // below: there the oracle's line bends with the arguments' width in a way not measured, and the
+                // older rules agree with it more often (a fresh probe's 21 members newly wrong, none once deferred).
+                if (facts.SoleCallHead > 0
+                    && m.Column + 1 + facts.SoleCallHead + facts.SoleCallArguments + 1 > width) {
+                    if (facts.SoleCallKept) {
+                        return ResolvedMode.Flat;
+                    }
+
+                    if (BreaksTheSoleCallArrow(facts, m, lineStart)) {
+                        return ResolvedMode.Broken;
+                    }
+
+                    if (!SoleCallKeepDefers(facts, m)) {
+                        return ResolvedMode.Flat;
+                    }
                 }
 
                 // ⚠ A sole lambda over a one-argument call with links after it (#620): the arrow breaks whenever the
@@ -1744,6 +1782,134 @@ public sealed class Fitter {
         // `[NotNullIfNotNull(`, parameters of 12 to 24 columns, indents 8, 12 and 20 — with round four's `[A(` and
         // `[Description(` rows.
         return SectionChops(facts, lineStart) ? ResolvedMode.Broken : ResolvedMode.Flat;
+    }
+
+    /// <summary>
+    ///     How far a one-argument sole call's arrow is past the column from which it breaks whatever the arguments,
+    ///     in twentieths of a column: <c>20·a + 23·L + 6·h − 13·λ − 1680</c> at a margin of 120 (#620, SK-DIV-0760).
+    /// </summary>
+    int FarRight(in GroupFacts facts, in Measures m) =>
+        20 * (m.Column - width)
+        + 23 * facts.SoleCallLinks
+        + 6 * facts.SoleCallHead
+        - 13 * facts.SoleCallLambda
+        - (1680 - 20 * 120);
+
+    /// <summary>
+    ///     Whether a sole call's arrow that the measured line keeps is left to the older rules instead: where the line
+    ///     was not measured and those rules agree with the oracle more often (#620, SK-DIV-0760).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two places, each found by a fresh probe's newly wrong members and none left once deferred: an arrow ending
+    ///     sixty columns or more in over a call that fits on the line below, where the oracle's line bends with the
+    ///     arguments' width; and a one-argument call that fits nowhere within five columns of the far-right line,
+    ///     where a receiver chain in front of the lambda (<c>await this.service.Get(x =&gt; …)</c>) moves it.
+    /// </remarks>
+    bool SoleCallKeepDefers(in GroupFacts facts, in Measures m) {
+        var below = m.ContinuationColumn + facts.SoleCallHead + facts.SoleCallArguments + 1 <= width;
+        return below
+            ? m.Column >= width - 60
+            : facts.SoleCallSingle && FarRight(facts, m) >= -100;
+    }
+
+    /// <summary>
+    ///     Whether a sole lambda's arrow breaks over a call that does not fit beside it (#620, SK-DIV-0760). See
+    ///     <see cref="GroupFacts.SoleCallHead" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c>, one column at a time, on grids of 2 000 to 10 500 cells each:
+    ///     the oracle decides before it lays out the arguments, by the links' width against the lambda's head, the
+    ///     call's head and where the arguments would end on one line two levels in. The callee, the statement and the
+    ///     argument's kind play no part, and a type test written on one line after the call is one more link. On six
+    ///     random probes written after the rule, 15 400 members, it took master's 8 767 agreeing to 13 655, one newly
+    ///     wrong (SK-DIV-0760).
+    /// </remarks>
+    /// <summary>
+    ///     Whether a sole lambda's arrow breaks over a chain of properties that fits neither beside it nor below it
+    ///     (#620, SK-DIV-0762): <c>100·s − 175·p − 12·f ≥ 776</c>, <c>s</c> the column the lambda starts at, <c>p</c>
+    ///     its parameters' width before <c>=&gt;</c> (modifiers included) and <c>f</c> how much of the chain the fill
+    ///     would keep beside the arrow.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c>: 2 048 cells of eight parameter lists, two segment widths and
+    ///     lambdas starting at columns 12 to 47 (2 034 agree), and 780 members of four random probes (774). The line's
+    ///     start, the chain's width and what is in front of the lambda play no part — #557's line, which read the
+    ///     width below, agreed in 1 334 and 584. ⚠ Not where the chain fits below, which #557's line still decides.
+    /// </remarks>
+    bool BreaksThePropertyChainArrow(int[] chain, int lambda, in Measures m) {
+        var column = m.Column + 1 + chain[0];
+        var kept = chain[0];
+        for (var k = 1; k < chain.Length && column + 1 + chain[k] <= width; k++) {
+            column += 1 + chain[k];
+            kept += 1 + chain[k];
+        }
+
+        var start = m.Column - lambda;
+        var parameters = lambda - 3;
+        return 100 * start - 175 * parameters - 12 * kept >= 776;
+    }
+
+    bool BreaksTheSoleCallArrow(in GroupFacts facts, in Measures m, int lineStart) {
+        // ⚠ A head that does not fit beside the arrow moves below whatever the rest (measured at arrows ending at
+        // columns 56 to 120 behind every head and argument count).
+        if (m.Column + 1 + facts.SoleCallHead > width) {
+            return true;
+        }
+
+        // The arrow ends twelve columns or more past the line's start, as for every other sole-lambda line (#618).
+        if (m.Column - lineStart < 12) {
+            return false;
+        }
+
+        // `10·L ≥ 6·(λ + h) + 15·(E − e)`: L the links, λ the lambda through `=>`, h the head through `(`, and E where
+        // the arguments' line would end two levels past the line, all on one line.
+        var links = 10 * facts.SoleCallLinks;
+        var head = 6 * (facts.SoleCallLambda + facts.SoleCallHead);
+        var end = m.ContinuationColumn + indentWidth + facts.SoleCallArguments;
+        if (!facts.SoleCallSingle) {
+            // ⚠ Two arguments or more behind a short head, lambda and links: the arrow breaks only once it ends far
+            // enough to the right, `a + 2·h + λ + 3·L ≥ 120` at a margin of 120, and not at all behind the shortest.
+            var lead = facts.SoleCallLambda + facts.SoleCallHead;
+            if (6 * lead + 16 * facts.SoleCallLinks <= 207
+                && (m.Column + 2 * facts.SoleCallHead + facts.SoleCallLambda + 3 * facts.SoleCallLinks < width
+                    || 4 * lead + 5 * facts.SoleCallLinks < 70)) {
+                return false;
+            }
+
+            // ⚠ At a thousandth of a column (round two): the lambda weighs a little less than the head, as for one
+            // argument — 34 059 cells and probe members, every one of them a call of two arguments or more.
+            return 1000 * facts.SoleCallLinks
+                >= 603 * facts.SoleCallHead
+                + 576 * (facts.SoleCallLambda - 3)
+                + 1500 * (end - (width - 27))
+                + 1864;
+        }
+
+        // ⚠ One argument: the arguments' line counts only while it ends six columns or more short of the margin; past
+        // that the line stands on its own. ⚠ And an argument far past the margin keeps the arrow by a second line,
+        // steeper in the head, that stops rising 126 columns past it.
+        // ⚠ And behind an arrow far to the right, by the arrow's own column: `20·a + 23·L + 6·h − 13·λ ≥ 1680` at
+        // a margin of 120, whatever the arguments and the line's start.
+        // ⚠ The first line at a thousandth of a column (round two): `1000·L ≥ 604·h + 577·λ + 1500·min(0, E − 114) + 12`.
+        // The head and the lambda do not weigh the same — 3/5 of a column each, as round one had it, missed one cell in
+        // twenty past λ = 11 and every wide head — measured exactly on 520 thresholds of a column-at-a-time grid.
+        // ⚠ And an arrow far to the right against the arguments' line breaks it too, `20·a + 6·h − 14·λ + 23·L − 34·E ≥
+        // −2214`: the far-right line below, with the arguments' line in it, which the first round's grids — heads of
+        // 30 or fewer, an arrow before column 45 — never reached (a 42-column head behind a deep indent).
+        var first = 1000 * facts.SoleCallLinks
+            >= 604 * facts.SoleCallHead
+            + 577 * facts.SoleCallLambda
+            + 1500 * Math.Min(0, end - (width - 6))
+            + 12;
+        var longFirstLine = 20 * m.Column
+            + 6 * facts.SoleCallHead
+            - 14 * facts.SoleCallLambda
+            + 23 * facts.SoleCallLinks
+            - 34 * end
+            >= -2214;
+        return FarRight(facts, m) >= 0
+            || longFirstLine
+            || first && links >= 5 * head - 90 + 15 * Math.Min(end, width + 126) - 3595;
     }
 
     /// <summary>

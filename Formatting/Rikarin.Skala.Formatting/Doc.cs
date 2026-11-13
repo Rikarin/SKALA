@@ -1491,6 +1491,32 @@ public sealed class Document {
 /// <param name="LambdaBodyKind">
 ///     With <see cref="LambdaTestCall" />: which of #618's and #620's measured lines the arrow is decided by.
 /// </param>
+/// <param name="SoleCallHead">
+///     ⚠ The arrow of a sole lambda argument whose whole body is a call of one argument or more, with or without
+///     links after it — <c>Use(x =&gt; Head(a, b).Name)</c>, <c>this.model.Get(a)</c> — and no type test: the head
+///     through that call's <c>(</c>, or zero for any other group (#620, SK-DIV-0760). Where the call does not fit
+///     beside the arrow, the arrow breaks by one measured line over the head, the links, the lambda's own head and
+///     where the arguments' line would end two levels in (<c>Fitter.BreaksTheSoleCallArrow</c>); a break the author
+///     wrote after the arrow is kept, and one inside the body keeps the arrow.
+/// </param>
+/// <param name="SoleCallArguments">With <see cref="SoleCallHead" />: the arguments' width inside the parentheses.</param>
+/// <param name="SoleCallLinks">With <see cref="SoleCallHead" />: the width of the links after the call's <c>)</c>.</param>
+/// <param name="SoleCallLambda">With <see cref="SoleCallHead" />: the lambda's width through its <c>=&gt;</c>.</param>
+/// <param name="SoleCallSingle">With <see cref="SoleCallHead" />: the call takes exactly one argument.</param>
+/// <param name="SolePropertyChain">
+///     ⚠ The arrow of a sole lambda argument whose whole body is a chain of properties — <c>x.A.B.C</c>,
+///     <c>this.model.A.B</c> — written on one line: the widths of its root and of each name after it, or null for any
+///     other group (#620, SK-DIV-0762). Where the chain fits neither beside the arrow nor below it, the arrow breaks
+///     once the lambda starts far enough in for its parameters, by one measured line
+///     (<c>Fitter.BreaksThePropertyChainArrow</c>).
+/// </param>
+/// <param name="SolePropertyChainKept">
+///     With <see cref="SolePropertyChain" />: the author broke inside the chain, which keeps the arrow.
+/// </param>
+/// <param name="SoleCallKept">
+///     With <see cref="SoleCallHead" />: the author broke inside the body, which keeps the arrow, as
+///     <see cref="LambdaTestKept" /> does — and before a link, which the oracle keeps the same way.
+/// </param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
@@ -2138,6 +2164,14 @@ public readonly record struct GroupFacts(
     int LambdaTestFirstCall = 0,
     bool LambdaTestProperties = false,
     LambdaBodyKind LambdaBodyKind = LambdaBodyKind.BrokenTest,
+    int SoleCallHead = 0,
+    int SoleCallArguments = 0,
+    int SoleCallLinks = 0,
+    int SoleCallLambda = 0,
+    bool SoleCallSingle = false,
+    bool SoleCallKept = false,
+    int[]? SolePropertyChain = null,
+    bool SolePropertyChainKept = false,
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool TailStopsAtLastResort = false,

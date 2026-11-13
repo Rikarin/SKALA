@@ -1290,10 +1290,55 @@ public sealed class LayoutWriter {
             }
         } else if (InnermostBrokenConstruct(path) < 0) {
             return -1;
+        } else if (FromLineOfTheBroken(path) is >= 0 and var fromLine) {
+            return fromLine;
         }
 
         var level = LevelForBlock(ancestors, brokenAt);
         return level > nested ? level : -1;
+    }
+
+    /// <summary>
+    ///     For a list opening directly inside the from-the-line scope of the innermost broken construct, on the
+    ///     line that scope opened on: that scope's level, the construct's continuation line; −1 otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A sole lambda's chain body (#620, SK-DIV-0761): <c>Use(x =&gt; Head(</c> / the arguments two levels past
+    ///     the line / <c>)</c> / <c>.Name</c> one, as <c>var y = Head(</c> / … / <c>)</c> / <c>.Name</c> (#418) — and
+    ///     under a broken arrow, <c>Use(x =&gt;</c> / <c>Head(</c> / the arguments two levels past the body's line /
+    ///     <c>)</c> and <c>.Name</c> one. <see cref="LevelForBlock" /> reads a from-the-line scope on its own line as
+    ///     not there, which left the list one level past the line, collapsed with the chain's.
+    /// </remarks>
+    int FromLineOfTheBroken((int Node, int Child)[] path) {
+        var broken = InnermostBrokenConstruct(path);
+        for (int a = 0, next = scopes.Count - 1; a < broken; a++) {
+            if (document.Nodes[path[a].Node].Kind != DocKind.Indent) {
+                continue;
+            }
+
+            var scope = scopes[next--];
+            if (!scope.IsFromLine) {
+                if (scope.IsBlock || scope.Level > 0 || scope.ColumnOutdent != 0) {
+                    return -1;
+                }
+
+                continue;
+            }
+
+            if (scope.OpenLine != line) {
+                return -1;
+            }
+
+            for (var g = a + 1; g < path.Length; g++) {
+                if (document.Nodes[path[g].Node].Kind == DocKind.Group) {
+                    return g == broken ? scope.Level : -1;
+                }
+            }
+
+            return -1;
+        }
+
+        return -1;
     }
 
     /// <summary>
