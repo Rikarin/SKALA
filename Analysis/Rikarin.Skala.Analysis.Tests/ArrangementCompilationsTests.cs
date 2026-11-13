@@ -30,6 +30,30 @@ public sealed class ArrangementCompilationsTests {
     }
 
     /// <summary>
+    ///     ⚠ #634: a compilation known to be missing generated sources is not handed to arrangement.
+    /// </summary>
+    /// <remarks>
+    ///     Its unused-using answer is the answer for a program without the generated names, which is how
+    ///     <c>using Vixen.Net.Generated;</c> was deleted. Sabotage: drop the <c>Where</c> in
+    ///     <c>ArrangementCompilations.For</c> and this goes red.
+    /// </remarks>
+    [Fact]
+    public void For_LeavesOutACompilationMissingGeneratedSources() {
+        var complete = Empty.WithAssemblyName("complete");
+        var loaded = new LoadedProject {
+            Mode = LoadMode.Binlog,
+            Units = [
+                new CompilationUnit { Name = "a", Compilation = complete },
+                new CompilationUnit {
+                    Name = "b", Compilation = Empty.WithAssemblyName("incomplete"), GeneratedSourcesIncomplete = true
+                }
+            ]
+        };
+
+        Assert.Same(complete, Assert.Single(ArrangementCompilations.For(loaded)));
+    }
+
+    /// <summary>
     ///     What a loose load does not run is what it says it does not run: every semantic rule, and the
     ///     removal half of <c>SK0210</c>, which declares no semantics because its sorting half needs none.
     /// </summary>

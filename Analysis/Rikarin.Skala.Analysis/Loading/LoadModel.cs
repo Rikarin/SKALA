@@ -90,6 +90,18 @@ public sealed record CompilationUnit {
     public string ProjectPath { get; init; } = string.Empty;
 
     /// <summary>
+    ///     A source generator the build ran contributed nothing to this compilation — its assembly was
+    ///     missing, would not load, or threw — so members the build had are absent here (#634).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Set only by a loader that runs the generators itself (<see cref="BinlogLoader" />);
+    ///     <c>false</c> elsewhere means "not known to be incomplete", not "proved complete". Each cause
+    ///     carries its own <c>SK9029</c>, <c>SK9031</c> or <c>SK9030</c>; this flag is what a consumer
+    ///     that <em>rewrites</em> reads, because an absence it cannot see is not evidence it may act on.
+    /// </remarks>
+    public bool GeneratedSourcesIncomplete { get; init; }
+
+    /// <summary>
     ///     The build did not ask the compiler for XML documentation, so its documentation diagnostics
     ///     were never computed for this compilation (#384). False for the loose load, which drops every
     ///     compiler diagnostic anyway.

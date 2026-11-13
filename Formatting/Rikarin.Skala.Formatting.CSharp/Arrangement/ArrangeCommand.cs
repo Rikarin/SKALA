@@ -185,7 +185,10 @@ public static class ArrangeCommand {
                 output.Append("⚠ ")
                     .Append(syntacticOnly.ToString(CultureInfo.InvariantCulture))
                     .Append(syntacticOnly == 1 ? " file was" : " files were")
-                    .AppendLine(" in no loaded compilation: the syntactic subset only (docs/plan/06).");
+                    .AppendLine(
+                        " in no loaded compilation, or only in one known to be missing generated sources: "
+                        + "the syntactic subset only (docs/plan/06)."
+                    );
             }
 
             output.Append(changed.ToString(CultureInfo.InvariantCulture))

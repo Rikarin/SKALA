@@ -409,7 +409,8 @@ public sealed class InstrumentSilenceTests {
             TestContext.Current.CancellationToken
         );
 
-        Assert.Same(compilation, result);
+        Assert.Same(compilation, result.Compilation);
+        Assert.False(result.Complete);
         var reported = Assert.Single(diagnostics);
         Assert.Equal(ConfigDiagnosticIds.AnalyzerAssemblyMissing, reported.Id);
         Assert.Equal(SkalaSeverity.Warning, reported.Severity);
