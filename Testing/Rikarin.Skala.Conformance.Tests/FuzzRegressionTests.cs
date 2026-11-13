@@ -249,6 +249,11 @@ public sealed class FuzzRegressionTests {
     // `when` lift Skala added on pass one the parenthesis spent a level of its own and the `)` landed a level deeper;
     // pass two, reading the gap as kept, put it on the condition's level, the oracle's (SK-DIV-0399).
     [InlineData(3427174854403582517UL)]
+    // `{ Length: > 0 } when (value is` / `null) =>` / the body (#576 round 11): pass one broke the arrow for width and its
+    // lift put `null)` two levels past the arm; pass two read the arrow's break as kept, whose lift does not reach through
+    // a type test's kept break, and wrote one level — the oracle's, which keeps the arrow. No width lift over such a
+    // condition (SK-DIV-0399).
+    [InlineData(17391279223121675459UL)]
     // `T v99 = ((x, y) =>` / `{` / `return 97970;` / `}) ? 1.0m : Emit(…)`: the author's break before a lambda's `{`
     // made the condition read as written across lines, so pass one kept the `=` past #553's rule; pass two, `=> {`
     // joined, broke it — the oracle's answer for both. The gap before the brace now reads as glued (SK-DIV-0551).

@@ -12222,6 +12222,163 @@ Pinned by `WhenShortLeadIssue576Tests`, 20 cells: with the bar back at "a short 
 second question off, 4; with the `from` clause's points removed, 10 (the six positions and the four kept bodies); with the
 keep rule off, 5. Grid scripts: worktree `artifacts/scratch-i576/` (`gen576.py`, `genq.py`, `h.py`, `k.py`, `kb.py`, `kbrule.py`), uncommitted.
 
+⚠ **#576 round 10 (2026-11-13).** The instrument first: round 9's eleven grids, rebuilt from its scripts, reproduce its recorded
+numbers exactly (fresh seed 5760818: master 234, round 9 132). Classified on that probe, the 132 were 73 rows of the `when` gap
+(64 Skala breaking where the oracle fills), 44 of where the type arguments break, 7 of the arrow and 8 other. Three structure
+grids were built for this round, each holding the widths fixed and moving one thing: e1 (2 024 arms: heads 7 and 9, a condition of
+110 columns whose lead runs 8 to 38 and whose second argument is `T…`, `IReadOnlyList<T…>`, `IReadOnlyDictionary<int, T…>` or a
+nested first argument, call bodies of 40 to 130), e2 (1 968: indents 12 to 24 × conditions of 104 to 134) and e3 (513: atom bodies
+of 5 to 16 columns behind heads 13, 18 and 23, conditions 6 to 60 columns past the margin). Three rules are wired.
+
+**1. The `when` bar rises with what the `when`'s line keeps of the condition.** ⚠ The shape of the second argument moves
+nothing: on e1, `T…`, `IReadOnlyList<T…>` and `IReadOnlyDictionary<int, T…>` behind the same lead flip at the same body width,
+to the column. The width the fill leaves on the `when`'s line does — the lead through the outer comma while the rest fits below,
+else through the last type-argument break point — a third of a column of body per column up to about 42, and the 1/head law
+keeps an offset: the `when` breaks only while `6·head·(body + 6) ≥ 3816 + 2·min(first, 42)·head`. It only ever raises round 8's
+bar, and was fitted so that no row of any grid the oracle breaks falls under it. ⚠ Uncapped, the first fresh probe written after
+it (seed 5760820) found a 47-column lead the oracle breaks behind two columns under the bar; the cap is what that row measured.
+Behind a one-column pattern (`X when`, `_ when`) the bar is higher still: the `when` breaks only before a body at most sixteen
+columns short of where the condition ends on the line below (on every grid, no row the oracle breaks at that head lies under
+it). (`Fitter.WhenBreaks`, `GroupFacts.WhenLastPoint`.)
+
+**2. Before a plain second argument the outer comma takes the break three columns further.** Round 6's rule (the outer list
+breaks while the line it leaves below, through `() =>`, is 111 or less) is right for `IReadOnlyDictionary<int, T…>`, whose
+inner comma is the alternative. Before `IReadOnlyList<T…>` the oracle breaks at the outer comma to 114, and to 115 behind a lead
+of 17 or more, falling a column for every four columns of lead (`lead + 4·line ≤ 487`): 175 rows of the fit grids and 163 of the
+fresh probes, none the other way. That was most of the "28 rows" round 9 left; ⚠ round 9's reading — "with the body kept it
+breaks the inner list" — is refuted: the kept body follows the break, not the other way round. (`GroupFacts.WhenOuterLead`.)
+
+**3. An atom body of eleven columns or more no longer stops the `when` breaking.** Round 7's limit (the condition, flat on the line
+below, at most `13 + (b − 5)/2` columns past the margin before a body of fourteen or fewer) was measured at bodies of 5 and 9. On
+e3 a body of 9 to 16 columns breaks the `when` however far past the margin the condition runs, 6 to 60 columns, at all three
+heads; the fresh probes' 13-column bodies agree behind every lead under 39 (28 rows) and split behind longer ones. The limit
+stays for bodies of 10 or fewer and leads of 39 or more.
+
+Diverging rows (round 9 = the base commit `29260084c`; none non-idempotent anywhere, none newly diverging against master or
+round 9 on any row):
+
+| Grid | Rows | Master | Round 9 | Now |
+|---|---|---|---|---|
+| b576 | 1 216 | 172 | 160 | 152 |
+| w576 (fit) | 3 040 | 487 | 126 | 88 |
+| d576 (fit) | 2 300 | 588 | 206 | 153 |
+| s576 (fit) | 900 | 421 | 196 | 44 |
+| f576a–d (round 8–9 probes, fit here) | 3 900 | 877 | 447 | 244 |
+| e1 (structure, fit) | 2 024 | 500 | 167 | 28 |
+| e2 (indent × condition, fit) | 1 968 | 693 | 288 | 59 |
+| e3 (atom band, fit) | 513 | — | 315 | 83 |
+| f576e (round 9's last fresh probe, used here to fit) | 1 000 | 234 | 132 | 72 |
+| f576f (fresh, seed 5760819, after rules 1–2; then used for the 115 clause) | 1 000 | 229 | 119 | 60 |
+| f576g (fresh, seed 5760820, after all rules; then used for the cap) | 1 000 | 243 | 134 | 76 |
+| **f576h (fresh, seed 5760821, after the last change)** | 1 000 | **231** | **121** | **55** |
+| q1 / q2 (queries in six positions) | 600 / 600 | 265 / 261 | 67 / 62 | 67 / 62 |
+
+On the last probe: the `when` gap 137 → 62 → 37, where the type arguments break 42 → 48 → 7, the arrow 50 → 8 → 8, other 2 → 3 → 3.
+
+⚠ Still open, measured, not wired:
+- **The `when` gap, 37 rows of the last probe**, 34 of them Skala breaking where the oracle fills: 20 behind a condition whose fill
+  takes its inner `<`, 7 an arrow the author broke, 7 the outer comma. ⚠ No single-variable bar separates them: the oracle's choice
+  moves with the body's flat width although the two layouts differ only in the first line, and on e2 with how far the type
+  arguments' tail line runs past the margin (`I + c` past about 150, a column and a half of body per column), which no final line
+  of either layout shows. ⚠ So no per-line cost of the layouts is the oracle's rule: sums of squared slack, squared overflow, line
+  counts and the longest line, on the final layouts and with the body joined flat, were each tested on the 196 flips of d576, s576
+  and w576, and none ranks a single flip strictly the oracle's way.
+- **The arrow, 8 rows**: `=> new` / `Holder(…),` and `=> (` / `from … select item),`, the oracle keeping a creation's `new` or a
+  query's `(` on the arrow's line so that the rest fits below; Skala has no point there.
+- The query rows round 9's keep rule still breaks (102 on the fit grids, unchanged), chain bodies (no probe generates one), the
+  break after an inner `<` and round 7's band edge for bodies of 5 to 10 columns.
+
+Pinned by `WhenFirstLineIssue576Tests`, 17 cells: rule 1 off, 5 fail; the one-column clause off, 1; rule 2 off, 6; its 115 clause
+off, 2; rule 3 off, 3. Grid scripts: worktree `artifacts/scratch-i576b/` (`genb.py`, `an.py`, `pick.py`, `searchE.py`), uncommitted.
+
+⚠ **#576 round 11 (2026-11-14).** The instrument first: round 10's grids rebuilt from its scripts reproduce its recorded numbers
+exactly (f576h: master 231 → round 10 55). A replica of `Fitter.WhenBreaks` in Python, fed the planner's own widths (the last point
+as Skala reads it, through the last `<` or type-argument comma), agrees with Skala's output on every `when` row of the fresh probes;
+the rules below were fitted on it and each then confirmed in Skala. Two structure grids were built: e4 (1 536 arms: indents 12 and
+20, heads 7 and 9, leads 14, 26 and 38 before `IReadOnlyList<T…>`, conditions of 116 to 160, call bodies in steps of 6) and e5
+(4 032: heads 6 to 11, leads 14 and 30, conditions of 116 to 164, bodies in steps of 4). Five rules are wired.
+
+**1. ⚠ "A condition that fits on the line below moves there whatever the body" is refuted.** Rounds 8 to 10 broke the `when` for
+every condition ending at 119 or before below. What the oracle reads is the condition *beside* the `when`: one or two columns past
+the margin there it moves below (as an atom body's does, round 7); three or more and the product bar holds, the line below or not —
+measured as `h + X ≥ 122` on every grid (heads 7 to 10 at conditions ending 112 to 115 below: `null when M<HashSet<long>,` /
+`IReadOnlyList<T…>>() => Compute(` at a body of 33, where Skala broke the `when`). Where the condition fits below the bar is the
+product alone; the fill's first-line raise is for a condition that fills in both layouts (the one row it would have cost, f576f
+r0226, sits a column under it).
+
+**2. Where the fill must take an inner `<`, the bar rises with the condition's flat width** — the round-10 observation that the
+decision moves with "how far the type arguments run past the margin", which no line of either layout shows. On e4 and e5 the indent
+and the condition's width move the flip identically (the flip is a function of `X = I + c`, the condition's end flat from the arm's
+column), every rising edge has the same slope — a column and a half of body per column of `X`, one per column of lead — and the knee
+moves with the head as `1480/head`: the `when` breaks only while `head·(2·body − 2·lead − 3·X + 658) ≥ 2960`. Searched over the lead's
+coefficient (½ to 1¼) and both constants; only lead 1 puts every rising edge on the line with no row the oracle breaks under it. ⚠ It
+applies only where the fill takes an inner point (the outer tail through `() =>` past 117, and a last point past the lead): applied
+wherever the outer tail does not fit, or wherever there is an inner point, it makes 22 to 68 rows newly wrong.
+
+**3. The outer comma's raise stops at 34.** Round 10 capped the raise at a first line of 42 after one row; the coordinator's probe
+(seed 5769999) found `var v when Materialise<IReadOnlyCollection<Guid>,` (lead 38) breaking below that bar, and f576i a 36-column
+lead behind `int n when`. e1 saturates there too (leads 26, 32 and 38 flip at one body width). Rows of e1, e4 and s576 sit exactly on
+`6·head·(body + 6) − 3816 = 68·head` and fill, the two found rows lie 0.2 above it: past 34 the bar is reached strictly past
+`68·head`. ⚠ Not past a condition end of 146 below: two rows of f576e (leads 41 and 54, ending 150 and 156) hold 42, and any bound
+from 140 to 153 is clean on every grid. That is a seam, not a model — the raise's true shape past 34 is open.
+
+**4. Behind a one-column pattern (`X when`, `_ when`)** round 10's "a body at most sixteen columns short of where the condition ends
+below" broke up to twenty columns of body too early once the condition ends past 124 (and round 10 made f576i r0303 newly wrong
+against master: `X when` / `Make<List<bool>, IReadOnlyList<` breaks at a body of 109). The bar is
+`2·body ≥ 3·end + 2·last − lead − 214`: the same column and a half per column of condition, and a deeper second argument
+(`IReadOnlyDictionary<int, T…>` against `IReadOnlyList<T…>` against `T…`) raising it a column per column of last point. Searched on
+the 254 arms behind those heads that reach the clause: no row the oracle breaks under it, 20 the oracle fills over it.
+
+**5. A `where` whose condition has no break point of its own breaks after the keyword.** The "other" class: a query body kept on the
+arm's arrow line whose `where "q…"` runs past the margin comes back as `where` / the literal one level in. Skala had no point there.
+(`BreakPlan.PlanWhereClause`, literal, name or member-access conditions only; 71 rows of d576 and 9 of f576j.)
+
+Diverging rows (master = round 9's `6ddd53620` CLI, as round 10 measured; none non-idempotent anywhere, none newly diverging against
+master or round 10 on any row):
+
+| Grid | Rows | Master | Round 10 | Now |
+|---|---|---|---|---|
+| b576 | 1 216 | 160 | 152 | 52 |
+| d576 (fit) | 2 300 | 206 | 153 | 57 |
+| s576 (fit) | 900 | 196 | 44 | 44 |
+| w576 (fit) | 3 040 | 126 | 88 | 37 |
+| f576a–d (round 8–9 probes, fit) | 3 900 | 447 | 244 | 123 |
+| f576e–h (round 9–10 probes, fit) | 4 000 | 506 | 263 | 136 |
+| e1 / e2 / e3 (round 10's structure grids) | 2 024 / 1 968 / 513 | 167 / 288 / 315 | 28 / 59 / 83 | 28 / 41 / 83 |
+| e4 (structure, fit) | 1 536 | 477 | 355 | 24 |
+| e5 (structure, fit) | 4 032 | 1 216 | 739 | 26 |
+| coordQ (the coordinator's probe, seed 5769999; then used for rule 3) | 1 000 | 120 | 62 (1 newly wrong) | 35 |
+| f576i (fresh, seed 5760822, after rules 1–3; then used for rules 3 and 4) | 1 000 | 130 | 71 (2 newly wrong) | 40 |
+| **f576j (fresh, seed 5760823, chain bodies added, after rules 1–4)** | 1 000 | **124** | **51** | **23** |
+| q1 / q2 (queries in six positions) | 600 / 600 | 67 / 62 | 67 / 62 | 67 / 62 |
+
+The residue on the last fresh probe, f576j (written after every rule, the first probe with chain bodies: `source.Where(…).Select(…)
+.ToList()`), classed against round 10: the `when` gap 34 → 13, where the type arguments break 2 → 2, the arrow 7 → 8, other 8 → 0; chain
+bodies 25 (master) → 8 (round 10) → 3. On f576h, round 10's last probe: the `when` gap 37 → 15, the type arguments 7, the arrow 8,
+other 3 → 0.
+
+⚠ Still open, measured, not wired:
+- **The `when` gap, 13 rows of f576j.** 8 sit under an arrow the author broke (`WhenArrowKept`, the tail rule — not reworked),
+  2 are atom bodies behind `Tyyyyyyyyyyyy when` (round 7's band), 1 a chain body (no bar: a chain is not a wide body), 2 query bodies
+  behind `Xy when` where Skala breaks and the replica of this bar, fed the same widths, does not — not investigated.
+- **Where the type arguments break, 2 to 7 rows a probe**: the oracle takes the outer comma with the arrow at the line's end and the
+  body below where Skala takes the inner `<` and keeps the body on the arrow's line — the outer comma's rule reads no body.
+- **The arrow, 8 rows**: `=> new` / `Holder(…)` and `=> (from item` / `in items`, unchanged from round 10.
+- The query rows round 9's keep rule still breaks on the fit grids (b576 52, d576 57 in all), round 7's band edge for atom bodies
+  (e3's 83), and q1/q2's 62–67 (queries outside arms, other positions).
+
+⚠ **Fuzz 17391279223121675459 (pre-existing, fails identically on `a2a6de725` and master).** `{ Length: > 0 } when (value is` /
+`null) =>` / the body, the author's break after `is`: pass one broke the arrow for width and the arm's width lift
+(`LiftsIfArrowBreaks`) put `null)` two levels past the arm; pass two, reading that arrow break as kept, wrote it one level past —
+the kept arrow's lift does not reach through a type test's kept break. The oracle keeps the arrow on that input (`null) => Cast<…,`
+/ the type arguments filling) with `null)` one level past the arm. The width lift no longer opens over a `when` condition holding a
+type test the author broke after its keyword (`BreakPlan.HasAKeptTypeTestBreak`): both passes write one level, the oracle's line,
+and the arrow still breaks where the oracle's does not (the arrow class above). Seed in `FuzzRegressionTests`.
+
+Pinned by `WhenConditionEndIssue576Tests`, 16 cells: rule 1 back to the line-below guard, 3 fail; rule 2 off, 5; rule 3 back to
+a raise to 42, 2; rule 4 back to round 10's clause, 2; rule 5 off, 3. Grid scripts: worktree `artifacts/scratch-i576c/` (`genc.py` — e4,
+e5, `fresh3` with chain bodies — `ds.py`, `ruled.py`, `searchR.py`, `search6b.py`, `run2.sh`), uncommitted.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as

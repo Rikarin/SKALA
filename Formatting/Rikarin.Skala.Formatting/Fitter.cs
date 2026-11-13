@@ -412,7 +412,16 @@ public sealed class Fitter {
                     var continuation = m.ContinuationColumn <= lineStart
                         ? lineStart + indentWidth
                         : m.ContinuationColumn;
-                    if (!Fits(continuation, facts.WhenOuterTail + 14)) {
+                    // ⚠ Round 10: before a second argument holding one plain type argument the bar is three columns
+                    // higher, falling a column of line for four of lead (`M<First, IReadOnlyList<T…>>()`): the line
+                    // below through `() =>` may run to 114 while `lead + 4·line ≤ 487`, and to 115 behind a lead of 17
+                    // or more (a shorter one keeps the list there: `M<List<bool>,` and `Pick<int,`). Measured on the
+                    // ten #576 arm grids, 175 rows of the fit grids and 163 of the fresh probes, none the other way.
+                    var below = continuation + facts.WhenOuterTail + 5;
+                    if (!Fits(continuation, facts.WhenOuterTail + 14)
+                        && !(facts.WhenOuterLead > 0
+                            && (below <= 114 || below == 115 && facts.WhenOuterLead >= 17)
+                            && facts.WhenOuterLead + 4 * below <= 487)) {
                         return ResolvedMode.Flat;
                     }
 
@@ -2571,17 +2580,73 @@ public sealed class Fitter {
             // SK-DIV-0399). Short of it the type arguments fill beside the `when`, the rest of the arm as it is under a
             // broken `when`. ⚠ Round 9: a lead through the first comma under 23 columns is not "always breaks", as round 8
             // left it — it breaks a few columns of body earlier, and `head·(body − 6) ≥ 550` is the bar no measured break
-            // falls under (6 239 arms behind heads 6 to 11: misses 1 112 → 455, none newly wrong). ⚠ Only for a
-            // condition that, on the line below, ends at column 120 or past it: one ending at 119 or before moves there
-            // whatever the body (the first fresh probe's four regressions, ending at 115 to 119), and one ending at
-            // exactly 120 still fills by the rule (the dense grid's 104-column conditions at indent 12).
+            // falls under (6 239 arms behind heads 6 to 11: misses 1 112 → 455, none newly wrong). Rounds 8 to 10 applied
+            // it only to a condition ending at 120 or past it on the line below; round 11 replaced that guard (below).
             var head = m.Column - lineStart;
+            // ⚠ Round 11: "a condition that fits on the line below moves there whatever the body" is refuted. What the
+            // oracle reads is the condition beside the `when`: one or two columns past the margin there it moves below
+            // (as an atom body's does); three or more and the product bar holds, the line below or not — `h + X ≥ 122`
+            // on every grid, heads 7 to 10 at conditions ending 112 to 115 below (53 rows of the fresh probes, none
+            // the other way). Where it fits below the bar is the product alone: the fill's first-line raise is for a
+            // condition that fills in both layouts.
             if (facts.WhenWideBody > 0
                 && facts.WhenLead > 0
                 && head < 12
                 && tail < Unbounded
-                && !Fits(m.ContinuationColumn, tail + 1)) {
-                return head * (facts.WhenWideBody - 6) >= (facts.WhenLead >= 23 ? 627 : 550);
+                && !Fits(m.Column, m.FlatWidth - 2)) {
+                if (head * (facts.WhenWideBody - 6) < (facts.WhenLead >= 23 ? 627 : 550)) {
+                    return false;
+                }
+
+                if (Fits(m.ContinuationColumn, tail + 1)) {
+                    return true;
+                }
+
+                // ⚠ Round 10: the bar rises with what the `when`'s line keeps of the condition when it fills there — the
+                // lead through the outer comma while the rest, through `() =>`, fits below by 117, else through the last
+                // type-argument break point. With the widths held fixed, the shape of the second argument (`T…`,
+                // `IReadOnlyList<T…>`, `IReadOnlyDictionary<int, T…>`) moves nothing where the fill takes the outer
+                // comma; the first line's width does, a third of a column of body per column up to a first line of 42,
+                // and the 1/head law holds with an offset: the `when` breaks only while
+                // `6·head·(body + 6) ≥ 3816 + 2·min(first, 42)·head` (three structure grids and 12 000 arms of eleven
+                // more, raising only: no row the oracle breaks falls under it). ⚠ Uncapped, the first fresh probe
+                // written after the rule found a 47-column lead the oracle breaks behind two columns under the bar.
+                // ⚠ Round 11: where the fill takes the outer comma and the condition ends by 146 below, the raise stops
+                // at a first line of 34 — the structure grid e1 saturates there (leads 26 to 38 flip at one body width),
+                // and 42 broke the `when` too late behind `var v when` for a 38-column lead (the coordinator's probe, seed
+                // 5769999) and a 36-column one (f576i). Past 34 the bar is reached strictly past `68·head`: rows of e1, e4
+                // and s576 sit on `6·head·(body + 6) − 3816 = 68·head` and fill. Past an end of 146 two rows of f576e
+                // with leads of 41 and 54 hold 42; any bound from 140 to 153 is clean on every grid.
+                var conditionEnd = m.ContinuationColumn + tail;
+                var inner = conditionEnd - facts.WhenLead + 2 > 117 && facts.WhenLastPoint > facts.WhenLead;
+                var first = inner ? facts.WhenLastPoint : facts.WhenLead;
+                var raise = inner || conditionEnd > 146 ? 2 * Math.Min(first, 42) * head
+                    : first > 34 ? 68 * head + 1
+                    : 2 * first * head;
+                if (6 * head * (facts.WhenWideBody + 6) < 3816 + raise) {
+                    return false;
+                }
+
+                // ⚠ Round 11: where the fill must take an inner `<` the bar rises with the condition's flat width, a
+                // column and a half of body per column of condition and one per column of lead, past a knee that moves
+                // with the head: `head·(2·body − 2·lead − 3·X + 658) ≥ 2960`, X the condition's end flat from the arm's
+                // own column. Measured on two structure grids (e4, e5: heads 6 to 11, conditions ending 128 to 184,
+                // leads 14 to 38, indents 12 and 20, 5 568 arms), where I and the condition's width move the flip
+                // identically and every rising edge lies on the line; on no grid does a row the oracle breaks fall
+                // under it. This is "how far the type arguments run past the margin" round 10 found on e2.
+                if (inner && head * (2 * facts.WhenWideBody - 2 * facts.WhenLead - 3 * conditionEnd + 670) < 2960) {
+                    return false;
+                }
+
+                // ⚠ And behind a one-column pattern (`X when`, `_ when`): round 10's "sixteen columns short of where
+                // the condition ends below" broke up to twenty columns of body too early once the condition ends past
+                // 124. Round 11: `2·body ≥ 3·end + 2·last − lead − 214`, the end being where the condition ends on the
+                // line below and `last` the condition through its last type-argument break point — the same column and
+                // a half of body per column, and a deeper second argument (`IReadOnlyDictionary<int, T…>` against
+                // `IReadOnlyList<T…>` against `T…`) raising it a column per column (254 arms behind `X when` and
+                // `_ when` on every grid: no row the oracle breaks under it, 20 the oracle fills over it).
+                return head > 6
+                    || 2 * facts.WhenWideBody >= 3 * conditionEnd + 2 * facts.WhenLastPoint - facts.WhenLead - 214;
             }
 
             return true;
@@ -2608,7 +2673,14 @@ public sealed class Fitter {
             // ⚠ And, before a body of fourteen columns or fewer, only while the condition, flat on the line below, runs
             // at most 13 columns past the margin, half a column more per column of body past five: wider, it fills
             // beside the `when`. Measured on bodies of four and eight; a wider body was always seen to break.
-            if (body <= 14 && tail < Unbounded && 2 * (m.ContinuationColumn + tail - width) > 26 + body - 5) {
+            // ⚠ Round 10: not from a body of eleven columns with its comma, behind a lead under 39 columns: there the
+            // `when` breaks however far past the margin the condition runs (the band grid e3, bodies of 9 to 16 and
+            // conditions 6 to 60 columns past at three heads, and 28 rows of the fresh probes, bodies of 14). The limit
+            // was measured at bodies of 5 and 9, so a body of 9 or 10 keeps it; leads of 39 or more both stop and break.
+            if (body <= 14
+                && tail < Unbounded
+                && 2 * (m.ContinuationColumn + tail - width) > 26 + body - 5
+                && !(body >= 11 && facts.WhenLead is > 0 and < 39)) {
                 return false;
             }
 
