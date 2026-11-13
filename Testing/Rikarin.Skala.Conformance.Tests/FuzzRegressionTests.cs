@@ -292,6 +292,11 @@ public sealed class FuzzRegressionTests {
     // resort and broke, but the line below filled `(IReadOnlyList<` first; pass two ended the tail at that kept break
     // and joined the `=`. A cast type of this shape no longer fills, as the oracle never does.
     [InlineData(18236595362986456582UL)]
+    // Found 2026-11-13 (fails on a2a6de72 too): `new[] { …, (77044 ? 1.5d : // fuzz` / `1.0m), … }`. Pass one filled
+    // `(77044` beside the element before it and broke its signs for the comment; pass two, those breaks kept, pinned
+    // both signs (#518), read the pins as unbounded in the element's draft and moved `(77044` down. A conditional's
+    // pinned sign now drafts as a space, as any kept break does, and the oracle keeps `…, (77044` either way.
+    [InlineData(14753277088141197568UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

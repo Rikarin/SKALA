@@ -3839,6 +3839,21 @@ public sealed partial class CSharpDocumentBuilder {
                                 ? DefaultNewLine()
                                 : FirstNewLine(gap) ?? DefaultNewLine()
                     );
+
+                    // ⚠ A conditional's sign is required to break only because a break the author wrote at one
+                    // of its signs pinned both (#518, #548), so the draft measure reads it as a space, as it
+                    // does every other kept break (Fuzz replay 14753277088141197568). `Aaaaaaaaaa, (b ? c : // x`
+                    // / `d)` in an array initializer fills `(b` beside the element before it, its signs broken
+                    // for the comment; pass two, finding those breaks kept, read the pins as unbounded and moved
+                    // `(b` down. The oracle keeps `Aaaaaaaaaa, (b` for every spelling of the conditional.
+                    if (IsAConditionalsSign(nextToken)
+                        && !previous.IsDirective
+                        && !(nextPieceIndex >= 0
+                            && nextPieceIndex < pieces.Length
+                            && pieces[nextPieceIndex].IsDirective)) {
+                        doc.FlagLastLine(LineFlags.KeptBreak);
+                    }
+
                     return;
             }
         }
@@ -3877,6 +3892,11 @@ public sealed partial class CSharpDocumentBuilder {
             doc.FlagLastLine(LineFlags.KeptBreak);
         }
     }
+
+    /// <summary>Whether <paramref name="token" /> is a conditional expression's <c>?</c> or <c>:</c>.</summary>
+    static bool IsAConditionalsSign(SyntaxToken token) =>
+        token.Parent is ConditionalExpressionSyntax conditional
+        && (token == conditional.QuestionToken || token == conditional.ColonToken);
 
     /// <summary>
     ///     Whether the block comments ending at <paramref name="lastPieceIndex" /> follow a non-empty array
