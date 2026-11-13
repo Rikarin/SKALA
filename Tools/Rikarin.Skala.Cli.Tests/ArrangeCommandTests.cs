@@ -281,6 +281,55 @@ public sealed class ArrangeCommandTests {
     }
 
     /// <summary>
+    ///     ⚠ #639, the issue's two files verbatim: a namespace whose only use is a qualified static
+    ///     receiver. The receiver is shortened through the using, so the using stays — before the fix the
+    ///     same pass also removed it, the rewrite did not bind (<c>CS0103</c>) and the file was refused
+    ///     with <c>SK9098</c>.
+    /// </summary>
+    [Fact]
+    public void Arrange_KeepsTheUsingAShortenedReceiverBindsThrough() {
+        using var scratch = new Scratch();
+        scratch.Write(
+            "Repro/Severity/ImportSeverity.cs",
+            """
+            namespace Repro.Severity;
+            public enum ImportSeverity { Info, Warning, Error }
+            """
+        );
+        var file = scratch.Write(
+            "Repro/Qualified.cs",
+            """
+            using Repro.Severity;
+
+            namespace Repro;
+
+            public static class Qualified {
+                public static bool IsError(int value) => value == (int)Repro.Severity.ImportSeverity.Error;
+            }
+            """
+        );
+        scratch.Write(
+            "Scratch.csproj",
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <TargetFramework>{ScratchTargetFramework.Current}</TargetFramework>
+                 <ImplicitUsings>disable</ImplicitUsings>
+               </PropertyGroup>
+             </Project>
+             """
+        );
+
+        var arranged = RunIn(scratch.Root, Command, "--load=workspace", file);
+
+        Assert.True(arranged.ExitCode == 0, arranged.StandardOutput + arranged.StandardError);
+        Assert.DoesNotContain("SK9098", arranged.StandardOutput, StringComparison.Ordinal);
+        var rewritten = File.ReadAllText(file);
+        Assert.Contains("using Repro.Severity;", rewritten, StringComparison.Ordinal);
+        Assert.Contains("value == (int)ImportSeverity.Error;", rewritten, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     ///     ⚠ #395: <c>verify</c> is <c>arrange --check</c> plus two other stages, under every load mode — the
     ///     same files reported, with the same rules, by both verbs.
     /// </summary>

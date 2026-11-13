@@ -36,24 +36,41 @@ public sealed class UsingsRule : ArrangementRule {
     /// </remarks>
     readonly ImmutableHashSet<string> removable;
 
-    /// <summary>
-    ///     ⚠ The directives a rule earlier in the same pass made necessary, which <see cref="removable" />
-    ///     — computed before the pass began — cannot know about (#460).
-    /// </summary>
-    /// <remarks>
-    ///     <see cref="QualifiedReferenceRule" /> shortens <c>System.Text.StringBuilder</c> to
-    ///     <c>StringBuilder</c>, and a <c>using System.Text;</c> that was unused until then is exactly
-    ///     what the short name now binds through. Removing it anyway is <c>CS0246</c> and a revert of the
-    ///     whole document; the oracle keeps it.
-    /// </remarks>
-    readonly IReadOnlySet<string> required;
-
-    public UsingsRule(ImmutableHashSet<string>? removable = null, IReadOnlySet<string>? required = null) {
+    public UsingsRule(ImmutableHashSet<string>? removable = null) {
         this.removable = removable ?? [];
-        this.required = required ?? ImmutableHashSet<string>.Empty;
     }
 
     public override string Id => ArrangeIds.Usings;
+
+    /// <summary>
+    ///     ⚠ <see cref="removable" /> is computed before the pass begins, so it cannot see a using that a
+    ///     rule earlier in the same pass made necessary.
+    /// </summary>
+    /// <remarks>
+    ///     A shortened name is exactly that: <c>System.Text.StringBuilder</c> ⇒ <c>StringBuilder</c>
+    ///     (<see cref="QualifiedReferenceRule" />, #460) or <c>Repro.Severity.ImportSeverity.Error</c> ⇒
+    ///     <c>ImportSeverity.Error</c> (<see cref="StaticQualifierRule" />, #639) binds through a using the
+    ///     input did not need. #460 had the shortening rule record the directives it relied on, which
+    ///     covered the one rule that recorded and left the other shortening — whose output is the same
+    ///     shape — deleting the using under it. The set is now narrowed against the tree as it stands.
+    /// </remarks>
+    public override bool DecidedBeforeThePass => !removable.IsEmpty;
+
+    /// <summary>
+    ///     The removable set intersected with what the rewritten tree still does not need.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Intersected, never replaced: <see cref="Unused" /> over this one model can call a directive
+    ///     unused that another target framework's compilation needs, and the caller's set already says
+    ///     which ones those are. A directive this narrowing keeps that a later pass finds unused after all
+    ///     is removed then — <c>ArrangementPipeline</c> recomputes the set from the text on every pass that
+    ///     arranged anything (SK-FUZZ-0018).
+    /// </remarks>
+    public override ArrangementRule Rebase(SemanticModel model, CancellationToken cancellation) {
+        var stillUnused = Unused(model, model.SyntaxTree, cancellation);
+        var narrowed = removable.Intersect(stillUnused);
+        return narrowed.Count == removable.Count ? this : new UsingsRule(narrowed);
+    }
 
     /// <summary>
     ///     ⚠ False. Sorting needs no semantics at all, and removal takes its answer from
@@ -266,8 +283,7 @@ public sealed class UsingsRule : ArrangementRule {
         if (directive.GlobalKeyword.IsKind(SyntaxKind.GlobalKeyword)
             || directive.StaticKeyword != default
             || !HasNoComment(directive)
-            || !removable.Contains(Key(directive))
-            || required.Contains(Key(directive))) {
+            || !removable.Contains(Key(directive))) {
             return false;
         }
 
