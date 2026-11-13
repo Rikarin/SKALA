@@ -1394,6 +1394,15 @@ public sealed class Document {
 ///     <see cref="LambdaTestCallHead" /> is the head through that call's <c>(</c>. The arrow breaks when it ends twelve
 ///     columns or more past the line's start and <c>6·k − 6·p + 8·h − 6·w − 8·i ≥ −564</c> (#618).
 /// </param>
+/// <param name="LambdaTestLaterCall">
+///     ⚠ With <see cref="LambdaTestCall" />: the broken test's operand ends in a call of two or more arguments that is
+///     not its first call — <c>open(x).Analyze(a, b)</c>, <c>ctx.Get().Value.Merge(a, b).First()</c>,
+///     <c>Find(a, b).Merge(c, d)</c> (#618, SK-DIV-0520 round two). Past the margin the arrow breaks when it ends twelve
+///     columns or more past the line's start and <c>12·k − 5·p + 2·i − w ≥ −112</c>, <c>k</c> the columns from the
+///     line's start to the outer call's name end, <c>p</c> the lambda's head, <c>i</c> the line's start and <c>w</c>
+///     the operand's width; otherwise the operand's other line decides, and with <see cref="LambdaTestCallHead" /> −2,
+///     where there is none, the arrow stays.
+/// </param>
 /// <param name="LambdaTestKept">
 ///     With <see cref="LambdaTestCall" />: the author broke inside the operand, which keeps the arrow whatever the
 ///     measured lines say — the oracle keeps `Throws(static () =&gt; Reading(` / the argument / `)` as written and
@@ -2020,6 +2029,7 @@ public readonly record struct GroupFacts(
     bool LambdaLinkedCallKept = false,
     int LambdaTestCallHead = 0,
     bool LambdaTestLinks = false,
+    bool LambdaTestLaterCall = false,
     bool LambdaTestKept = false,
     LambdaBodyKind LambdaBodyKind = LambdaBodyKind.BrokenTest,
     bool BreaksIfItOverflows = false,
