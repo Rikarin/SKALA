@@ -371,6 +371,15 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ A bare `(a + b…)` whose `=` the measured form breaks stays broken where its value runs past the
+                // margin below too, as pass one wrote it (#598, SK-DIV-0770).
+                if (facts.SourceBroken
+                    && facts.BareParenOperand > 0
+                    && HeadIsWideEnough(facts, m, lineStart)
+                    && BareParenEqualsBreaks(facts, m) == true) {
+                    return ResolvedMode.Broken;
+                }
+
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
                 }
@@ -439,6 +448,15 @@ public sealed class Fitter {
                     && m.Column + m.PointWidth + 1 + facts.ParenCloseEndInner == width + 1
                     && Fits(m.ContinuationColumn, facts.ParenCloseEnd)) {
                     return ResolvedMode.Broken;
+                }
+
+                // ⚠ A bare doubled `((a + b…))`, cast or not, by the single parenthesis's measured form two columns
+                // tighter (#598, SK-DIV-0770). See BareParenEqualsBreaks.
+                if (facts.BareParenDoubled
+                    && m.PointWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 + facts.BareParenWidth > width
+                    && BareParenEqualsBreaks(facts, m) is { } doubled) {
+                    return doubled ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
                 // ⚠ A local's `=` before an `is` over a positional pattern: broken whenever the line overflows
@@ -1129,6 +1147,15 @@ public sealed class Fitter {
                     // as the author's and broke the arrow. See GroupFacts.BreaksIfReceiverOverflows.
                     if (ReceiverOverflows(facts, m)) {
                         return ResolvedMode.Broken;
+                    }
+
+                    // ⚠ A bare `(a + b…)` or `(T)(a + b…)` behind a wide head, by its measured form (#598,
+                    // SK-DIV-0770).
+                    if (facts.BareParenOperand > 0
+                        && m.PointWidth < Unbounded
+                        && HeadIsWideEnough(facts, m, lineStart)
+                        && BareParenEqualsBreaks(facts, m) is { } bare) {
+                        return bare ? ResolvedMode.Broken : ResolvedMode.Flat;
                     }
 
                     return TailFits(m, tail + facts.TailSpare) && HeadIsWideEnough(facts, m, lineStart)
@@ -2191,6 +2218,53 @@ public sealed class Fitter {
     ///     the same for an expression body's arrow.
     /// </remarks>
     bool TailFits(in Measures m, int tail) => Fits(m.ContinuationColumn, tail, m.Trailing);
+
+    /// <summary>
+    ///     Whether the <c>=</c> before a bare <c>(a + b…)</c> or <c>(T)(a + b…)</c>, single or doubled, breaks behind a
+    ///     head of twelve columns or more; null where the measured form does not decide (#598, SK-DIV-0770).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> on six dense grids of 54 670 statements. The oracle does not answer
+    ///     by whether the value fits below, the collection rule this replaces. It answers by two things:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <b>The fragment the <c>=</c> would keep.</b> Let <c>n</c> be the width of what the <c>=</c> assigns: a
+    ///             local's name, or an assignment's whole target, never the type. Its weight is
+    ///             <c>w = min(n + 3, 69 − 2n)</c>.
+    ///             The <c>=</c> breaks whenever <c>3·min(a, 24) + 2·cast &lt; w</c>, where <c>a</c> is the first operand.
+    ///             That holds even when the value then overflows below, <c>=</c> / <c>(aa</c> / <c>+ b…);</c>. The threshold
+    ///             is the same at every line width, and the type does not count: <c>List&lt;int&gt; vvvvv =</c> keeps
+    ///             <c>(aaaa</c> beside it where <c>var vvvvvvvvvvvv =</c> breaks.
+    ///         </item>
+    ///         <item>
+    ///             <b>Past that, the parenthesis's end below.</b> Let <c>p</c> be the column the parentheses would end on
+    ///             below the <c>=</c>, without the cast. The <c>=</c> stays when <c>128·p + 49·min(a, 24) + 34·cast − 16·w</c>
+    ///             reaches 14 724. It breaks at 14 695 or less. Between those the collection rule still answers. Over the
+    ///             grids, the best single threshold misclassifies 21 rows, all at a fitted width of one column.
+    ///         </item>
+    ///     </list>
+    ///     A doubled parenthesis reads <c>p</c> two columns tighter. Its gate is 3 rather than 0, and its bounds are
+    ///     14 749 and 14 767. Where the inner or the outer <c>)</c> lands on column 121, the <c>ParenCloseEnd</c> rules
+    ///     answer first, as before.
+    /// </remarks>
+    static bool? BareParenEqualsBreaks(in GroupFacts facts, in Measures m) {
+        if (facts.BareParenWidth <= 0) {
+            return null;
+        }
+
+        var name = facts.BareParenName;
+        var first = Math.Min(facts.BareParenOperand, 24);
+        var cast = facts.BareParenCast;
+        var weight = Math.Min(name + 3, 69 - 2 * name);
+        if (3 * first + 2 * cast - weight < (facts.BareParenDoubled ? 3 : 0)) {
+            return true;
+        }
+
+        var parenthesis = m.ContinuationColumn + facts.BareParenWidth - cast - (facts.BareParenDoubled ? 2 : 0);
+        var v = 128 * parenthesis + 49 * first + 34 * cast - 16 * weight;
+        var (breaks, keeps) = facts.BareParenDoubled ? (14749, 14767) : (14695, 14724);
+        return v <= breaks ? true : v >= keeps ? false : null;
+    }
 
     /// <summary>Whether a cast's <c>)</c> breaks before a parenthesised operator (#598).</summary>
     /// <remarks>

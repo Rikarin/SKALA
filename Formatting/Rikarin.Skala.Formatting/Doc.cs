@@ -1989,6 +1989,26 @@ public sealed class Document {
 ///     ⚠ Columns a <see cref="BreaksOnlyIfTailFits" /> group's tail must leave free on the continuation line, kept
 ///     and added alike (#598): six for a typed local of a short type before a bare parenthesis, zero otherwise.
 /// </param>
+/// <param name="BareParenOperand">
+///     ⚠ For a local's or a plain assignment's <c>=</c> whose value is a parenthesis around a binary operator with no
+///     member after it, <c>(a + b…)</c>, <c>(T)(a + b…)</c> or doubled, the width of the operator's first operand, or
+///     zero (#598, SK-DIV-0770). See <c>Fitter.BareParenEqualsBreaks</c>.
+/// </param>
+/// <param name="BareParenCast">
+///     With <see cref="BareParenOperand" />: the cast's width through its <c>)</c>, <c>(T)</c> being three, or zero.
+/// </param>
+/// <param name="BareParenWidth">
+///     With <see cref="BareParenOperand" />: the value's flat width through its <c>;</c>, read from the formatted
+///     tokens so that a break pass one kept inside it does not move it.
+/// </param>
+/// <param name="BareParenName">
+///     With <see cref="BareParenOperand" />: the width of what the <c>=</c> assigns, a local's name or an assignment's
+///     whole target.
+/// </param>
+/// <param name="BareParenDoubled">
+///     With <see cref="BareParenOperand" />: the value is a doubled parenthesis, <c>((a + b…))</c>, behind a head of
+///     twelve columns or more, read by the same form two columns tighter.
+/// </param>
 /// <param name="CastParenFirst">
 ///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator, the whole value of a <c>return</c> or a
 ///     plain <c>=</c> (#598): the width of the operator's first operand, or zero. See
@@ -2272,7 +2292,12 @@ public readonly record struct GroupFacts(
     int HeldValueTarget = 0,
     int HeldValueTargetTail = 0,
     bool HeldValueTargetKept = false,
-    int WholeList = -1);
+    int WholeList = -1,
+    int BareParenOperand = 0,
+    int BareParenCast = 0,
+    int BareParenWidth = 0,
+    int BareParenName = 0,
+    bool BareParenDoubled = false);
 
 /// <summary>
 ///     What a local's <c>=</c> before a lambda with a bare-name body knows of its declaration (#558): the
