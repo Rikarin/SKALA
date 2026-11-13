@@ -118,7 +118,9 @@ public sealed partial class CSharpDocumentBuilder {
         return true;
     }
 
-    SpaceKind TokenGap(SyntaxToken previous, SyntaxToken next) =>
+    SpaceKind TokenGap(SyntaxToken previous, SyntaxToken next) => HoleGap(previous, next, options);
+
+    static SpaceKind HoleGap(SyntaxToken previous, SyntaxToken next, in PhaseOneOptions options) =>
         IsHoleBrace(previous, SyntaxKind.OpenBraceToken)
         || IsHoleBrace(next, SyntaxKind.CloseBraceToken)
         || IsAlignmentComma(previous)
@@ -126,6 +128,34 @@ public sealed partial class CSharpDocumentBuilder {
         || IsFormatColon(next)
             ? SpaceKind.Forbidden
             : SpaceRules.Decide(previous, next, options);
+
+    /// <summary>
+    ///     The space <see cref="RespacedInterpolatedString" /> writes between two adjacent tokens of one interpolated
+    ///     string — none against the string's own text, which touches its braces, and the hole's rules inside a
+    ///     hole; null when the gap is not inside an interpolated string, or the string is written verbatim.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ For <c>BreakPlan</c>'s widths, which asked <see cref="SpaceRules.Decide" /> alone and so counted a space
+    ///     between the string's text and a hole's brace and between a brace and a parenthesis that is never written.
+    ///     <c>$"value {(value is null ? 0 : 1)} and {state.Length}"</c>, 54 columns, read wider than a 60-column
+    ///     identifier that breaks the <c>=</c> in the same place, so the one-argument creation it sat in chopped where
+    ///     the oracle breaks the <c>=</c>; and pass two, the argument then on a line of its own and no longer a
+    ///     measured callee, broke it (fuzz 1052827977788418967).
+    /// </remarks>
+    internal static SpaceKind? GapInAnInterpolatedString(
+        SyntaxToken previous,
+        SyntaxToken next,
+        in PhaseOneOptions options
+    ) {
+        if (options.DisableSpaceChanges
+            || next.Parent is null
+            || !next.Parent.AncestorsAndSelf()
+                .Any(node => node is InterpolatedStringExpressionSyntax && node.SpanStart <= previous.SpanStart)) {
+            return null;
+        }
+
+        return InsideAHole(previous, next) ? HoleGap(previous, next, options) : SpaceKind.Forbidden;
+    }
 
     SpaceKind AfterACommentInAHole(SyntaxToken previous, SyntaxToken next) {
         if (IsHoleBrace(next, SyntaxKind.CloseBraceToken)) {

@@ -7883,7 +7883,10 @@ public sealed class BreakPlan {
     ///     <c>Review /* f */&gt;</c>: the rules' space, and each comment with one space before it.
     /// </remarks>
     int GapWidth(SyntaxToken previous, SyntaxToken token) {
-        var width = SpaceRules.Decide(previous, token, options) switch {
+        // ⚠ Inside an interpolated string, the space the builder's respacing writes (fuzz 1052827977788418967). See
+        // CSharpDocumentBuilder.GapInAnInterpolatedString.
+        var width = (CSharpDocumentBuilder.GapInAnInterpolatedString(previous, token, options)
+            ?? SpaceRules.Decide(previous, token, options)) switch {
             SpaceKind.Required => 1,
             SpaceKind.Forbidden => 0,
             _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
