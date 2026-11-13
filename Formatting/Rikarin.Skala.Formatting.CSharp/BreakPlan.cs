@@ -333,6 +333,12 @@ public sealed class BreakPlan {
     readonly Dictionary<long, int> whenLifts = [];
 
     /// <summary>
+    ///     The planned gap after an arm's <c>when</c>, keyed by its <c>when</c> clause, allocated when the arm is planned
+    ///     so that the arm's body group can name it (#576 round 9, <see cref="GroupFacts.ArmQueryWhenGap" />).
+    /// </summary>
+    readonly Dictionary<long, int> whenGaps = [];
+
+    /// <summary>
     ///     The group each <see cref="HeldLevel.WhileArrowFlat" /> or <see cref="HeldLevel.WhileGroupBroken" /> hold
     ///     is decided by: a sole lambda's arrow, or the gap after an <c>is</c>.
     /// </summary>
@@ -1063,6 +1069,10 @@ public sealed class BreakPlan {
 
             case OrderByClauseSyntax { Orderings.Count: > 1 } orderBy:
                 PlanOrderings(orderBy);
+                return;
+
+            case FromClauseSyntax { Type: null } from:
+                PlanFromClause(from);
                 return;
 
             case SwitchExpressionArmSyntax arm:
@@ -6498,6 +6508,48 @@ public sealed class BreakPlan {
         );
     }
 
+    /// <summary>
+    ///     A <c>from</c> clause's own gaps — after <c>from</c>, before <c>in</c>, after <c>in</c> — a fill one
+    ///     continuation level past the query's clauses (#576 round 9, SK-DIV-0399).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> on 600 queries in six positions (a local's value, a
+    ///     <c>return</c>, an argument, a parenthesised query under <c>.ToList()</c>, a switch arm's body, a lambda's
+    ///     body): wherever the clause does not fit, the oracle keeps what fits and breaks there —
+    ///     <c>from item in</c> / the collection a level past <c>where</c>, and on #576's arms <c>(from item</c> /
+    ///     <c>in items</c> and <c>(from</c> / <c>item in items</c> — the same in every position. Skala had no point
+    ///     inside the clause and ran it past the margin.
+    /// </remarks>
+    void PlanFromClause(FromClauseSyntax node) {
+        var group = NewGroup();
+        var pins = options.KeepsUserBreaksBetweenItems;
+        var broken = PlanItemGap(node.Identifier, group, true, pins, true);
+        broken |= PlanItemGap(node.InKeyword, group, true, pins, true);
+        broken |= PlanItemGap(FirstToken(node.Expression), group, true, pins, true);
+
+        // ⚠ The collection goes a level past the query's clauses. Where the query starts its line (`=` / `from …`, an
+        // argument chopped), they sit on `from`'s column and the clause's own level is the one. Where it is the
+        // parenthesised body of an arm, `.ToList()`'s receiver or a `return`'s value, the clauses already sit a level
+        // past `from`'s line and the collection two: the statement's level, which nothing has spent, and the clause's
+        // own. Measured on all six positions of the probe; with one level the `return` and parenthesised rows put the
+        // collection on `where`'s column.
+        var twoLevels = node.Parent is QueryExpressionSyntax { Parent: var holder } query
+            && query.FromClause == node
+            && holder is ParenthesizedExpressionSyntax or ReturnStatementSyntax;
+        Describe(
+            node,
+            new(
+                group,
+                GroupMode.Preserve,
+                new(pins && broken, BreaksIfTooLong: true),
+                true,
+                OwnLevel: true,
+                SpendsUnderDelimiters: twoLevels,
+                UnconditionalLevel: twoLevels
+            )
+        );
+    }
+
     void PlanAroundEquals(SyntaxNode node, SyntaxToken equals, ExpressionSyntax value) {
         if (equals.IsKind(SyntaxKind.None)) {
             return;
@@ -9010,7 +9062,17 @@ public sealed class BreakPlan {
         // braces in the pattern. Measured 2026-10-14 with `Testing ask` on 300 generated arms. The lift is decided
         // ahead, as the arrow's is (GroupFacts.LiftsIfWhenBreaks); a break the author kept there lifts outright,
         // which is pass one's answer read back.
-        if (!kept && !keptAfter && arm.WhenClause is { } gap && IsAPlannedWhenGap(gap)) {
+        // ⚠ Not over a parenthesised body the author broke before its `)` (fuzz 3427174854403582517): the oracle puts
+        // that `)` on the condition's own line level, `=> (value is not null` / `)`, under the `when` gap's break kept
+        // or added. Under the lift Skala added, the parenthesis spent a level of its own past the uncounted lift and the
+        // `)` landed a level deeper; pass two, reading the gap as kept, put it back.
+        if (!kept
+            && !keptAfter
+            && arm.WhenClause is { } gap
+            && IsAPlannedWhenGap(gap)
+            && !(arm.Expression is ParenthesizedExpressionSyntax body
+                && options.KeepsUserBreaksBetweenItems
+                && BreaksBefore(body.CloseParenToken))) {
             var gapLift = NewGroup();
             var keptGap = options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(gap.Condition));
             if (!keptGap) {
@@ -9052,7 +9114,14 @@ public sealed class BreakPlan {
                     BreaksOnlyIfHeadOverflows: true,
                     Continues: opensAtPattern,
                     LiftsThroughInnerBreaks: opensAtPattern && arm.WhenClause is not null,
-                    LiftGroup: widthLift
+                    LiftGroup: widthLift,
+                    // ⚠ Asked again on the lifted line (#576 round 9). See GroupFacts.ArrowRecheckedAfterLift.
+                    ArrowRecheckedAfterLift: !kept
+                    && arm.WhenClause is { } typeArgumentsWhen
+                    && IsAPlannedWhenGap(typeArgumentsWhen)
+                    && typeArgumentsWhen.Condition.DescendantNodes().Any(static node => node is TypeArgumentListSyntax)
+                    // Not under a `when` gap the author kept, which the arrow's lift moves no line of either.
+                    && !(options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(typeArgumentsWhen.Condition)))
                 ),
                 true,
                 !opensAtPattern,
@@ -9076,6 +9145,9 @@ public sealed class BreakPlan {
                 BreaksIfTooLong: true,
                 ArmBodyTrail: arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0,
                 ArmBodyDot: BreaksAtItsOwnDot(arm, arm.Expression),
+                ArmQueryBody: kept ? 0 : ArmQueryBodyWidth(arm.Expression),
+                ArmQueryHead: kept ? 0 : ArmQueryHeadWidth(arm.Expression),
+                ArmQueryWhenGap: kept || ArmQueryBodyWidth(arm.Expression) == 0 ? -1 : PlannedWhenGapOf(arm),
 
                 // ⚠ Not under a body the arrow group holds the level for, which a kept break after the arrow
                 // does not lift either (keptAfter).
@@ -9141,6 +9213,43 @@ public sealed class BreakPlan {
         };
         return head == 0 ? 0 : Math.Max(1, head - casts);
     }
+
+    /// <summary>
+    ///     The formatted width of an arm's body that is a parenthesised query whose first clause can fill, or zero
+    ///     (#576 round 9). See <see cref="GroupFacts.ArmQueryBody" />.
+    /// </summary>
+    int ArmQueryBodyWidth(ExpressionSyntax body) =>
+        body is ParenthesizedExpressionSyntax { Expression: QueryExpressionSyntax { FromClause.Type: null } }
+            ? FormattedWidth(body)
+            : 0;
+
+    /// <summary>
+    ///     The group of an arm's planned <c>when</c> gap, allocated here for the <c>when</c> clause to use; −2 for a gap
+    ///     the author broke, which is always broken; −1 for none. See <see cref="GroupFacts.ArmQueryWhenGap" />.
+    /// </summary>
+    int PlannedWhenGapOf(SwitchExpressionArmSyntax arm) {
+        if (arm.WhenClause is not { } when || !IsAPlannedWhenGap(when)) {
+            return -1;
+        }
+
+        if (options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(when.Condition))) {
+            return -2;
+        }
+
+        if (!whenGaps.TryGetValue(Key(when), out var gap)) {
+            whenGaps[Key(when)] = gap = NewGroup();
+        }
+
+        return gap;
+    }
+
+    /// <summary>The width of such a body's <c>(from item</c>, or zero. See <see cref="GroupFacts.ArmQueryHead" />.</summary>
+    int ArmQueryHeadWidth(ExpressionSyntax body) =>
+        body is ParenthesizedExpressionSyntax {
+            Expression: QueryExpressionSyntax { FromClause: { Type: null } from }
+        } paren
+            ? FormattedWidth(paren.OpenParenToken, from.Identifier)
+            : 0;
 
     /// <summary>
     ///     Whether an arm's `when` clause lifts from the arm's pattern under a broken arrow: every one, a type
@@ -9974,7 +10083,7 @@ public sealed class BreakPlan {
             if (options.KeepsUserBreaksBetweenItems && BreaksBefore(condition)) {
                 Mandatory(condition);
             } else {
-                var after = NewGroup();
+                var after = whenGaps.TryGetValue(Key(node), out var planned) ? planned : NewGroup();
                 Point(condition, after);
                 Describe(
                     node.Condition,
