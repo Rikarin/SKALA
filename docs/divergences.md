@@ -14171,6 +14171,69 @@ argument (which is worse than the whole list, 916 against 950 on K). The patch i
 - hugged calls with links, whose arguments the oracle indents two levels;
 - a one-line test under a broken arrow that still overflows.
 
+**#620 round, 2026-11-13: measured, nothing wired.** `open(x).Analyze(a, b)` under a broken test is now SK-DIV-0520 round
+two's. The data comes from four probes written by one script with `Testing ask`:
+
+- **G** (seed 62001, 1 200 members): 600 for each of the two classes below, under ten tests.
+- **S, F and I** (seeds 61801, 61877 and 61944): 100 to 150 members of each class.
+
+Master is `afad8cb8b`.
+
+**A first call of two or more arguments with links after it, no test** (`Use(x => Head(a, b, c).Name.Length)`). ⚠ The
+oracle keeps the arrow whenever the first call, through its `)`, does not fit on the line below. That held in 398 of
+402 members past the margin across the four probes: G 244 of 247, S 60 of 61, F 52 of 52, I 42 of 42. This is the
+clean half of the "`Normalize(` keeps where the line overflows far" item above, and it is not a width threshold. Master
+gets **none** of those 398 exactly right:
+
+- It breaks the arrow over 210 of them.
+- Over the other 188 it keeps the arrow but writes the arguments, the `)` and the links all one level past the line.
+  The oracle writes the arguments two levels past the line and the `)` and links one, the "hugged call" item above.
+
+The oracle stacks the same way under a broken arrow. Its one such member on G, `Run((a, b) =>` / `this.m.Get(`, puts
+the arguments two levels past the body's line and the `)` and links one.
+
+So the arrow rule alone would only trade one wrong layout for another, and it needs the layout first. ⚠ **Refuted as
+the way in:**
+
+- Giving the chain's level `AdditiveLevel` (as `IsAStackedTypeTestsOperand` does) changed no member of G, S or I.
+- Setting `AdditiveLevel` on the first call's argument-list plan after the walk also changed nothing. The plan was
+  reached (checked on a one-member file), but an argument list's level is not opened through `OpenContinuation`. The
+  delimited visitor in `CSharpDocumentBuilder` collapses it into the chain's `FromLine` level, one level per opening
+  line.
+
+The change belongs there and was not attempted.
+
+**A one-line test whose operand is a one-argument call that does not fit on the line below**
+(`Use(x => Head(arg) is T)`, `LambdaBodyKind.InlineTest`). Master always breaks the arrow here. On G the oracle keeps it
+over 178 of 451 members past the margin. ⚠ **What decides it is mostly the test**, and a narrower test keeps:
+
+| test | oracle keeps |
+|---|---:|
+| `as Node` | 47 of 50 |
+| `is null` | 39 of 46 |
+| `is not null` | 30 of 53 |
+| `is not { }` | 28 of 44 |
+| `is SyntaxNode` | 10 of 31 |
+| `is not SyntaxNode` | 10 of 44 |
+| `as INamedTypeSymbol` | 5 of 46 |
+| `is SyntaxNode node` | 3 of 32 |
+| `is { IsStatic: true }` | 2 of 48 |
+| `is IMethodSymbol { IsStatic: true }` | 4 of 57 |
+
+Within one test, a narrow call head (`Open(`, `Bind(`) with a short parameter list breaks, and a wide one keeps. The
+best line, fitted on G, breaks when `3·k − 5·p − 6·h − g + 12·t − 3·i ≥ −64`. Here `h` is the head through `(`, `g` the
+argument's width and `t` the test's width with its space. Its arrow agrees with the oracle in:
+
+| probe | the line | master |
+|---|---:|---:|
+| G | 402 of 451 | 273 |
+| S | 95 of 107 | 77 |
+| F | 58 of 66 | 43 |
+
+⚠ **Not wired.** Every member it keeps where the oracle breaks is newly wrong, and there are 27, 8 and 3 such members on
+G, S and F. Raising the line until none are newly wrong (−200) leaves 13 members fixed on G and 0 on S and F. The kept
+layout under such a test (`=> Head(` / the argument two levels in / `) is T`) was not checked against the oracle here.
+
 - options: none.
 - status: **open** (#618, #620).
 
