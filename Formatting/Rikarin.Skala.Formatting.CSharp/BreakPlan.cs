@@ -3851,12 +3851,13 @@ public sealed class BreakPlan {
     ///     instead.
     /// </remarks>
     void PlanPropertyFill(SyntaxNode root) {
-        if (TrailingProperty(root) is null || !PlansTheFill(root)) {
+        var lambdaTested = IsASoleLambdasBrokenTestedProperty(root);
+        if (!lambdaTested && (TrailingProperty(root) is null || !PlansTheFill(root))) {
             return;
         }
 
         var dots = new List<SyntaxToken>();
-        Walk(root);
+        Walk(root is InvocationExpressionSyntax { Expression: var called } && lambdaTested ? called : root);
         if (dots.Count == 0) {
             return;
         }
@@ -3921,7 +3922,8 @@ public sealed class BreakPlan {
                 ),
                 HeadSharesTheLevelAroundIt(root),
                 OwnLevel: !HeadSharesTheLevelAroundIt(root) && !fromLine,
-                FromLine: fromLine
+                FromLine: fromLine,
+                AdditiveLevel: IsASoleLambdasBrokenTestedProperty(root)
             )
         );
 
@@ -4032,7 +4034,8 @@ public sealed class BreakPlan {
     }
 
     bool PlansTheFill(SyntaxNode root) =>
-        root.Parent switch {
+        IsASoleLambdasBrokenTestedProperty(root)
+        || root.Parent switch {
             AssignmentExpressionSyntax assignment when assignment.Left == root => true,
             BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == root => TypeTestTail(root) > 0,
             IsPatternExpressionSyntax test when test.Expression == root => false,
@@ -4044,6 +4047,27 @@ public sealed class BreakPlan {
                 FlatSourceWidth(root) + WidthOfNext(arm, SyntaxKind.CommaToken) > 14,
             _ => true
         };
+
+    /// <summary>
+    ///     Whether <paramref name="root" /> is a property chain — no call on it but, at most, one of no arguments at its
+    ///     end — that a sole lambda's whole body tests with a type test the author broke before its keyword (#618,
+    ///     SK-DIV-0520 round three). Its dots fill: the last that fits, two levels past the line it starts on, the test
+    ///     one — under the arrow broken or kept — where the fill was never planned under a type test and the chain ran
+    ///     past the margin whole.
+    /// </summary>
+    bool IsASoleLambdasBrokenTestedProperty(SyntaxNode root) {
+        if (root.Parent is not ExpressionSyntax { Parent: LambdaExpressionSyntax lambda } body
+            || BrokenTestedOperandOf(lambda, body) != root) {
+            return false;
+        }
+
+        var chain = root is InvocationExpressionSyntax {
+            ArgumentList.Arguments.Count: 0, Expression: MemberAccessExpressionSyntax called
+        }
+            ? called
+            : root;
+        return !chain.DescendantNodesAndSelf().Any(static node => node is InvocationExpressionSyntax);
+    }
 
     /// <summary>
     ///     The outermost link of a chain when it is a property — a member access or a <c>?.</c> binding
@@ -5106,7 +5130,15 @@ public sealed class BreakPlan {
             new(
                 group,
                 GroupMode.Preserve,
-                new(whole, BreaksIfTooLong: true),
+                // ⚠ Held against a sole lambda's operand, the operand's list nests from the `is`'s line as a type
+                // test's does (#618): `Use(x =>` / `call(` / the argument two levels past the call / `)` /
+                // `is { … }` one, where `Continues` off wrote the argument one level in and the `)` on the call's
+                // column.
+                new(
+                    whole,
+                    BreaksIfTooLong: true,
+                    Continues: heldAgainst is not null && BreaksBefore(node.IsKeyword)
+                ),
                 FromLine: !IsAHeaderCondition(node) && heldAgainst is null,
                 OwnLevel: heldAgainst is not null,
                 HoldsLevel: heldAgainst is not null ? HeldLevel.WhileArrowFlat : HeldLevel.None
@@ -9195,15 +9227,36 @@ public sealed class BreakPlan {
         || ArrowWinsOverTheChain(lambda)
             ? facts
             : facts.LambdaTestCall > 0
-                ? facts with { LambdaTestLaterCall = true }
+                ? facts with { LambdaTestLaterCall = true, LambdaTestFirstCall = FirstCallWidth(operand) }
                 : new GroupFacts(
                     BreaksIfTooLong: true,
                     LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                     LambdaTestCall: FormattedWidth(operand),
                     LambdaTestKept: HasLineBreakIn(operand),
                     LambdaTestCallHead: -2,
-                    LambdaTestLaterCall: true
+                    LambdaTestLaterCall: true,
+                    LambdaTestFirstCall: FirstCallWidth(operand)
                 );
+
+    /// <summary>
+    ///     The width of <paramref name="operand" /> through its first call's <c>)</c>, or its whole width where it has
+    ///     no call (#618, <see cref="GroupFacts.LambdaTestFirstCall" />).
+    /// </summary>
+    int FirstCallWidth(ExpressionSyntax operand) {
+        InvocationExpressionSyntax? first = null;
+        for (var spine = operand; spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax;) {
+            if (spine is InvocationExpressionSyntax invocation) {
+                first = invocation;
+                spine = invocation.Expression;
+            } else {
+                spine = ((MemberAccessExpressionSyntax)spine).Expression;
+            }
+        }
+
+        return first is null
+            ? FormattedWidth(operand)
+            : FormattedWidth(operand.GetFirstToken(), first.ArgumentList.CloseParenToken);
+    }
 
     /// <summary>
     ///     <paramref name="facts" /> with <see cref="GroupFacts.LambdaLinkedCall" /> set where the body is a
@@ -9252,7 +9305,9 @@ public sealed class BreakPlan {
                                 linked.GetFirstToken(),
                                 firstCall.ArgumentList.OpenParenToken
                             ),
-                            LambdaTestLinks: true
+                            LambdaTestLinks: true,
+                            LambdaTestArgument: FormattedWidth(firstCall.ArgumentList) - 2,
+                            LambdaTestFirstLink: FirstLinkWidth(firstCall)
                         )
                         : TestedOperandOfASoleLambda(lambda, body) is { } testedOperand
                             ? new GroupFacts(
@@ -9260,7 +9315,18 @@ public sealed class BreakPlan {
                                 LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
                                 LambdaTestCall: FormattedWidth(testedOperand),
                                 LambdaTestKept: HasLineBreakIn(testedOperand),
-                                LambdaTestCallHead: -1
+                                LambdaTestCallHead: -1,
+                                LambdaTestProperties: !testedOperand.DescendantNodesAndSelf()
+                                    .Any(static node => node is InvocationExpressionSyntax),
+                                LambdaTestArgument: OnlyCallOf(testedOperand) is { } only
+                                    ? FormattedWidth(only.ArgumentList) - 2
+                                    : 0,
+                                LambdaTestArgumentHead: OnlyCallOf(testedOperand) is { } onlyHead
+                                    ? FormattedWidth(
+                                        testedOperand.GetFirstToken(),
+                                        onlyHead.ArgumentList.OpenParenToken
+                                    )
+                                    : 0
                             )
                             : IsAFilledSoleLambda(lambda, body)
                                 ? new GroupFacts(
@@ -9613,9 +9679,18 @@ public sealed class BreakPlan {
     ///     <c>Find(a, b).Merge(c, d)</c> (#618, <see cref="GroupFacts.LambdaTestLaterCall" />).
     /// </summary>
     static bool IsALaterCallOfTwoOrMore(ExpressionSyntax operand) {
+        // ⚠ A trailing link that is a call of no arguments — `.First()` in the summary's own example — hangs off the
+        // call as a property does (round three): the code read it as the last call, which left
+        // `this.cache.Read(a, b).Merge(c, d)` / `.First()` to the first call's line. Round three's lines for that line
+        // break most such members anyway; this decides the rest (one member of probe D, behind `Run(`).
         var last = operand;
-        while (last is MemberAccessExpressionSyntax access) {
-            last = access.Expression;
+        while (last is MemberAccessExpressionSyntax
+               or InvocationExpressionSyntax {
+                   ArgumentList.Arguments.Count: 0, Expression: MemberAccessExpressionSyntax
+               }) {
+            last = last is MemberAccessExpressionSyntax access
+                ? access.Expression
+                : ((InvocationExpressionSyntax)last).Expression;
         }
 
         if (last is not InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 } call) {
@@ -9659,7 +9734,42 @@ public sealed class BreakPlan {
             spine = access.Expression;
         }
 
-        return spine is InvocationExpressionSyntax { ArgumentList.Arguments.Count: <= 1 } ? operand : null;
+        return spine is InvocationExpressionSyntax { ArgumentList.Arguments.Count: <= 1 }
+            || IsASoleLambdasBrokenTestedProperty(operand)
+                ? operand
+                : null;
+    }
+
+    /// <summary>
+    ///     The width of the link after <paramref name="call" />'s <c>)</c> — <c>.Name</c>, <c>.First()</c> — or zero
+    ///     (#618, <see cref="GroupFacts.LambdaTestFirstLink" />).
+    /// </summary>
+    int FirstLinkWidth(InvocationExpressionSyntax call) {
+        if (call.Parent is not MemberAccessExpressionSyntax link || link.Expression != call) {
+            return 0;
+        }
+
+        SyntaxNode end = link.Parent is InvocationExpressionSyntax invoked && invoked.Expression == link
+            ? invoked
+            : link;
+        return FormattedWidth(link.OperatorToken, end.GetLastToken());
+    }
+
+    /// <summary>
+    ///     An operand's only call where it has exactly one, of one argument, with nothing but properties after it —
+    ///     <c>Resolve(a)</c>, <c>this.cache.Read(a).Value</c> — or null (#618,
+    ///     <see cref="GroupFacts.LambdaTestArgument" />).
+    /// </summary>
+    static InvocationExpressionSyntax? OnlyCallOf(ExpressionSyntax operand) {
+        var spine = operand;
+        while (spine is MemberAccessExpressionSyntax access) {
+            spine = access.Expression;
+        }
+
+        return spine is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 1 } call
+            && !call.Expression.DescendantNodesAndSelf().Any(static node => node is InvocationExpressionSyntax)
+                ? call
+                : null;
     }
 
     /// <summary>

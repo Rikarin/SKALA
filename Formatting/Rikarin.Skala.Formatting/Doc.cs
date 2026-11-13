@@ -1409,6 +1409,41 @@ public sealed class Document {
 ///     breaks the arrow over the same call written flat (#620, group C's probe of eleven members, every class). It is
 ///     also pass two's answer to pass one's chop.
 /// </param>
+/// <param name="LambdaTestArgument">
+///     ⚠ With <see cref="LambdaTestCall" /> and <see cref="LambdaTestCallHead" /> −1: the operand is one call of one
+///     argument with only properties after it — <c>Use(x =&gt; Resolve(a…)</c> / <c>is T)</c>,
+///     <c>this.cache.Read(a…).Value</c> — and this is the argument's width, or zero (#618, SK-DIV-0520 rounds three and
+///     four). With <c>c</c> the columns from the line's start through the outer call's <c>(</c> — the head width the
+///     oracle weighs — <c>t</c> the properties after the call, <c>p</c> the lambda's parameters, <c>h</c>
+///     <see cref="LambdaTestArgumentHead" /> and <c>s = 5·(c + t) − 3·(p + h)</c>, the arrow stays where the argument's
+///     line under the kept arrow, <c>e = i + 8 + a</c>, reaches column 114 and <c>s &lt; 7</c>, or falls short of it and
+///     <c>s − 7·e &lt; −795</c>.
+/// </param>
+/// <param name="LambdaTestArgumentHead">
+///     With <see cref="LambdaTestArgument" />: the call's head through its <c>(</c>.
+/// </param>
+/// <param name="LambdaTestFirstLink">
+///     ⚠ With <see cref="LambdaTestLinks" />: the first link after the first call — <c>.Name</c>, <c>.First()</c> —
+///     with <see cref="LambdaTestArgument" /> the width inside that call's parentheses (#618, SK-DIV-0520 rounds three
+///     and four). With <c>e = i + 4 + f</c>, where the first call would end a level in, and the head score
+///     <c>g = 9·c + 2·i − 2·p</c>, the arrow breaks where <c>e &lt; 96</c> and <c>g ≥ 20</c>, <c>e &lt; 100</c> and
+///     <c>g ≥ 40</c>, <c>e &lt; 105</c> and <c>g ≥ 160</c>, or <c>e &lt; 111</c> and <c>g ≥ 220</c>. Behind a head of six
+///     columns or more it also breaks where <c>call(…).Link</c> at the line's start plus five ends before column 113,
+///     the arguments' line under a kept arrow, <c>i + 8 + a</c>, before 104, and <c>5·(c + t) − 3·(p + h) ≥ 70</c>; or
+///     where that score less seven times the arguments' line is at least −630.
+/// </param>
+/// <param name="LambdaTestFirstCall">
+///     ⚠ With <see cref="LambdaTestLaterCall" />: <c>f</c>, the operand through its first call's <c>)</c> —
+///     <c>Lookup(a)</c> in <c>Lookup(a).Merge(b, c)</c> (#618, SK-DIV-0520 round four). In
+///     <see cref="LambdaTestArgument" />'s terms the arrow stays where <c>f ≥ 22</c>, <c>9·c + 2·i − 2·p &lt; 28</c>
+///     and the operand overflows beside the arrow by ten columns or more, and breaks where
+///     <c>9·c + 2·i − 3·p − f ≥ −5</c>; elsewhere round two's line decides.
+/// </param>
+/// <param name="LambdaTestProperties">
+///     ⚠ With <see cref="LambdaTestCallHead" /> −1: the operand is a property chain with no call on it (#618,
+///     SK-DIV-0520 round four). Its arrow stays, the chain filling beside it, where it overflows beside the arrow by
+///     ten columns or more and <c>9·c + 2·i − 2·p &lt; 35</c>, in <see cref="LambdaTestArgument" />'s terms.
+/// </param>
 /// <param name="LambdaLinkedCall">
 ///     ⚠ The arrow of a sole lambda argument whose whole body is a call of one argument with links after it —
 ///     <c>Use(x =&gt; Analyze(a).Value)</c>, <c>this.model.Get(a).ToList()</c> — and no type test: that call's width
@@ -2042,6 +2077,11 @@ public readonly record struct GroupFacts(
     bool LambdaTestLinks = false,
     bool LambdaTestLaterCall = false,
     bool LambdaTestKept = false,
+    int LambdaTestArgument = 0,
+    int LambdaTestArgumentHead = 0,
+    int LambdaTestFirstLink = 0,
+    int LambdaTestFirstCall = 0,
+    bool LambdaTestProperties = false,
     LambdaBodyKind LambdaBodyKind = LambdaBodyKind.BrokenTest,
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
