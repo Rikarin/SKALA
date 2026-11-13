@@ -14508,6 +14508,34 @@ of 26 to 40 grid was built for it, and the form became `s`.
 
 - status: **partially fixed**, pinned by `CastParenBehindAWideHeadIssue598Tests`.
 
+⚠ **Round 7 (2026-11-13): measured, not wired. The residue is a call with arguments or a property, not the `=`.**
+Rounds 5 and 6 measured `.M()`, `.Trim()`, `.ToUpperInvariant()` and `.GetEnumerator()`, calls with no arguments.
+A random probe was then run with `Testing ask` (seed 61207, 4 000 statements). It used eight heads (`return`
+included), five casts or none, four operators, first operands of 2 to 34, lines of 116 to 140 and indents 8 to 20, and
+it added `.Select(x)`, `.M(aaaa, bbbb)` and `.Length`. The misses split by the member after the parenthesis:
+
+| after the `)` | cast: apart / statements | uncast: apart / statements |
+|---|---:|---:|
+| a call with no arguments | 87 / 1 890 | 79 / 414 |
+| `.Select(x)` | 205 / 477 | 25 / 100 |
+| `.M(aaaa, bbbb)` | 200 / 450 | 24 / 107 |
+| `.Length` | 149 / 468 | 21 / 94 |
+
+- **Why.** `BreakPlan.IsACallOnAParenthesisedOperator` admits a call with no arguments only. So under a cast,
+  `CastOverAParenthesisedCall` hands nothing to the held call, and the parentheses break inside. The largest single
+  class is the oracle's `=` / `(T)(a + b…).Select(x);` (109), and then the same with `.Length` (80).
+- **Tried and reverted.**
+  - Admitting one argument fixed `.Select(x)` under a cast: 205 → 41 apart. It newly diverged 12 statements. Each
+    was a line whose `(` still fits, where the oracle chops `x` and Skala then broke the dot.
+  - A dot rule to match ("an argument keeps its dot while its `(` fits") read the call's width from `tail`. That is
+    not the call's width under every planner that sets `ParenReceiver`: no-argument calls and `.Length` broke too,
+    with 239 newly diverging statements and 17 that took two passes.
+  - Neither is in the tree. The next round needs the call's own head and argument count as facts, not `tail`.
+- ⚠ This round's commits for #446 (`Fitter.OneOverMovesTheDot`) and #619 (`Fitter.HeldLambdaLine`) were measured on
+  this probe too, and leave it unchanged: 3 210 of 4 000 on master and on the branch.
+- status: unchanged, **partially fixed**. **Open**: calls with arguments and properties after a parenthesised operator,
+  with or without a cast; and the earlier open items above.
+
 ## SK-DIV-0565 — a held single call behind a parenthesised receiver that is no operator: the dot's level
 
 ⚠ **Found by the fuzzer (#627, seed 6141772401922034799, `real/vixen/Core/Vixen.Terrain.Tests/TerrainBrushTests.cs`),
