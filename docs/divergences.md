@@ -14079,8 +14079,113 @@ tests fail; with the stacking off, 1 does.
 - The open items above. That includes the one-argument call too wide for the line below (t3), which this probe's
   data repeats: the oracle keeps the arrow over 18 to 41 such members per probe where Skala breaks it.
 
-- status: **partly resolved** (#618): the three classes above, pinned by `SoleLambdaTestArrowIssue618Tests`, and the later
-  call of two or more (round two), pinned by `SoleLambdaTestLaterCallArrowIssue618Tests`; the rest **open**.
+**#618 round three (2026-11-13): two of the open classes were never about the arrow.** Measured with `Testing ask` on
+eight probes of 2 400 members from one generator (seeds 74001–74004, 74555, 74777, 74901, 74902; eight operand classes,
+nine statement kinds, ten parameter lists, indents 8 to 20, two vocabularies of callees, heads, links and tests). Master
+`a2a6de725`.
+
+- **Property-only chains.** ⚠ Not "the oracle splits 12 to 7" on the arrow: on a fresh probe the arrow already agreed in
+  270 of 277. What differed was the operand. `PlansTheFill` never plans a property fill under a type test, so the chain
+  ran past the margin whole. The oracle fills it: before the last dot that fits, two levels past the line it starts on,
+  the test one, under the arrow broken or kept. The fill is now planned for a sole lambda's broken test
+  (`IsASoleLambdasBrokenTestedProperty`, `AdditiveLevel`), and its arrow is read by the `−1` line, as a one-argument
+  call's is.
+- **The no-argument link the oracle breaks before** (`a.B.C.Build()`) is the same fill, with the call kept with its
+  property.
+- **A property pattern under the broken arrow** (`is { … }`) stacked its operand's argument list one level short. It
+  nests from the `is`'s line as a type does now (`Continues` on `PlanBrokenTypeTest`'s held group).
+- **A one-argument call too wide for the line below.** The line's start plays no part. With `c` the head through the outer call's `(`, `t` the properties after the call, `p` the parameters and `h`
+  the call's head, the oracle keeps the arrow where the argument's line under it, `i + 8 + a`, reaches column 114 and
+  `5·(c + t) − 3·(p + h) < 7` (`GroupFacts.LambdaTestArgument`). Over 2 247 such members of probes A–F the score
+  separates at 7 to 8: all 703 below 7 keep, all 1 500 from 9 break, and 7 and 8 split 35 keeps to 9 breaks.
+- **A later call followed by a call of no arguments** (`….Merge(a, b).First()`). ⚠ `GroupFacts.LambdaTestLaterCall`'s
+  summary named this shape a later call, but `IsALaterCallOfTwoOrMore` read `.First()` as the last call. It now skips a
+  trailing call of no arguments. Behind a head of six columns or more, a later call breaks the arrow whatever round two's
+  line says: of 932 such members past column twelve on probes A and C, the 7 the oracle keeps all sit behind `X(`,
+  `Do(`, `Use(` and `Run(`.
+- **A first call of two or more with links** (round one's `LambdaTestLinks`). Behind a head of six or more the arrow also
+  breaks in two cases (`GroupFacts.LambdaTestFirstLink`). The first is where `call(…).Link` one level in ends before
+  column 113, the arguments' line under a kept arrow ends before 104, and `5·(c + t) − 3·(p + h) ≥ 60`. The second is
+  where that score, less seven times the arguments' line, is at least −630. The bounds were tightened twice, after
+  probes E and F each found members one column inside them.
+
+| probe (members agreeing) | master | now | newly wrong |
+|---|---:|---:|---:|
+| A (fit, 2 220 parsed) | 1 922 | 2 188 | 0 |
+| B (one argument and properties; fresh for the fill) | 1 766 | 2 363 | 0 |
+| C (later calls and links; fit) | 2 223 | 2 361 | 0 |
+| D (heads of two to six columns; fresh for the later rule) | 1 813 | 2 258 | 0 |
+| E, F (second vocabulary; each refitted after) | 2 017 / 2 026 | 2 372 / 2 367 | 0 / 0 |
+| **G (fresh, seed 74901, second vocabulary)** | **1 988** | **2 360** | **0** |
+| **H (fresh, seed 74902, first vocabulary)** | **2 071** | **2 372** | **0** |
+
+On G and H together, members wrong master → now: property chains 240 → 0 (behind heads of two to four columns
+16 → 3); a no-argument link 72 → 0 (15 → 6); one-argument calls 205 → 16 (26 → 2); later calls 43 → 0 (9 → 9); first
+calls with links 97 → 14 (4 → 4). Every probe re-formats to itself. Pinned by `SoleLambdaTestRoundThreeIssue618Tests`;
+switching off the fill fails 2 of its 8 tests, `Continues` 1, the one-argument line 1, the later head 1, the trailing
+call 1, and each links line 1.
+
+⚠ **Still open, measured:**
+- **Heads of two to four columns** — `X(`, `Do(`, `Use(`, `Run(` at the statement's start — in every class. The oracle
+  keeps the arrow far more often there, even over an operand that fits a level in. No line was found. Property chains
+  come closest, at `4·c − p + i ≥ 18` (7 of 893 apart), but every threshold newly broke at least one member master had
+  right, down to 8. On G and H, 25 of 4 800 members.
+- Boundary cells of the links lines (14), of the one-argument line (16), and of round one's two-argument line (11).
+- A no-argument first call whose property run ends in `.Build()` past the margin: the oracle breaks before `.Build()`
+  inside the run, Skala keeps the run whole (3).
+
+**#618 round four (2026-11-13): the head the oracle weighs.** ⚠ Round three said that for heads of two to four columns
+"no line was found". The origin was wrong, not the class. Five head-width grids of 2 400 members each (seeds 75001, 75002,
+76002, 77002, 78002) repeat every operand with callee names of 1 to 8 columns, both bare (`Use(`) and behind `q.`
+(`q.Use(`), and change nothing else. In every class the decision flips once and stays flipped as the head widens, and the
+`q.` form flips two columns of name earlier. So what counts is `c`, the head through the outer call's `(`, not the callee.
+For parameters that are bare names (`x`, `item`, `(x, y)`), the flip is exactly round one's `k ≥ 12`. For a `static`
+modifier or typed parameters the oracle keeps the arrow behind wider heads, on a boundary in `c`, the line's start and the
+parameters: `g = 9·c + 2·i − 2·p`. Outside `g < 36`, a later call, a property chain and a no-argument link break their
+arrow in 3 640 of 3 679 grid members past column twelve.
+
+Wired, each measured with zero newly wrong on every probe:
+- **property chain:** the arrow stays where it overflows by ten columns or more and `g < 35` (`LambdaTestProperties`);
+- **later call:** with `f` the operand through its first call's `)`, the arrow breaks where `9·c + 2·i − 3·p − f ≥ −5`,
+  and stays where `f ≥ 22`, `g < 28` and it overflows by ten or more (`LambdaTestFirstCall`);
+- **first call with links:** with `e = i + 4 + f`, where the first call would end a level in, the arrow breaks where
+  `e < 96` and `g ≥ 20`, `e < 100` and `g ≥ 40`, `e < 105` and `g ≥ 160`, or `e < 111` and `g ≥ 220`. Round three's
+  first line now needs a score of 70, after fresh probe J found a member at 67;
+- **one-argument call:** round three's line holds whether or not the operand fits on the line below. Short of column 114
+  the bound falls seven points a column, `s − 7·(i + 8 + a) < −795`;
+- **a call of two or more with nothing after it:** in the head's terms the line is `3·c − 5·i − 2·p + 3·h − 5·w ≥ −430`,
+  with 5 of 1 703 members apart where round one's line left 40. It decides five points or more from its boundary.
+
+| probe (members agreeing) | master | round three | now | newly wrong |
+|---|---:|---:|---:|---:|
+| A–H (round three's eight) | 15 826 of 19 020 | 18 641 | 18 813 | 0 |
+| grids A, B (fit) | 1 450 / 1 453 | 2 267 / 2 159 | 2 335 / 2 317 | 0 |
+| I, grid C (fresh after the first rules) | 2 054 / 1 622 | — | 2 374 / 2 329 | 0 |
+| J, grid D (fresh after the second) | 2 013 / 1 465 | — | 2 378 / 2 327 | 0 |
+| **K (fresh, seed 78001), grid E (fresh, seed 78002 — every head of 2 to 9 columns)** | **2 076 / 1 580** | — | **2 384 / 2 358** | **0** |
+
+Probes I, J and grids C and D each found members at a boundary, and each bound was tightened and every probe re-run.
+Every probe re-formats to itself. Pinned by `SoleLambdaTestRoundFourIssue618Tests` (6 tests); switching off any one of the
+rules above fails at least one of them.
+
+⚠ **Still not closed.** On K and grid E together, 58 of 4 800 members still differ, against 1 144 on master. None is in a
+class the rules leave unmeasured. Every one sits within a few points of a measured boundary:
+- later calls behind heads of 2 to 4 columns: 10;
+- first calls with links: 15;
+- one-argument calls: 20;
+- property chains: 6;
+- no-argument links: 5;
+- two-argument calls: 2.
+
+Across all sixteen probes, 605 of 38 220 members differ. ⚠ The no-argument first call whose property run ends in
+`.Build()` past the margin, where the oracle breaks inside the run (3 members across probes G and H), is chain layout,
+not the arrow. Fixing it would move `ChainLinks`' trailing property run, which other issues' chains share. It was not
+attempted.
+
+- status: **partly resolved** (#618): the three classes above, pinned by `SoleLambdaTestArrowIssue618Tests`, the later
+  call of two or more (round two), pinned by `SoleLambdaTestLaterCallArrowIssue618Tests`, round three's classes, pinned
+  by `SoleLambdaTestRoundThreeIssue618Tests`, and round four's head-width lines, pinned by
+  `SoleLambdaTestRoundFourIssue618Tests`; the boundary cells listed above **open**.
 
 ## SK-DIV-0540 — a constant pattern that is a member access breaks before its own dot
 

@@ -1786,14 +1786,108 @@ public sealed class Fitter {
         // best fit (−175, 16 of 635 apart on probe H): it is the line below which every member the old rules already
         // agreed with stays as it was, on probes S, F and H — the boundary is not clean, and on its near side the
         // other rules keep deciding. Measured 2026-11-13; see GroupFacts.LambdaTestLaterCall.
+        // ⚠ Round three: behind a head of six columns or more through the outer call's `(` it breaks whatever the line
+        // says — the keeps the line left all sit behind `X(`, `Do(`, `Use(` and `Run(` (7 of 932 members past column
+        // twelve, none of them behind a wider head).
+        // ⚠ Round four, with the head width the oracle weighs (`c`, through the outer call's `(`), the line's start and
+        // the parameters, measured on head-width grids that change nothing else: the arrow stays over a wide first call
+        // behind a narrow head, and breaks wherever the head outweighs the parameters and the first call. See
+        // GroupFacts.LambdaTestFirstCall.
+        var head = callee + 1;
+        var overflow = arrowEnd + 1 + facts.LambdaTestCall - width;
+        if (facts.LambdaTestLaterCall && callee + parameters >= 11) {
+            if (facts.LambdaTestFirstCall >= 22
+                && 9 * head + 2 * lineStart - 2 * (parameters - 3) < 28
+                && overflow >= 10) {
+                return false;
+            }
+
+            if (9 * head + 2 * lineStart - 3 * (parameters - 3) - facts.LambdaTestFirstCall >= -5) {
+                return true;
+            }
+        }
+
+        // ⚠ A property chain fills beside the kept arrow behind a narrow head (round four). See
+        // GroupFacts.LambdaTestProperties.
+        if (facts.LambdaTestProperties && overflow >= 10 && 9 * head + 2 * lineStart - 2 * (parameters - 3) < 35) {
+            return false;
+        }
+
         if (facts.LambdaTestLaterCall
             && callee + parameters >= 11
-            && 12 * callee - 5 * parameters + 2 * lineStart - facts.LambdaTestCall >= -112) {
+            && (callee + 1 >= 6 || 12 * callee - 5 * parameters + 2 * lineStart - facts.LambdaTestCall >= -112)) {
             return true;
         }
 
         if (facts.LambdaTestCallHead == -2) {
             return false;
+        }
+
+        // ⚠ One call of one argument with only properties after it (SK-DIV-0520 round three): the arrow stays where the
+        // argument's line under it reaches column 114 and the head before the lambda with the properties after the call
+        // is narrow against the lambda's parameters with the call's head. Measured 2026-11-13; see
+        // GroupFacts.LambdaTestArgument.
+        // ⚠ Round four: whether or not the operand fits on the line below — the same score separates the members that
+        // do (48 keeps below 7, every member from 10 breaking).
+        // ⚠ And short of column 114 the bound falls seven points a column (round four): `s − 7·(i + 8 + a) < −795`.
+        if (facts.LambdaTestCallHead == -1 && facts.LambdaTestArgument > 0) {
+            var tail = facts.LambdaTestCall - facts.LambdaTestArgumentHead - facts.LambdaTestArgument - 1;
+            var spread = 5 * (head + tail) - 3 * (parameters - 3 + facts.LambdaTestArgumentHead);
+            var argumentEnd = lineStart + 8 + facts.LambdaTestArgument;
+            if (argumentEnd >= 114 ? spread < 7 : spread - 7 * argumentEnd < -795) {
+                return false;
+            }
+        }
+
+        // ⚠ A first call of two or more with links after it (round three), behind a head of six columns or more: the
+        // arrow also breaks where the first call with its first link fits a level in with room to spare, its arguments
+        // are narrow and the head before the lambda with the links is wide against the lambda's parameters with the
+        // call's head; or where that difference, less seven times the column the arguments' line under a kept arrow
+        // ends at, is at least −630. See GroupFacts.LambdaTestFirstLink.
+        // ⚠ Round four: what decides most of it is where the first call would end a level in, `i + 4 + f`, weighed
+        // against the head score: below 96 the arrow breaks, and on to 111 it breaks behind a wider head.
+        if (facts.LambdaTestLinks && !facts.LambdaTestLaterCall && callee + parameters >= 11) {
+            var end = lineStart + 4 + facts.LambdaTestCallHead + facts.LambdaTestArgument + 1;
+            var score = 9 * head + 2 * lineStart - 2 * (parameters - 3);
+            if (end < 96 && score >= 20
+                || end < 100 && score >= 40
+                || end < 105 && score >= 160
+                || end < 111 && score >= 220) {
+                return true;
+            }
+        }
+
+        if (facts.LambdaTestLinks && !facts.LambdaTestLaterCall && callee + parameters >= 11 && callee + 1 >= 6) {
+            var links = facts.LambdaTestCall - facts.LambdaTestCallHead - facts.LambdaTestArgument - 1;
+            var spread = 5 * (callee + 1 + links) - 3 * (parameters - 3 + facts.LambdaTestCallHead);
+            var arguments = lineStart + 8 + facts.LambdaTestArgument;
+            if (lineStart + 5 + facts.LambdaTestCallHead + facts.LambdaTestArgument + facts.LambdaTestFirstLink < 113
+                && arguments < 104
+                && spread >= 70
+                || spread - 7 * arguments >= -630) {
+                return true;
+            }
+        }
+
+        // ⚠ A call of two or more with nothing after it (round four): in the head's terms the line is
+        // `3·c − 5·i − 2·p + 3·h − 5·w ≥ −430`, 5 of 1 703 apart where round one's left 40. It decides five points or
+        // more from its boundary; nearer, round one's still does.
+        if (!facts.LambdaTestLinks
+            && !facts.LambdaTestLaterCall
+            && facts.LambdaTestCallHead > 0
+            && callee + parameters >= 11) {
+            var line = 3 * head
+                - 5 * lineStart
+                - 2 * (parameters - 3)
+                + 3 * facts.LambdaTestCallHead
+                - 5 * facts.LambdaTestCall;
+            if (line >= -425) {
+                return true;
+            }
+
+            if (line < -435) {
+                return false;
+            }
         }
 
         return arrowEnd + 1 + facts.LambdaTestCall > width
