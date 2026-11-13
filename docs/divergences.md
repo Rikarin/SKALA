@@ -13781,6 +13781,61 @@ held decision under the `=` hides the rule in every random probe. Wired as `Fitt
   `eg`'s 40 and 32 of `f8`'s 57. Measured, not wired.
 - status: #619 **fixed** for the value that does not fit below; the band past the held limit **open**.
 
+⚠ **Round 3 (2026-11-13): a held line past the margin is read as the margin.** Group I's probes kept the call's line
+below at 121 or less. Past that — `T n… = r.Where(x => …)` too wide even for a line of its own — the oracle still
+breaks the `=` for most of group I's names and receivers: `=` / `r.Where(x =>` / the body two levels in / `)` /
+`.T…();`. Skala kept the `=` and broke the arrow beside it. On a grid of 20 790 statements (five heads, receivers of 1
+to 6, names under group I's bounds, lines below of 120 to 133) it missed 6 852.
+
+- **The line's width plays no part there; the rest's does.** From a line of 122 up, every statement answers the same at
+  every width, so it is not a limit on the line. With the rest after the call swept from 10 to 40 columns (6 016
+  statements), the `=` never breaks under a rest of 20 and breaks for every name group I allows from about 30. It is
+  group I's rule, read where the held call would move.
+- **The held call itself, behind a kept `=`** (4 374 statements: names past group I's bounds, lines of 117 to 129,
+  rests 14 to 40). The rest from which the oracle moves it below is the same at every line from 120 to 129, and #605's
+  limit with its rest term already gives it at 120. Skala asked one to eleven columns more rest per column of line past
+  the margin. So past the margin the line is read as 120 (`Fitter.HeldLambdaLine`), in the held call's decision and in
+  `HeldChainBreaksTheEquals`. Past the margin the `=` no longer needs `r.Where(…)` to fit below.
+- **The call's head turns over past the margin.** The first fresh probe (seed 70913) newly diverged 78 statements, all
+  under `.Select(`, `.OrderBy(` and `.SkipWhile(`. Measured then on 1 728 statements under `.Any(`, `.Select(`,
+  `.OrderBy(` and `.SkipWhile(`: the oracle needs two thirds of a column more rest per column of head. That is −0.4 a
+  column on the limit where #605 has +0.6 (`Fitter.HeldLambdaLimitPast`), and it gives all 32 thresholds measured at a
+  line of 130.
+- ⚠ **Scoped, not general.**
+  - It applies only at two columns over or more. One column over is #605's lone `)`.
+  - It applies only under heads of 7 to 9 columns. Under `.SkipWhile(` and `.Any(` the head term still newly diverged
+    25 statements across two probes (seeds 70913 and 52207), so those keep #605's reading.
+  - It does not apply behind a head and receiver of 11 columns or fewer (`nnnnnnn = r`), where the oracle never moved
+    an overflowing call at any rest.
+
+| probe | statements | master | now |
+|---|---:|---:|---:|
+| the rest swept, 10–40 (fit) | 6 016 | 2 885 | 4 668 |
+| five heads × lines 120–133, a 24-column rest | 20 790 | 13 938 | 15 444 |
+| ten heads × three tails × lines 124/130 | 17 820 | 15 710 | 16 228 |
+| group I's names × lines 112–126 | 22 275 | 18 514 | 18 956 |
+| four callees × rests 14–40 (fit of the head term) | 1 728 | 1 239 | 1 454 |
+| kept `=`, lines 117–129 × rests 14–40 | 4 374 | 3 208 | 3 208 |
+| fresh, seed 70913 (fed the scoping above) | 5 000 | 4 247 | 4 444 |
+| fresh, seed 52207 (fed the scoping above) | 4 000 | 3 657 | 3 754 |
+| **fresh, seed 33187, written after the final rule: five heads, indents 8–20, receivers 1–12, names 3–40, lines 118–134, rests 8–42, five callees** | 5 000 | 4 235 | 4 434 |
+| **fresh, seed 48829: ten heads, six tails, six callees, lines 118–136** | 4 000 | 3 684 | 3 773 |
+| group I's random probe (seed 4242) and a 3 888-statement band grid | 5 000 / 3 888 | 4 945 / 3 785 | 4 945 / 3 785 |
+
+No statement in any of these is newly wrong in the final rule, and none takes two passes. Pinned by
+`EqualsBeforeAnOverflowingHeldCallIssue619Tests`. With `ReadsPastTheMargin` switched off, 2 of its 3 cells fail.
+
+Still open:
+- **Below a kept `=`, a moved call that still overflows.** The new reading moves it at the oracle's rest, but the
+  oracle then keeps `.Where(x => a` on one line and chops the `&&` operands: `.Where(x => a` / `&& b` / `&& c` / `)`.
+  Skala breaks after the arrow. So the 4 374-statement grid gains nothing yet, though the move now agrees.
+- **The band past the held limit, below the margin** (group I's open item). The oracle's `=` boundary sits 0 to 2
+  columns past the held limit: a plateau, then a slope of about 0.4 a column of the receiver's column where the limit
+  has 0.14. No form with one rounded threshold reproduced it (1 105 of 1 359 boundaries at best).
+- **`.SkipWhile(`, `.Any(` and other heads past the margin**, and the one-column-over row, which keep #605's reading.
+- status: #619 **fixed** past the margin for heads of 7 to 9 columns; the band below the margin and the moved
+  call's own layout **open**.
+
 ## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
 
 Found by group C's #602 probes (2026-10-14), not attempted. A sole lambda argument whose whole body is a type test the
