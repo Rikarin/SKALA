@@ -245,6 +245,10 @@ public sealed class FuzzRegressionTests {
     // the `when` and a collection expression was joined, so pass one lifted the braces for a break it then dropped
     // and pass two put them back. The oracle keeps that break.
     [InlineData(16565442098129427039UL)]
+    // `{ … } when` / `Bind<…>() => (value is not null` / `),` (#576): the author's break before the body's `)`. Under the
+    // `when` lift Skala added on pass one the parenthesis spent a level of its own and the `)` landed a level deeper;
+    // pass two, reading the gap as kept, put it on the condition's level, the oracle's (SK-DIV-0399).
+    [InlineData(3427174854403582517UL)]
     // `T v99 = ((x, y) =>` / `{` / `return 97970;` / `}) ? 1.0m : Emit(…)`: the author's break before a lambda's `{`
     // made the condition read as written across lines, so pass one kept the `=` past #553's rule; pass two, `=> {`
     // joined, broke it — the oracle's answer for both. The gap before the brace now reads as glued (SK-DIV-0551).

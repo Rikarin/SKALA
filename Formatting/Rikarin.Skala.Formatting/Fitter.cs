@@ -622,6 +622,14 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ A parenthesised query after an arm's arrow stays on the arrow's line, its `from` clause filling,
+                // when it is wide against the arrow's line: `2·body > arrow + 88`, the arrow's end read from the start
+                // of its own line, and only while `(from item` fits beside it (#576 round 9). See
+                // GroupFacts.ArmQueryBody.
+                if (facts.ArmQueryBody > 0 && ArmQueryStays(facts, m, lineStart)) {
+                    return ResolvedMode.Flat;
+                }
+
                 // ⚠ A wide-named local's `=` before a lambda over a call (#453 round 2): broken exactly by the
                 // measured reach and floor, read from the planner's widths so that a kept break inside the lambda
                 // on pass two does not change the answer. See GroupFacts.EqualsLambdaArguments.
@@ -2066,6 +2074,37 @@ public sealed class Fitter {
     ///         comma is 23 columns or more (<see cref="GroupFacts.WhenWideBody" />, <see cref="GroupFacts.WhenLead" />).
     ///     </para>
     /// </remarks>
+    /// <summary>
+    ///     Whether a parenthesised query after an arm's arrow stays on the arrow's line, its <c>from</c> clause filling,
+    ///     rather than moving below (#576 round 9, SK-DIV-0399). See <see cref="GroupFacts.ArmQueryBody" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on 2 400 arms whose line through <c>where</c> overflows (eight #576 grids and a probe of queries in
+    ///     six positions): the oracle keeps the body while <c>2·body &gt; arrow + 88</c>, the arrow's end read from the
+    ///     start of its own line — not from the margin and not from the arm — 90 behind a head on one line. ⚠ That
+    ///     origin is what made round 5 to 8's line-below limits "irregular across indents". Two gates: <c>(from item</c>
+    ///     must fit beside the arrow; and under a broken <c>when</c>, an arrow line of 81 columns or fewer that leaves
+    ///     two or fewer beside <c>(from item</c> moves the body below whatever its width (24 rows at indents 20 and 24,
+    ///     none kept). No kept row is broken by either gate on any grid; 102 broken rows are kept by the oracle.
+    /// </remarks>
+    bool ArmQueryStays(in GroupFacts facts, in Measures m, int lineStart) {
+        var head = m.Column + 1 + facts.ArmQueryHead;
+        if (head > width) {
+            return false;
+        }
+
+        var arrow = m.Column - lineStart;
+        if (WhenGapBroke(facts.ArmQueryWhenGap) && width - head <= 2 && arrow <= 81) {
+            return false;
+        }
+
+        var oneLine = facts.LiftGroup < 0 || !resolved[facts.LiftGroup] || enteredOn[facts.LiftGroup] == m.Line;
+        return 2 * facts.ArmQueryBody > arrow + (oneLine ? 90 : 88);
+    }
+
+    /// <summary>Whether an arm's planned <c>when</c> gap broke: −2 is one the author broke. See GroupFacts.ArmQueryWhenGap.</summary>
+    bool WhenGapBroke(int gap) => gap == -2 || gap >= 0 && resolved[gap] && modes[gap] == ResolvedMode.Broken;
+
     bool WhenBreaks(in GroupFacts facts, in Measures m, int tail, int lineStart) {
         if (m.FlatWidth >= Unbounded || Fits(m.Column, m.FlatWidth)) {
             return false;
@@ -2085,18 +2124,19 @@ public sealed class Fitter {
             // ⚠ Before a call, a creation or a parenthesised query, behind a head under twelve columns, the `when`
             // breaks only from a body width that falls as the head widens: `head·(body − 6) ≥ 627` (#576 round 8,
             // SK-DIV-0399). Short of it the type arguments fill beside the `when`, the rest of the arm as it is under a
-            // broken `when`. Measured where the condition's lead through its first comma is 23 columns or more; a
-            // shorter lead breaks a few columns of body earlier, not modelled, so it keeps the break. ⚠ Only for a
+            // broken `when`. ⚠ Round 9: a lead through the first comma under 23 columns is not "always breaks", as round 8
+            // left it — it breaks a few columns of body earlier, and `head·(body − 6) ≥ 550` is the bar no measured break
+            // falls under (6 239 arms behind heads 6 to 11: misses 1 112 → 455, none newly wrong). ⚠ Only for a
             // condition that, on the line below, ends at column 120 or past it: one ending at 119 or before moves there
             // whatever the body (the first fresh probe's four regressions, ending at 115 to 119), and one ending at
             // exactly 120 still fills by the rule (the dense grid's 104-column conditions at indent 12).
             var head = m.Column - lineStart;
             if (facts.WhenWideBody > 0
-                && facts.WhenLead >= 23
+                && facts.WhenLead > 0
                 && head < 12
                 && tail < Unbounded
                 && !Fits(m.ContinuationColumn, tail + 1)) {
-                return head * (facts.WhenWideBody - 6) >= 627;
+                return head * (facts.WhenWideBody - 6) >= (facts.WhenLead >= 23 ? 627 : 550);
             }
 
             return true;

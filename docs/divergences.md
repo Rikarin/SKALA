@@ -12132,6 +12132,96 @@ Diverging rows, master `afad8cb8b` → now (none non-idempotent before or after,
 Pinned by `WideBodyWhenIssue576Tests` (6 of its 9 cells fail with the rule off; the line-below guard's cell fails without
 the guard). Grid scripts: worktree `.scratch-arm/` (`gen576.py`, `h.py`, `when576.py`), uncommitted.
 
+⚠ **#576 round 9 (2026-11-13).** The instrument was checked first: round 8's grids rebuilt from its scripts reproduce its
+recorded numbers exactly (b576 172, w576 487, d576 588, s576 421, f576a 214, f576b 229). Classified side by side, the
+divergence on the fresh probe was 117 rows of the `when` gap (all Skala breaking it where the oracle fills, all behind heads
+of 6 to 10 columns), 23 of an arrow, 23 of the body kept on the arrow's line, 18 of where the type arguments break, the rest
+scattered. Four rules are wired.
+
+**1. ⚠ Round 8's "a lead under 23 columns keeps the break" is refuted.** That fallback was the largest single class left:
+round 8 found such leads break *a few columns earlier* than the 627 bar, and then let them break at every width. Measured over
+the 6 239 arms behind heads under twelve on all six grids, the product rule with a lower bar for a short lead,
+`head·(body − 6) ≥ 550`, puts no measured break below the bar (the lowest is 550, `Pick<int,` behind 11 at indent 12), so no
+row master had right goes wrong: `when` decisions missed 1 112 → 455. ⚠ The line-below guard stays, and it is not "the
+condition ends at 119 or before, so it moves" either: dropped, 70 rows of b576 (`var v when Convert<Dictionary<int, string>,
+T…>()`, ending at 117) would be fixed, but rows ending at 115 to 119 with a nested second argument break at bodies far under
+any bar (products 162 to 414), so it would make rows newly wrong. Which of the two the oracle picks there is still open; its
+condition shape (a nested second argument or not) separates the measured rows but was not wired on so few.
+
+**2. The arrow is asked again on the lifted line.** The oracle decides an arm's arrow with the pattern unlifted, lifts, and
+then breaks before the `=>` as well wherever the lift pushed `…>>() =>` past the margin: `X when M<A, IReadOnlyList<` /
+`T…>>()` / `=>` / the body. Measured on the fresh probes: with the `when` gap flat, the line through `()` of 118 to 121 once
+lifted gives `=>` alone in all 46 rows, 122 or more gives `=> body` (58 rows: the arrow already broke before the lift), and a
+condition on one line never does it. Skala kept the unlifted answer and wrote 121 to 124 columns. `DecideByTheArrow` now
+re-asks the arm's group before the arrow (`GroupFacts.ArrowRecheckedAfterLift`, `LayoutWriter.ArrowBreaksOnTheLiftedLine`)
+when the body broke after the arrow on that line. ⚠ Not when the `when` gap broke, for width or kept: the arrow's lift
+moves no line of the condition then, and the first cut, which assumed it did, made 230 rows of b576 newly wrong and 304
+unstable.
+
+**3. A `from` clause fills, in every position.** The title case needed a point Skala did not have: behind `) =>` the oracle
+keeps `(from item` and breaks the query inside its `from` clause. Measured on a probe of 600 queries in six positions (a
+local's value, a `return`, an argument, `(…).ToList()`'s receiver, a switch arm's body, a lambda's body; q1), and confirmed
+on a second written after the rule (q2): wherever the clause does not fit, the oracle keeps what fits and breaks there —
+`from item in` / the collection, `(from item` / `in items`, `(from` / `item in items` — the collection a level past the query's
+clauses, the same in every position. Skala ran the clause past the margin. The three gaps are now a fill
+(`BreakPlan.PlanFromClause`), yielding to what precedes the query as a type argument list's points do: as ordinary points the
+`=`'s ordering rule read the line as ending inside the clause and kept `var v = from item in` (66 rows newly wrong on the
+first cut). ⚠ The level: where the query starts its line the clauses sit on `from`'s column and the collection one level in;
+where it is a `return`'s value or parenthesised, the clauses already sit a level past `from`'s line and the collection two —
+the statement's level, which nothing has spent, and the clause's own. One level for every position put the `return` and
+parenthesised rows on `where`'s column.
+
+**4. The body kept on the arrow's line (the title case).** Measured on 2 400 arms whose line through `where` overflows
+(nine grids and q1): the oracle keeps a parenthesised query on the arrow's line, its `from` clause filling, exactly when
+`2·body > arrow + 88`, the arrow's end read from the start of its own line (90 behind a head on one line), and only while
+`(from item` fits beside the arrow. ⚠ The origin is the finding. Round 3 and round 8 read this boundary as a line-below limit
+"irregular across indents" (105/107 at an arrow of 109, 107/109 at 115); against the arrow line's own start it is one line,
+0 misses on the 500 heads that span lines with the `when` flat. Under a broken `when` one more gate: an arrow line of 81
+columns or fewer that leaves two or fewer beside `(from item` moves the body below whatever its width (24 rows at indents 20
+and 24, none kept). (`Fitter.ArmQueryStays`, `GroupFacts.ArmQueryBody`, `ArmQueryHead`, `ArmQueryWhenGap`.) No kept row is
+broken by either gate on any grid; 102 rows the oracle keeps are still broken.
+
+Diverging rows, master `a2a6de725` → now (none non-idempotent before or after, none newly diverging on any row):
+
+| Grid | Rows | Master | Now |
+|---|---|---|---|
+| b576 (round 8 discovery) | 1 216 | 172 | 160 |
+| w576 (fit) | 3 040 | 487 | 126 |
+| d576 (fit) | 2 300 | 588 | 206 |
+| s576 (fit, lead bound) | 900 | 421 | 196 |
+| f576a (round 8 fresh) | 900 | 214 | 104 |
+| f576b (round 8 fresh, used here to fit) | 1 000 | 229 | 137 |
+| f576c (fresh, seed 5760816, after rule 1; then used for rule 2) | 1 000 | 228 | 112 |
+| f576d (fresh, seed 5760817, after rules 1–2; then used for rule 4) | 1 000 | 206 | 94 |
+| q1, queries in six positions (seed 9101, used for rules 3–4) | 600 | 265 | 67 |
+| **fresh, seed 5760818, built after all four rules** | 1 000 | **234** | **132** |
+| **fresh queries in six positions, seed 9102, after all four** | 600 | **261** | **62** |
+
+On the last arm probe: the body kept on the arrow's line 25 → 6 rows, the arrow alone 27 → 0, the `when` gap 129 → 64.
+
+⚠ Still open, all measured, none wired:
+- **The `when` gap, 64 rows on the last probe.** Every one is Skala breaking it where the oracle fills. Most (all grids: 124 + 66
+  of 591) are lead-23-or-more conditions whose flat-`when` layout keeps the body on the arrow's line. ⚠ "Never break the `when`
+  where the body would be kept" was measured and is wrong — 1 220 rows newly wrong: the oracle keeps the body under a broken
+  `when` too. A rising bar for leads past 36 (`627 + 10·(lead − 36)`) trims 21 misses but makes 4 rows newly wrong, and the
+  short-lead bars are family-dependent (`Pick<int, Func<…>>` from 594, `Pick<int, IReadOnlyList<…>>` from 550).
+- **Where the type arguments break, 28 rows.** With the body below the arrow the oracle breaks after the outer first comma while
+  the unlifted line through `() =>` is 115 or less (round 6's twelve-column spare was fitted on atoms); with the body kept it
+  breaks the inner list — and in between it turns on the condition's lead (outer comma under 25, inner list from 35).
+- The query rows the keep rule still breaks (102 on the fit grids), chain bodies, the inner `<` break and the band's upper
+  edge (rounds 6–8).
+
+⚠ **Fuzz 3427174854403582517 (another group's run; pre-existing, fails identically on `a2a6de725`).** `{ … } when` /
+`Bind<…>() => (value is not null` / `),` with the author's break before the body's `)`. The oracle puts that `)` on the
+condition's line level, under a `when` gap it breaks itself and under one the author broke alike. Under the lift Skala adds
+for its own gap break (`LiftsIfWhenBreaks`), whose level is uncounted, the parenthesis spent a level of its own and the `)`
+landed a level deeper; pass two, reading the gap as kept, lifted outright and put it back. Such an arm no longer opens the
+`when` lift, kept or planned: both passes agree, and with the oracle. Seed in `FuzzRegressionTests`.
+
+Pinned by `WhenShortLeadIssue576Tests`, 20 cells: with the bar back at "a short lead always breaks" 6 fail; with the arrow's
+second question off, 4; with the `from` clause's points removed, 10 (the six positions and the four kept bodies); with the
+keep rule off, 5. Grid scripts: worktree `artifacts/scratch-i576/` (`gen576.py`, `genq.py`, `h.py`, `k.py`, `kb.py`, `kbrule.py`), uncommitted.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as

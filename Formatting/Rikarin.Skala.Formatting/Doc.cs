@@ -1164,6 +1164,29 @@ public sealed class Document {
 ///     condition's line, as it does under the author's: <c>X when</c> / <c>Materialise&lt;…&gt;() =&gt; Handle(</c> /
 ///     the arguments two levels past the arm / <c>)</c> one level. Unlike the arrow's lift it lifts the body too.
 /// </param>
+/// <param name="ArrowRecheckedAfterLift">
+///     ⚠ On a switch arm's group before its <c>=&gt;</c>, behind a <c>when</c> condition whose only break points are
+///     type argument lists (#576 round 9, SK-DIV-0399): decided with the pattern unlifted, as every arrow group
+///     under <see cref="LiftsIfArrowBreaks" /> is, and then asked again on the lifted line. Where the body broke
+///     after the arrow and the lift pushes <c>… &gt;&gt;() =&gt;</c> past the margin, the oracle breaks before the
+///     arrow as well and writes <c>=&gt;</c> on a line of its own: <c>X when M&lt;A, IReadOnlyList&lt;</c> /
+///     <c>T…&gt;&gt;()</c> / <c>=&gt;</c> / the body.
+/// </param>
+/// <param name="ArmQueryBody">
+///     ⚠ On a switch arm's body group, when the body is a parenthesised query: the query's formatted width (#576
+///     round 9, SK-DIV-0399). The oracle keeps <c>=&gt; (from item</c> on the arrow's line and fills the
+///     <c>from</c> clause, rather than moving the body below, exactly when <c>2·body &gt; arrow + 88</c>, the arrow
+///     measured from the start of its own line — and only when <see cref="ArmQueryHead" /> fits beside it.
+/// </param>
+/// <param name="ArmQueryHead">
+///     With <see cref="ArmQueryBody" />: the width of <c>(from item</c>, the least of the query the arrow's line
+///     must hold for the body to stay there.
+/// </param>
+/// <param name="ArmQueryWhenGap">
+///     With <see cref="ArmQueryBody" />: the arm's planned <c>when</c> gap group, −2 for one the author broke, −1 for
+///     none. Under a broken <c>when</c>, a short arrow line that leaves two columns or fewer beside <c>(from item</c>
+///     moves the body below whatever its width (#576 round 9, <c>Fitter.ArmQueryStays</c>).
+/// </param>
 /// <param name="CalleeArgumentHead">
 ///     ⚠ With <see cref="CalleeArgument" />: the statement's head through the <c>=</c>, read from the syntax
 ///     (SK-DIV-0505). The fitter's own head starts at the group's marker, which for a deconstruction is the tuple's
@@ -2163,6 +2186,10 @@ public readonly record struct GroupFacts(
     int LiftGroup = -1,
     bool LiftsIfArrowBreaks = false,
     bool LiftsIfWhenBreaks = false,
+    bool ArrowRecheckedAfterLift = false,
+    int ArmQueryBody = 0,
+    int ArmQueryHead = 0,
+    int ArmQueryWhenGap = -1,
     bool DraftsBroken = false,
     int ArmCast = 0,
     bool BreaksIfTheLineOverflows = false,

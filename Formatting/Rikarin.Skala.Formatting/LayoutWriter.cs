@@ -174,7 +174,13 @@ public sealed class LayoutWriter {
     ///     The groups whose <see cref="GroupFacts.LiftGroup" /> is <see cref="watchedChain" /> resolved since
     ///     the watch began, with their modes, for <see cref="DecideByTheArrow" /> to force.
     /// </summary>
-    List<(int Group, ResolvedMode Mode, int Line)> watchedLifts = [];
+    List<(int Group, ResolvedMode Mode, int Line, int Column, int Node)> watchedLifts = [];
+
+    /// <summary>
+    ///     Whether a planned <c>when</c> gap broke while <see cref="DecideByTheArrow" /> wrote ahead: the arrow's lift
+    ///     then moves no line of the condition (#576 round 9).
+    /// </summary>
+    bool watchedWhenBroke;
 
     /// <summary>
     ///     The groups the walk is inside that resolved broken and carry <see cref="GroupFacts.Continues" />,
@@ -357,9 +363,10 @@ public sealed class LayoutWriter {
                         // land on, and against the rest of the line as well as its own width. See
                         // Fitter's remarks for why this is not a separate pass, and TrailingWidth
                         // for why the group's own width is not the whole measurement.
+                        var enteredColumn = CurrentColumn();
                         fitter.Enter(
                             node,
-                            CurrentColumn(),
+                            enteredColumn,
                             ContinuationColumn(slot.Arg1),
                             TrailingWidth(stack),
                             line,
@@ -370,7 +377,13 @@ public sealed class LayoutWriter {
                         }
 
                         if (watchedChain >= 0 && document.FactsOf(slot.Arg1).LiftGroup == watchedChain) {
-                            watchedLifts.Add((slot.Arg1, fitter.ModeOf(slot.Arg1), line));
+                            watchedLifts.Add((slot.Arg1, fitter.ModeOf(slot.Arg1), line, enteredColumn, node));
+                        }
+
+                        if (watchedChain >= 0
+                            && document.FactsOf(slot.Arg1).WhenTable
+                            && fitter.ModeOf(slot.Arg1) == ResolvedMode.Broken) {
+                            watchedWhenBroke = true;
                         }
 
                         break;
@@ -1029,11 +1042,12 @@ public sealed class LayoutWriter {
     ///     unlifted one it was decided on, and pass two reads that break as kept and lifts the same way.
     /// </remarks>
     void DecideByTheArrow(int node, int group, Stack<(int Node, int Child)> stack) {
-        var (watched, broke, lifts) = (watchedChain, watchedChainBroke, watchedLifts);
+        var (watched, broke, lifts, whenBroke) = (watchedChain, watchedChainBroke, watchedLifts, watchedWhenBroke);
         var checkpoint = Checkpoint();
         watchedChain = group;
         watchedChainBroke = false;
         watchedLifts = [];
+        watchedWhenBroke = false;
 
         var ahead = new Stack<(int Node, int Child)>(stack.Reverse());
         var floor = ahead.Count;
@@ -1041,8 +1055,9 @@ public sealed class LayoutWriter {
         ahead.Push((node, 0));
         Run(ahead, int.MaxValue, floor);
         var forced = watchedLifts.ToArray();
+        var gapBroke = watchedWhenBroke;
         Restore(checkpoint);
-        (watchedChain, watchedChainBroke, watchedLifts) = (watched, broke, lifts);
+        (watchedChain, watchedChainBroke, watchedLifts, watchedWhenBroke) = (watched, broke, lifts, whenBroke);
 
         // ⚠ A `when` lift breaks with the `when` gap alone, which is entered on the arm's first line (#576). See
         // GroupFacts.LiftsIfWhenBreaks.
@@ -1064,9 +1079,52 @@ public sealed class LayoutWriter {
         // unlifted keeps the `=>` beside the `)`, which is what lets the lifted query measure itself with
         // it and chop.
         fitter.Force(group, ResolvedMode.Broken);
-        foreach (var (lift, mode, _) in forced) {
-            fitter.Force(lift, mode);
+        foreach (var (lift, mode, liftLine, column, liftNode) in forced) {
+            var lifted = !gapBroke
+                && ArrowBreaksOnTheLiftedLine(group, forced, lift, mode, liftLine, column, liftNode, start);
+            fitter.Force(lift, lifted ? ResolvedMode.Broken : mode);
         }
+    }
+
+    /// <summary>
+    ///     Whether an arm's group before its <c>=&gt;</c>, decided flat on the unlifted line, breaks once the arrow's lift
+    ///     moves that line a level right (#576 round 9, SK-DIV-0399). See <see cref="GroupFacts.ArrowRecheckedAfterLift" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on the fresh probes of #576: behind a <c>when</c> condition whose type arguments fill beside the
+    ///     <c>when</c>, a body that breaks after the arrow and a line through <c>()</c> of 118 to 121 columns once lifted,
+    ///     the oracle writes <c>=&gt;</c> alone on a line of its own every time (46 rows); at 122 or more the arrow
+    ///     breaks before the lift already, and the body follows it on its line (`=&gt; body`, 58 rows). Skala kept the
+    ///     unlifted answer and wrote <c>… &gt;&gt;() =&gt;</c> past the margin.
+    /// </remarks>
+    bool ArrowBreaksOnTheLiftedLine(
+        int group,
+        (int Group, ResolvedMode Mode, int Line, int Column, int Node)[] forced,
+        int lift,
+        ResolvedMode mode,
+        int liftLine,
+        int column,
+        int liftNode,
+        int start
+    ) {
+        if (mode != ResolvedMode.Flat
+            || liftLine == start
+            || !document.FactsOf(group).LiftsIfArrowBreaks
+            || !document.FactsOf(lift).ArrowRecheckedAfterLift) {
+            return false;
+        }
+
+        // The body after the arrow broke, on the arrow's line.
+        if (!forced.Any(other => other.Mode == ResolvedMode.Broken
+                && other.Line == liftLine
+                && document.FactsOf(other.Group) is { FlatIfOwnerBroke: true } body
+                && body.Owner == lift
+            )) {
+            return false;
+        }
+
+        var through = document.PointWidthOf(liftNode) + document.AfterPointOf(liftNode);
+        return through < Document.Unbounded && column + indentWidth + through > width;
     }
 
     /// <summary>
