@@ -1246,6 +1246,11 @@ public sealed class Document {
 ///     ⚠ The same floor for the one column where the type argument list's <c>&gt;</c> fits and only the
 ///     call's <c>(</c> does not: a different table (#490). Zero breaks the colon whatever the width.
 /// </param>
+/// <param name="ColonTypeOpen">
+///     ⚠ With <see cref="YieldsToOverflowingTypeArguments" />: the value's width from its first token through the
+///     type argument list's <c>&lt;</c>. The yield holds only while that <c>&lt;</c> fits beside the point (fuzz
+///     354857589735471722); see <c>Fitter</c>.
+/// </param>
 /// <param name="CalleeWidth">
 ///     ⚠ An <c>=</c> before a call with two or more arguments: the callee's width, which turns the ordering
 ///     rule into a measured one (#446, SK-DIV-0211). With a head of <see cref="MinimumHead" /> or more the
@@ -2101,6 +2106,7 @@ public readonly record struct GroupFacts(
     int ColonFloor = 0,
     int ColonFloorSlope = 0,
     int ColonEdgeFloor = 0,
+    int ColonTypeOpen = 0,
     int CalleeWidth = 0,
     EqualsOwner CalleeOwner = EqualsOwner.None,
     int ThroughWidth = 0,

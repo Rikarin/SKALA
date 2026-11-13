@@ -2482,10 +2482,20 @@ public sealed class Fitter {
         // ⚠ The type argument list after the point overflows by itself, so it fills and this group's
         // break is not the one taken — unless the argument list after it is at least the measured
         // floor. See GroupFacts.YieldsToOverflowingTypeArguments and ColonFloor (#490).
+        // ⚠ Only while the list's own `<` fits (fuzz 354857589735471722; GroupFacts.ColonTypeOpen). Filling a list
+        // whose `<` is past the margin leaves the line long. ⚠ Not AfterPoint, which this read first: it reads
+        // through the list's points to the call's `(` whenever an argument list after it can break, and so
+        // broke colons #490's own fixture fills. Measured 2026-11-13 with `Testing ask`, names of 4, 6 and 9,
+        // bare, `ref` and `out`, the `<` at 104 to 128: the oracle breaks the colon — or the keyword after it —
+        // from the `<` at 122 on, and at 121 alone moves the `<` itself down, which Skala has no point for and
+        // answers as at 122.
+        // Pass one filled `name59: ref Cast_w…<` / `byte, object>()` at 125 columns; pass two read the break after
+        // the `<` as the author's, had no flat width to compare with the floor, and broke.
         if (facts.YieldsToOverflowingTypeArguments
             && m.YieldEnd > 0
             && m.PointWidth < Unbounded
-            && !Fits(m.Column, m.PointWidth + m.YieldEnd)) {
+            && !Fits(m.Column, m.PointWidth + m.YieldEnd)
+            && (facts.ColonTypeOpen <= 0 || Fits(m.Column, m.PointWidth + 1 + facts.ColonTypeOpen))) {
             var arguments = m.FlatWidth >= Unbounded ? Unbounded : m.FlatWidth - m.PointWidth - m.YieldEnd;
             var floor = facts.ColonFloor + facts.ColonFloorSlope * (m.PointWidth + m.YieldEnd - 118) / 100;
             if (arguments < floor) {
