@@ -14227,7 +14227,8 @@ Stable on a second pass everywhere. Pinned by `SoleLambdaUnbrokenBodyArrowIssue6
 whose operand still overflows, where the oracle breaks after `is` and Skala chops the operand's arguments. 165 of
 probe I's 600 members. One-argument calls with links: SK-DIV-0560; the rest re-measured in SK-DIV-0561.
 
-- status: **partly resolved** (#620).
+- status: **partly resolved** (#620); calls with or without links, and a type test on one line over one, are
+  SK-DIV-0760's; a hugged call's arguments SK-DIV-0761's; chains whose first call fits beside the arrow stay open.
 
 ## SK-DIV-0560 — a sole lambda over a one-argument call with links after it
 
@@ -14265,7 +14266,8 @@ property chain. Left out.
 - On probe J, 39 members where the oracle keeps and master's chain rule breaks, and 17 the other way.
 
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the rule reads only while it is on).
-- status: **partly resolved** (#620).
+- status: **partly resolved** (#620); ⚠ the call that fits nowhere and "no width separates" are SK-DIV-0760's now —
+  the links' width does — and its line decides ahead of this rule wherever the call does not fit beside the arrow.
 
 ## SK-DIV-0561 — #620's residue: what was tried and refuted, and a measured rule left unwired
 
@@ -14382,8 +14384,154 @@ argument's width and `t` the test's width with its space. Its arrow agrees with 
 G, S and F. Raising the line until none are newly wrong (−200) leaves 13 members fixed on G and 0 on S and F. The kept
 layout under such a test (`=> Head(` / the argument two levels in / `) is T`) was not checked against the oracle here.
 
+**#620 round, 2026-11-13, later the same day: superseded by SK-DIV-0760 and SK-DIV-0761.** ⚠ Refuted, all three:
+
+- "the test decides it": the test's *width* does, as one more link after the call — `as Node` keeps where
+  `is IMethodSymbol { IsStatic: true }` breaks because it is narrower, nothing else;
+- "no width separates" two-argument calls (`a − 4·(g + i) ≥ −240` fixing 85 and breaking 12): one line over the links,
+  the lambda, the head and the arguments' line separates them, 2 500 of 2 500 on a probe of its own;
+- "the change belongs in `CSharpDocumentBuilder`'s delimited visitor": it belongs in `LayoutWriter.LiftedLevel`, which
+  read the chain's from-the-line scope on its own line as absent.
+
 - options: none.
-- status: **open** (#618, #620).
+- status: **superseded** (#618's broken-test half stays open there; #620's by SK-DIV-0760 and SK-DIV-0761).
+
+## SK-DIV-0760 — a sole lambda over a call that does not fit beside its arrow: one measured line
+
+#620 (2026-11-13). A sole lambda argument whose whole body is a call of one argument or more — `Use(x => Head(a, b))`,
+links after it or not (`.Name`, `.First().Name`, `.Select(y => y.Name).ToList()`), a type test written on one line
+after it or not (`… as Node`, `… is { IsStatic: true }`) — whose call, through its `)`, does not fit beside the arrow.
+The head is a name, generic or not, behind at most `recv.`, `this.`, `base.` or `this.f.`; later calls take one
+argument or none; no argument is a lambda.
+
+⚠ **The oracle decides the arrow before it lays out the arguments, by one line in five widths and nothing else** — `L`
+the links (with the test, if any), `λ` the lambda through `=>`, `h` the head through the call's `(`, `g` the arguments
+inside the parentheses, and `E = i + 8 + g`, where the arguments would end on one line two levels past the line's
+start `i`. The callee in front of the lambda, the statement and the argument's kind play no part. It breaks the arrow
+when the arrow ends twelve columns or more past the line's start and
+
+- one argument: `1000·L ≥ 604·h + 577·λ + 1500·min(0, E − 114) + 12` and
+  `10·L ≥ 30·(λ + h) − 90 + 15·min(E, 246) − 3595`;
+- two or more: `1000·L ≥ 603·h + 576·(λ − 3) + 1500·(E − 93) + 1864`.
+
+⚠ Round two (2026-11-13, the coordinator's bar of no member newly wrong): the first round's lines were
+`10·L ≥ 6·(λ + h) + …`, three fifths of a column for the head and the lambda alike. They are not alike. Measured one
+column at a time on 520 exact thresholds, the lambda weighs 0.577 of a column and the head 0.604; the round-one line
+missed one cell in twenty past λ = 11, and its two newly wrong members — r4's `TryFind(static x => Heee(…).Pr())` and
+C's `recv.ComputeTheValueFor<INamedTypeSymbol>(…)` — were that, and a head wider than the first grids held.
+
+So a call that fits nowhere keeps its arrow unless the links are wide (398 of 402 on #620's last probes, "whenever"
+was the narrow case of this), and the links' width is what made "the head plays no part" and "the test's kind
+decides" both look true. Two more conditions, each measured one column at a time:
+
+- the head does not fit beside the arrow, `a + 1 + h > 120`: the arrow breaks;
+- one argument, an arrow ending far right: it breaks once `20·a + 23·L + 6·h − 13·λ ≥ 1680`, `a` the arrow's column;
+- ⚠ (round two) one argument, an arrow far right against the arguments' line: it breaks once
+  `20·a + 6·h − 14·λ + 23·L − 34·E ≥ −2214` — the line above with `E` in it, which a head of forty columns or more
+  behind a deep indent or a long callee reaches (grids of 2 695, 3 384 and 3 384 cells, every one agreeing after it);
+- two or more behind a short head, lambda and links (`6·(λ + h) + 16·L ≤ 207`): it breaks only once
+  `a + 2·h + λ + 3·L ≥ 120`, and never while `4·(λ + h) + 5·L < 70`.
+
+A break the author wrote after the arrow is kept (the oracle keeps it even over a body it keeps beside the arrow), and
+one inside the body — in the call or before a link — keeps the arrow. The constants hold at a margin of 120 only.
+
+Grids (each `Testing ask`, 2026-11-13): the links against the head and parameters, one column at a time (5 717 cells,
+every threshold exact); the arguments' line, 4 640 and 10 540 cells; the indent and the callee, 2 106; two arguments,
+5 208, 2 340, 870, 2 496 and 6 528; the arrow's column, 6 600, 8 064 and 5 652; wide heads, 2 695, 3 384 and 3 384.
+Random probes, whole member text compared against master `a2a6de725`, after the last change:
+
+| probe (members agreeing with the oracle) | master | now | newly wrong |
+|---|---:|---:|---:|
+| r1 (2 500: one argument, fits nowhere; arrow 1 338 → 2 500) | 0 | 1 942 | 0 |
+| r2 (2 500: two to four arguments, links) | 49 | 2 500 | 0 |
+| r3 (2 500: no links) | 2 318 | 2 332 | 0 |
+| r4, r45, r46, r47 (4 × 2 500: every region, long prefixes) | 1 194 / 1 025 / 1 176 / 975 | 2 158 / 1 831 / 2 048 / 1 800 | 0 |
+| A, B, C, D, E (1 800, 2 700, 2 700, 3 000, 2 700: nine classes) | 1 400 / 2 075 / 2 124 / 2 360 / 2 112 | 1 695 / 2 508 / 2 536 / 2 822 / 2 540 | 0 |
+| **F, r48 (2 700 and 2 500, written after the last change)** | 2 090 / 1 172 | 2 511 / 2 069 | **0** |
+
+Per class on F: a first call of two arguments or more with links 134 → 289 of 300, of one argument with links 154 →
+275, a type test on one line over one argument 199 → 253 and over two or more 259 → 292, a lone call of one argument
+265 → 278, a property chain 253 → 296 (SK-DIV-0762). Stable on a second pass everywhere; every grid above has no
+member newly wrong.
+
+⚠ Where the line keeps the arrow over an arrow ending sixty columns or more in, over a call that fits below — or, for
+one argument that fits nowhere, within five columns of the far-right line — the older rules decide
+(`Fitter.SoleCallKeepDefers`): r4's 21 newly wrong members there had a receiver chain and an `=` in front
+(`var x = await this.s.Get(x => …)`), where the oracle's line bends in a way not measured.
+
+**Still open:** a chain whose first call fits beside the arrow and has calls after it (`recv.Get().Select(a, b)`, a
+no-argument first call with links), which #571's rule decides — the best line found agrees in 678 of 738 members
+there against Skala's 562, not wired; an argument wider than its line, where the oracle breaks before a `!` or a
+member's dot inside it; a long prefix whose `=` the oracle breaks instead; and the type test of SK-DIV-0763.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line` (the rule reads only while it is on).
+- status: **fixed** for the shapes above (pinned by `SoleLambdaCallArrowIssue620Tests`; a sabotage run with the rule off
+  fails 5 of its 7); the residue above is **open**.
+
+## SK-DIV-0761 — a sole lambda's chain body: its first call's arguments two levels past the line
+
+#620 (2026-11-13). `Use(x => Head(a, b, c).Name.Length)` with the arguments chopped: the oracle writes them two levels
+past the line, the `)` and `.Name.Length` one — as `var y = Head(` / … / `)` / `.Name` does (#418) — and under a broken
+arrow two levels past the body's line. Skala wrote them one level in. The chain's level is from its line
+(`IndentKind.FromLine`), and `LayoutWriter.LevelForBlock` reads such a scope on its own line as not there, so the
+list's lift (`LiftedLevel`) never saw the chain's continuation line. A list opening directly inside the from-the-line
+scope of the innermost broken construct, on that scope's line, now nests from that scope's level
+(`LayoutWriter.FromLineOfTheBroken`).
+
+⚠ Refuted, from SK-DIV-0561: the collapse is not `CSharpDocumentBuilder`'s; the builder opens the list's scope as
+for any list, and the writer's lift is what skipped it.
+
+Measured on A (1 800 members) with the layout change alone: 1 400 → 1 490 agreeing, none newly wrong; the 90 are all
+chain bodies under either arrow. Pinned by `SoleLambdaCallArrowIssue620Tests.AHuggedCallUnderAChain_…`; a sabotage run
+with the lift off fails 4 of the class's 5.
+
+⚠ **Open:** the same chain behind `await`, `!` or a cast, and a `)[0].Name` link, which the oracle keeps on the `)`'s
+line.
+
+- options: none.
+- status: **fixed** (the shapes above).
+
+## SK-DIV-0762 — a sole lambda over a chain of properties that fits nowhere: where the lambda starts
+
+#620 round two (2026-11-13). `Use(x => symbol.A.B.C…)`, a name, `this.f` or `base.f` and names only, written on one
+line, fitting neither beside the arrow nor on the line below. #557's line (`9·below + 2·p − 2·start ≤ 969`, or a simple
+lambda starting at column 21) read the width below and only bodies rooted at the lambda's own parameter; on the probes
+it agreed in 584 of 780 members, and in 1 334 of a 2 048-cell grid.
+
+⚠ **The oracle decides by where the lambda starts against its parameters, not by the chain's width:** it breaks the
+arrow once `100·s − 175·p − 12·f ≥ 776`, `s` the column the lambda starts at, `p` its parameters before `=>`
+(modifiers and parentheses counted), `f` how much of the chain the fill would keep beside the arrow — and the arrow
+ends twelve columns or more past the line's start. The chain's root, the line's start and the statement play no part.
+Measured on 2 048 cells (eight parameter lists, two segment widths, lambdas starting at 12 to 47): 2 048 agree; on
+780 probe members: 774. A chain the author broke keeps the arrow; one the author broke after the arrow keeps that.
+
+| probe | master | now | newly wrong |
+|---|---:|---:|---:|
+| the grid (2 048) | 1 278 | 2 048 | 0 |
+| property chains on A, B, C, D, E, F | 159 / 242 / 247 / 358 / 240 / 253 | 192 / 293 / 293 / 417 / 290 / 296 | 0 |
+
+Open: a chain that fits below, where #557's line still decides (196 of 228 members agree, the best line found 194).
+Pinned by `SoleLambdaCallArrowIssue620Tests.APropertyChainThatFitsNowhere_…`.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
+- status: **fixed** where the chain fits nowhere; **open** where it fits below.
+
+## SK-DIV-0763 — a call's arguments under a type test written on one line: measured, not wired
+
+#620 round two (2026-11-13). `return base.Create(GetRoot(x)) is SyntaxNode node;` past the margin: the oracle keeps the
+call whole and breaks after `is` (`… is` / `SyntaxNode node;`), or before it when the call fits and the keyword does
+not; Skala chops the call's arguments. The same in a `return`, an `=`, a discard and a sole lambda's body.
+
+Measured on a probe of 2 000 one-line tests in seven contexts: ⚠ with two arguments or more the oracle chops (260 of
+271 where the call and the keyword fit); with one argument it breaks after the keyword in 150 of 195. Letting every
+such list stay whole while the call and its keyword fit fixed 161 members and broke 409; letting only one-argument
+lists do it fixed 149 and broke 74. The rest of the one-argument choice depends on the head, the argument, the test and
+the line's end (the best line found, 172 of 195). ⚠ **Not wired** — it fails the bar — and a `{ … }` pattern after
+`is` has no break before the keyword at all in Skala (`IsPatternExpressionSyntax` plans none), so the oracle's
+`)` / `is IMethodSymbol { IsStatic: true }` is not reachable without a new point.
+
+- options: none.
+- status: **open**.
 
 ## SK-DIV-0505 — one argument behind a head wider than fourteen: one boundary for every owner
 
