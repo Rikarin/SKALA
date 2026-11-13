@@ -5585,7 +5585,10 @@ public sealed class BreakPlan {
         // two levels past the call / `is T` one.
         || root.Parent is ExpressionSyntax { Parent: LambdaExpressionSyntax lambda } body
         && (TestedOperandOfASoleLambda(lambda, body) == root
-            || TestedLinkedCallOfASoleLambda(lambda, body).Operand == root);
+            || TestedLinkedCallOfASoleLambda(lambda, body).Operand == root
+            // ⚠ And an operand ending in a later call of two or more arguments, whichever line decides its arrow
+            // (SK-DIV-0520 round two): `Run(x =>` / `open(a)` / `.Analyze(b, c)` two levels past the call / `is T` one.
+            || BrokenTestedOperandOf(lambda, body) is { } tested && tested == root && IsALaterCallOfTwoOrMore(tested));
 
     /// <summary>Whether a node is an operand of <c>&amp;&amp;</c> or <c>||</c>.</summary>
     static bool IsALogicalOperand(SyntaxNode node) =>
@@ -9094,8 +9097,34 @@ public sealed class BreakPlan {
         PlanArrowBody(
             lambda,
             body,
-            WithTheLinkedCall(lambda, body, ArrowFactsOf(lambda, body))
+            WithTheLinkedCall(lambda, body, WithTheLaterCall(lambda, body, ArrowFactsOf(lambda, body)))
         );
+
+    /// <summary>
+    ///     <paramref name="facts" /> with <see cref="GroupFacts.LambdaTestLaterCall" /> set where the body is a type test
+    ///     the author broke before its keyword over an operand ending in a later call of two or more arguments
+    ///     (<see cref="IsALaterCallOfTwoOrMore" />); where no other line decides that operand's arrow, facts of its own
+    ///     with <see cref="GroupFacts.LambdaTestCallHead" /> −2.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Read from the tree, the operand's formatted width and the author's breaks inside it — the same
+    ///     <see cref="GroupFacts.LambdaTestKept" /> every other class reads — so pass two asks what pass one asked.
+    /// </remarks>
+    GroupFacts WithTheLaterCall(LambdaExpressionSyntax lambda, ExpressionSyntax body, GroupFacts facts) =>
+        BrokenTestedOperandOf(lambda, body) is not { } operand
+        || !IsALaterCallOfTwoOrMore(operand)
+        || ArrowWinsOverTheChain(lambda)
+            ? facts
+            : facts.LambdaTestCall > 0
+                ? facts with { LambdaTestLaterCall = true }
+                : new GroupFacts(
+                    BreaksIfTooLong: true,
+                    LambdaHead: FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                    LambdaTestCall: FormattedWidth(operand),
+                    LambdaTestKept: HasLineBreakIn(operand),
+                    LambdaTestCallHead: -2,
+                    LambdaTestLaterCall: true
+                );
 
     /// <summary>
     ///     <paramref name="facts" /> with <see cref="GroupFacts.LambdaLinkedCall" /> set where the body is a
@@ -9500,6 +9529,32 @@ public sealed class BreakPlan {
             : null;
 
     /// <summary>
+    ///     Whether an operand's last call — the one its trailing links hang off, if any — takes two or more arguments
+    ///     and is not its first call: <c>open(x).Analyze(a, b)</c>, <c>ctx.Get().Value.Merge(a, b).First()</c>,
+    ///     <c>Find(a, b).Merge(c, d)</c> (#618, <see cref="GroupFacts.LambdaTestLaterCall" />).
+    /// </summary>
+    static bool IsALaterCallOfTwoOrMore(ExpressionSyntax operand) {
+        var last = operand;
+        while (last is MemberAccessExpressionSyntax access) {
+            last = access.Expression;
+        }
+
+        if (last is not InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 } call) {
+            return false;
+        }
+
+        for (var spine = call.Expression; spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax;) {
+            if (spine is InvocationExpressionSyntax) {
+                return true;
+            }
+
+            spine = ((MemberAccessExpressionSyntax)spine).Expression;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     ///     The operand a sole lambda's broken type test tests where its last call has one argument or none, links after
     ///     it or not (<c>Resolve(x.GetRoot())</c>, <c>ctx.Get()</c> / <c>.Value</c>); null otherwise. Its arrow breaks
     ///     whenever the operand does not fit beside it and the arrow ends twelve columns or more past the line's start
@@ -9513,7 +9568,9 @@ public sealed class BreakPlan {
 
         // ⚠ The last call on the spine with one argument or none: a first call of two or more followed by links has a
         // measured line of its own (TestedLinkedCallOfASoleLambda), and a first call of one argument followed by a call
-        // of more keeps the arrow by a rule not found.
+        // of more is GroupFacts.LambdaTestLaterCall's (WithTheLaterCall) — ⚠ not "keeps the arrow by a rule not found",
+        // which this said until SK-DIV-0520 round two: reading that line takes probe I's 700 such members from 305
+        // agreeing to 655.
         if (TestedLinkedCallOfASoleLambda(lambda, body).Operand is not null) {
             return null;
         }

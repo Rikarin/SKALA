@@ -1658,6 +1658,22 @@ public sealed class Fitter {
                 break;
         }
 
+        // ⚠ An operand ending in a later call of two or more arguments (`open(x).Analyze(a, b)`, SK-DIV-0520 round
+        // two): its own line first, then the operand's other line where it has one (−2: none, and the arrow stays).
+        // A wider operand, a longer parameter list or a narrower callee keeps the arrow. ⚠ The constant is not the
+        // best fit (−175, 16 of 635 apart on probe H): it is the line below which every member the old rules already
+        // agreed with stays as it was, on probes S, F and H — the boundary is not clean, and on its near side the
+        // other rules keep deciding. Measured 2026-11-13; see GroupFacts.LambdaTestLaterCall.
+        if (facts.LambdaTestLaterCall
+            && callee + parameters >= 11
+            && 12 * callee - 5 * parameters + 2 * lineStart - facts.LambdaTestCall >= -112) {
+            return true;
+        }
+
+        if (facts.LambdaTestCallHead == -2) {
+            return false;
+        }
+
         return arrowEnd + 1 + facts.LambdaTestCall > width
             && callee + parameters >= 11
             && (facts.LambdaTestLinks
