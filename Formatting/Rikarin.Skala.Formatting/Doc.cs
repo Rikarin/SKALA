@@ -2047,6 +2047,14 @@ public sealed class Document {
 ///     ⚠ <see cref="ParenMember" />'s shape behind a head of seven to eleven columns through the <c>=</c>, read only for a
 ///     doubled parenthesis with a call after it (#598, SK-DIV-0872). See <c>Fitter.ShortParenMemberEqualsBreaks</c>.
 /// </param>
+/// <param name="HeldValueNameWidth">
+///     ⚠ With <see cref="HeldValue" />: the width of what the <c>=</c> assigns, a local's name or an assignment's whole
+///     target, for any value (#598, round 12). See <c>Fitter.ShortHeadKeepsBeforeOneArgument</c>.
+/// </param>
+/// <param name="HeldValueArgumentCount">
+///     ⚠ With <see cref="HeldValue" />: how many arguments the held call takes (#598, round 12). See
+///     <c>Fitter.ShortHeadKeepsBeforeArguments</c>.
+/// </param>
 /// <param name="CastMember">
 ///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator with one member after it, the whole value of a
 ///     <c>return</c> or an assignment, simple or compound (#598, SK-DIV-0871): the value's widths, with
@@ -2353,7 +2361,9 @@ public readonly record struct GroupFacts(
     int WhenLastPoint = 0,
     int WhenOuterLead = 0,
     ParenMemberValue CastMember = default,
-    ParenMemberValue ShortParenMember = default);
+    ParenMemberValue ShortParenMember = default,
+    int HeldValueNameWidth = 0,
+    int HeldValueArgumentCount = 0);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator
