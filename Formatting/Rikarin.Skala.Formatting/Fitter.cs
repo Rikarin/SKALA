@@ -578,6 +578,27 @@ public sealed class Fitter {
                     return BreaksBeforeAPlainMember(facts, m, tail) ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
+                // ⚠ Where the line through the held call fits and only the rest of the chain overflows, the `=` breaks
+                // when the value fits below by a limit of its own, and stays otherwise (#619 round 7): the ordering rule
+                // answered with a limit read from the indent. See HeldChainThroughBreaksTheEquals.
+                if (facts is { HeldChainReceiver: > 0, EqualsName: > 0 }
+                    && m.PointWidth < Unbounded
+                    && m.FlatWidth < Unbounded
+                    && tail < Unbounded
+                    && m.Trailing < Unbounded
+                    && Fits(m.Column, m.FlatWidth + m.Trailing - facts.HeldChainRest)
+                    && !Fits(m.Column, m.FlatWidth, m.Trailing)) {
+                    return HeldChainThroughBreaksTheEquals(
+                        facts,
+                        m.Column + m.PointWidth,
+                        m.FlatWidth + m.Trailing - facts.HeldChainRest - m.PointWidth - 1,
+                        m.ContinuationColumn + tail + m.Trailing,
+                        lineStart
+                    )
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ An `=` before a held lambda call's chain asks the plain member value's two questions, with the
                 // receiver for the fragment the held call would leave beside it (#619). Only where the value fits
                 // below whole, and only on a line the group can measure whole, as above. See
@@ -607,6 +628,7 @@ public sealed class Fitter {
 
                     return HeldChainValueBreaksTheEquals(
                         facts,
+                        m,
                         m.Column - lineStart,
                         m.Column + m.PointWidth + 1 - lineStart,
                         m.Column + m.PointWidth,
@@ -912,7 +934,6 @@ public sealed class Fitter {
                         && m.Column - lineStart + receiver >= 12) {
                         return HeldLambdaOneOverMoves(
                             m.Column,
-                            receiver,
                             facts.HeldCallHead,
                             facts.HeldCallLambdaRest,
                             line
@@ -962,6 +983,16 @@ public sealed class Fitter {
                             facts.HeldCallHead,
                             line
                         );
+
+                    // ⚠ Behind a local's or an assignment's `=`, a call whose limit leaves the whole value ending before column
+                    // 113 below never moves: the `=` breaks or the arrow does (#619 round 7). See
+                    // HeldLambdaStaysBesideTheEquals.
+                    if (saturates
+                        && facts.HeldCallAfterEquals
+                        && paren + facts.HeldCallLambdaArrow <= width
+                        && HeldLambdaStaysBesideTheEquals(receiver, limit, facts.HeldCallLambdaRest)) {
+                        return ResolvedMode.Flat;
+                    }
 
                     return Fits(m.Column, receiver)
                         && !Fits(m.Column, m.FlatWidth)
@@ -1545,8 +1576,27 @@ public sealed class Fitter {
     ///     missed; two random probes written before the fit (indents 8 to 20, six heads, five tails, nine callees)
     ///     miss 3 of 520 and 1 of 554 such statements, against 23 and 32. ⚠ An assignment's name is its whole target,
     ///     <c>this.n…</c> included (<see cref="GroupFacts.EqualsName" />), and its head none.
+    ///     ⚠ Round 7 (2026-11-14): the third region's limit sat 0.002 to 0.02 above a whole column for four pairs of name
+    ///     and receiver, and there the oracle stops a column sooner — <c>List&lt;int&gt; n12 = r9</c>'s 111.002 is 110, at
+    ///     every head, indent, callee and rest (22 such pairs, 40 random contexts each, 3 520 statements: every pair answers
+    ///     alike in all 40). Solved again exactly over those and every third-region statement of the round's probes, each
+    ///     piece takes a receiver term of its own: <c>113.0366 + 0.12195·name − 0.39024·receiver</c> and
+    ///     <c>121.0965 − 0.24561·name − 0.38597·receiver</c>, by margins of 0.012 and 0.009 (names to 45). It moves five
+    ///     pairs a statement can reach, the four above and <c>n42 r2</c> (109 to 110), and a probe of nine pairs around
+    ///     them (1 080 statements) agrees; a first solve without that probe moved <c>n20 r14</c>, which the oracle keeps.
+    ///     Past names of 45 round 4's pieces stand (names of 53 to 58 behind an <c>=</c> past column 84 answer otherwise).
+    ///     ⚠ And where the held call could not move (<see cref="HeldLambdaStaysBesideTheEquals" />) under the held limit's
+    ///     cap, the <c>=</c> breaks only within group I's plateau (<see cref="HeldChainBand" />); past it the arrow breaks.
+    ///     Under the floor the plateau, fitted on names of 31 or less, runs short for the longest names and is not read.
     /// </remarks>
-    static bool HeldChainValueBreaksTheEquals(in GroupFacts facts, int head, int reach, int equals, int below) {
+    static bool HeldChainValueBreaksTheEquals(
+        in GroupFacts facts,
+        in Measures m,
+        int head,
+        int reach,
+        int equals,
+        int below
+    ) {
         var name = facts.EqualsName;
         var receiver = facts.HeldChainReceiver;
         if (HeldChainFragmentIsShort(receiver, name, reach)) {
@@ -1557,8 +1607,68 @@ public sealed class Fitter {
             return false;
         }
 
+        // ⚠ Past names of 45, outside every grid of round 7, round 4's pieces stand: there the oracle's limit is not one
+        // line in the name (an `=` past column 84 moves it), and the refit made 12 of 270 probed statements newly wrong.
+        var limit = name > 45
+            ? Math.Min(121.05 - 0.245 * name, 113 + 0.12 * name) - 0.382 * receiver
+            : Math.Min(
+                121.096491 - 0.245614 * name - 0.385965 * receiver,
+                113.036585 + 0.121951 * name - 0.390244 * receiver
+            );
+        if (below > Math.Min(112, Math.Floor(limit))) {
+            return false;
+        }
+
+        // ⚠ Where the held call could not move behind the kept `=` (HeldLambdaStaysBesideTheEquals), the `=` breaks only
+        // within group I's plateau while the held limit's cap decides, and the arrow breaks past it (#619 round 7).
+        var column = equals + 1;
+        var held = HeldLambdaLimitWithin(column, receiver, facts.HeldChainCallHead)
+            + (facts.HeldChainRest - 10) / 1.5
+            - Math.Max(0, facts.HeldChainArrow - 4) / 50.0;
+        return !(HeldLambdaStaysBesideTheEquals(receiver, held, facts.HeldChainRest)
+            && HeldLambdaCapDecides(column, receiver, facts.HeldChainCallHead)
+            && !HeldChainBandBreaks(facts, m));
+    }
+
+    /// <summary>
+    ///     Whether an <c>=</c> before a held lambda call's chain breaks where the line through the held call fits and only
+    ///     the rest of the chain overflows (#619 round 7): <c>T n… =</c> / <c>r….Where(x =&gt; …).T…();</c> rather than
+    ///     <c>T n… = r….Where(x =&gt; …)</c> / <c>.T…();</c>.
+    /// </summary>
+    /// <param name="equals">The <c>=</c>'s 1-based column.</param>
+    /// <param name="fragment">What stays beside a kept <c>=</c>: the receiver and the held call through its <c>)</c>.</param>
+    /// <param name="below">The 1-based column the value would end at below, its <c>;</c> included.</param>
+    /// <param name="lineStart">The statement's indent.</param>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on 1 399 random series (six heads, indents 8 to 20, names of 3 to
+    ///     45, receivers of 1 to 14, fourteen callees of 4 to 15 columns, four tails, rests of 5 to 44, two bodies), each
+    ///     swept a column at a time with the line through the held call at 120 or less and the whole line past the margin
+    ///     (10 490 statements). Round 2 had the oracle keep the <c>=</c> and break before the next link there; it does so
+    ///     only past a limit on the value's end below, and every series switches exactly once. The limit has group I's
+    ///     shape (<see cref="HeldChainValueBreaksTheEquals" />'s third region, about ten columns lower and without its
+    ///     receiver term): it rises 0.119 a column of name to a hinge at 22 and falls 0.243 a column past it, plus a
+    ///     sixtieth of a column per column of rest past ten and of indent. Solved exactly for the largest margin over the
+    ///     9 876 statements under names of seven or more, it separates every one, by 0.0017 of a column. Under a name of six
+    ///     the <c>=</c> breaks only before a fragment #590 calls short; under five, never, as there. The ordering rule had
+    ///     answered with a limit read from the indent, 109 less a quarter of the continuation, and missed 1 067 of the 10 490.
+    /// </remarks>
+    static bool HeldChainThroughBreaksTheEquals(
+        in GroupFacts facts,
+        int equals,
+        int fragment,
+        int below,
+        int lineStart
+    ) {
+        var name = facts.EqualsName;
+        if (name < 7 && !EqualsFloor.FragmentIsShort(equals, name, fragment)) {
+            return false;
+        }
+
         return below
-            <= Math.Min(112, Math.Floor(Math.Min(121.05 - 0.245 * name, 113 + 0.12 * name) - 0.382 * receiver));
+            <= 102.613854
+            + 0.118860 * name
+            - 0.361478 * Math.Max(0, name - 22.07)
+            + 0.017485 * (facts.HeldChainRest - 10 + lineStart);
     }
 
     /// <summary>See <see cref="GroupFacts.EqualsName" /> and <see cref="EqualsFloor.BreaksBeforeTheValue" />.</summary>
@@ -3358,6 +3468,31 @@ public sealed class Fitter {
     static int HeldLambdaSaturation(int callHead) => 113 + callHead;
 
     /// <summary>
+    ///     Whether a held lambda call behind a local's or an assignment's kept <c>=</c> stays on the <c>=</c>'s line whatever
+    ///     its line below (#619 round 7): its <paramref name="limit" /> leaves the whole value — receiver, call and rest —
+    ///     ending before column 113 on the line below.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on 1 200 random series outside group I whose value fits below, the
+    ///     held call's line swept a column at a time from six under the limit to two past it (8 296 statements: six heads,
+    ///     indents 8 to 20, names of 3 to 40, receivers of 1 to 14, fourteen callees, rests of 5 to 14), with round 6's
+    ///     probes and two more grids. Of the 11 760 statements behind a kept <c>=</c> whose line is within the limit, the
+    ///     oracle moves the call in 11 654 and breaks the arrow in 106 — every one where the receiver, the limit and the rest
+    ///     add to 112.98 or less, and none of the moves under 113.06. Only short rests and short receivers behind long names
+    ///     get there: a value whose line at the limit would end so far left fits below, and the oracle breaks the <c>=</c>
+    ///     or the arrow instead of moving the call (<see cref="HeldChainValueBreaksTheEquals" />). Past the margin below it
+    ///     cannot bite: a line within the limit then ends the value past 120.
+    /// </remarks>
+    static bool HeldLambdaStaysBesideTheEquals(int receiver, double limit, int rest) => receiver + limit + rest < 113;
+
+    /// <summary>Whether <see cref="HeldLambdaLimitWithin" />'s cap decides rather than its floor.</summary>
+    static bool HeldLambdaCapDecides(int column, int receiver, int callHead) =>
+        Math.Min(114.953511 - 0.139466 * column - 0.016815 * receiver, 123.35 - 0.38 * receiver - 0.13 * column)
+        + 0.597428 * (callHead - 7)
+        >= Math.Min(69.995833 + 0.565909 * receiver + 0.444697 * column, 78.94 + 0.2 * receiver + 0.441 * column)
+        + 1.181061 * (callHead - 7);
+
+    /// <summary>
     ///     Whether a held lambda call whose line overflows by its <c>)</c> alone, a rest after it, moves below its receiver
     ///     rather than staying and giving the <c>)</c> a line of its own (#619 round 6).
     /// </summary>
@@ -3366,14 +3501,21 @@ public sealed class Fitter {
     ///     random statements built one column over outside group I and every such statement of the other #619 probes and
     ///     grids (4 685, heads and receivers of 12 to 50, indents 8 to 20, fourteen callees, rests of 8 to 42) the switch is
     ///     mixed from 12 to 19, and no reach separates it. The exact largest-margin line does, by 0.012 of a column: the call
-    ///     moves while its line below — one column over, 125 less the reach — is within 110.792, less 0.1214 a column of the
-    ///     receiver's column and 0.0058 of receiver, plus 0.6243 a column of call head past seven and 0.6705 of rest past
-    ///     ten. ⚠ The margin is thin: solved on 1 933 and then 3 231 statements, each fresh set of about 2 500 found one
-    ///     statement within 0.02 of the line on the wrong side.
+    ///     moves while its line below — one column over, 125 less the reach — is within 110.731, less 0.1209 a column of the
+    ///     receiver's column, plus 0.6154 a column of call head past seven and 0.6703 of rest past ten. ⚠ The margin is thin:
+    ///     round 6 solved it on 1 933 and then 3 231 statements, each fresh set of about 2 500 finding one statement within
+    ///     0.02 of the line on the wrong side.
+    ///     ⚠ Round 7 (2026-11-14): two more fresh sets of 3 000 (seeds 61904 and 61905) found four statements 0.012 on the
+    ///     wrong side, all kept where round 6's line moved them; solved again over the 9 214 statements of every set, two
+    ///     more (seeds 61911 and 61912) found one, 0.003 over. Over all 12 704 the receiver's own term (round 6's 0.0058)
+    ///     goes to zero, the head's falls from 0.6243 to 0.6154, and the margin is 0.0055. The column, the head, the rest
+    ///     and the line decide alone — no two of 11 186 distinct statements that share them answer differently — but no
+    ///     small-denominator form exists:
+    ///     the first integer form that separates them has a denominator of 82, and floor terms on the column, the rest or
+    ///     the head (an eighth of the column, two thirds of the rest) do worse than the plain line.
     /// </remarks>
-    static bool HeldLambdaOneOverMoves(int column, int receiver, int callHead, int rest, int line) =>
-        line
-        <= 110.791908 - 0.121387 * column - 0.005780 * receiver + 0.624277 * (callHead - 7) + 0.670520 * (rest - 10);
+    static bool HeldLambdaOneOverMoves(int column, int callHead, int rest, int line) =>
+        line <= 110.730769 - 0.120879 * column + 0.615385 * (callHead - 7) + 0.670330 * (rest - 10);
 
     /// <summary><see cref="HeldLambdaLimit" />'s cap and the line under it, under <c>.Where(</c>'s head.</summary>
     static double HeldLambdaCap(int column, int receiver) =>

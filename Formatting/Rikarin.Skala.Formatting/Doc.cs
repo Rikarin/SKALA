@@ -1371,6 +1371,11 @@ public sealed class Document {
 ///     by the call's own measured table, which weighs the head before the receiver too (#605). See
 ///     <c>Fitter.HeldLambdaLimit</c>.
 /// </param>
+/// <param name="HeldCallAfterEquals">
+///     ⚠ With <see cref="HeldCallLambda" />: the chain is the value of a local's or an assignment statement's <c>=</c>.
+///     There the call never moves below while its limit leaves the whole value ending before column 113 on the line
+///     below (#619 round 7). See <c>Fitter.HeldLambdaStaysBesideTheEquals</c>.
+/// </param>
 /// <param name="HeldCallLambdaArrow">
 ///     ⚠ With <see cref="HeldCallLambda" />: the width of the lambda from its first token through its <c>=&gt;</c>,
 ///     which the held call's line would end with if the arrow broke. Where that line would not fit, the oracle
@@ -2239,6 +2244,7 @@ public readonly record struct GroupFacts(
     bool TailStopsAtLastResort = false,
     bool HeldCallOnAPath = false,
     bool HeldCallLambda = false,
+    bool HeldCallAfterEquals = false,
     int LambdaOperandParameters = 0,
     int LambdaOperandTail = 0,
     int LambdaOperandFirst = 0,

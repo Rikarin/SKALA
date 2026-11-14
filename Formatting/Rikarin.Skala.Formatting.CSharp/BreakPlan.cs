@@ -3650,6 +3650,13 @@ public sealed class BreakPlan {
                 // ⚠ And the rest of the chain moves the lambda call's limit whatever the chain's wrap style (#605,
                 // group B); see GroupFacts.HeldCallLambdaRest.
                 HeldCallLambdaRest: call == root ? 0 : RestWidth(call, root),
+                // ⚠ Behind a local's or an assignment's `=` the call stays while its limit leaves the whole value short of
+                // column 113 below (#619 round 7); see GroupFacts.HeldCallAfterEquals.
+                HeldCallAfterEquals: root.Parent is EqualsValueClauseSyntax {
+                    Parent: VariableDeclaratorSyntax { Parent.Parent: LocalDeclarationStatementSyntax }
+                }
+                || root.Parent is AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment
+                && assignment.Right == root,
                 // ⚠ And the held line through the arrow must fit for the arrow to break there (#605, group I); see
                 // GroupFacts.HeldCallLambdaArrow.
                 HeldCallLambdaArrow: call.ArgumentList.Arguments is [{ Expression: LambdaExpressionSyntax lambda }]
