@@ -15766,6 +15766,9 @@ width, the inner cast's width and the line together:
 - Where the rest does not fit below, the oracle breaks at the inner cast instead, the operand one level in.
 - Short heads (`var v =`, `_field =`) break their `=` first in the oracle, under the twelve-column `MinimumHead` that
   keeps Skala's `=` (#379).
+- ⚠ Round 11 of #598: over a parenthesised operator **with a member** the break after the cast is wired, beside the head
+  and below a broken `=`, by a score of its own (SK-DIV-0871). The cast over a parenthesised cast of an atom is still
+  open here.
 
 ## SK-DIV-0770 — a bare `(a op b…)` behind a wide head: the name the `=` assigns decides, not whether the value fits below
 
@@ -15949,10 +15952,14 @@ The three fresh probes were built after the last change. Their 12 000 statements
 ⚠ **Open:**
 - Of the 63 left behind wide heads, 35 are in the bands. Another 18 are names of four columns or less behind a long
   head with a cast. Five are the oracle's break after an outer cast (SK-DIV-0608), and five are other.
+  - Round 11 (2026-11-14): the short names and the type-and-name break are **fixed** in SK-DIV-0873, the outer cast
+    below a broken `=` in SK-DIV-0871, and the bands are still open (SK-DIV-0874 has what was measured).
 - The oracle's break between the type and the name, `Dictionary<int, string>` / `v = (a + b…).M();`, answers one column
-  over behind a long type and a short name. Skala has no point there for this value.
+  over behind a long type and a short name. Skala has no point there for this value. **Fixed** in SK-DIV-0873.
 - Short heads and `return` are outside this entry. Their one-argument boundary is round 8's, and it did not separate
-  on the name either. A linear fit over head, line, indent, name and cast still misses 15 % of 2 116 rows.
+  on the name either. A linear fit over head, line, indent, name and cast still misses 15 % of 2 116 rows. Round 11
+  moved three of their classes (SK-DIV-0870, SK-DIV-0871, SK-DIV-0872); the one-argument boundary is still open
+  (SK-DIV-0874).
 
 - options: none.
 - status: **fixed** behind heads of twelve columns or more outside the bands, single and doubled, cast or not. Pinned
@@ -15974,3 +15981,161 @@ between the call's parentheses. The branch now answers 791 of the 792 and 92 of 
 
 - options: none.
 - status: **fixed**, pinned by `ParenMemberNameIssue598Tests`.
+
+## SK-DIV-0870 — a call on a parenthesised operator nests its arguments from the line the call starts on
+
+#598, round 11 (2026-11-14). `x = (T)(a` / `* b…).Where(` / `y` / `);`: the `=` kept, the operator broken, the
+arguments chopped on the operator's line. The oracle puts `y` one level past the statement and the `)` on it, in all
+149 such rows of the #598 grids. Skala put them two levels in and one: the list opened on the operator's line, so the
+`=`'s continuation, open since the statement's line, counted as well. Under `return` nothing else was open, and Skala
+had it right.
+
+The oracle's rule is the line the call **starts** on, not the line its `(` lands on. Under a broken `=` the call starts on
+the line below, and the arguments are two levels in there, as Skala already wrote them. An object creation's
+initializer follows the same rule (SK-DIV-0164).
+
+Wired as an anchored block (`BreakPlan.AnchorsItsArguments`): the call pushes an anchor where it starts, and its
+argument list is a block on that anchor. It applies to a call with arguments on one parenthesis around a binary
+operator, or two, cast or not, that is the whole value of a local's `=`, an assignment, simple or compound, or a
+`return`. It is structural, so a break pass one wrote does not change it on pass two.
+
+- 128 statements fixed over round 8's random grids, m2 and round 10's fresh probes, none newly wrong.
+- options: none.
+- status: **fixed**, pinned by `CastBreakAndAnchorIssue598Tests`.
+
+## SK-DIV-0871 — the break after a cast before a parenthesised operator with a member
+
+#598, round 11. Behind a head that keeps its `=`, the oracle often writes `return (IReadOnlyList<int>)` /
+`(a + b…).Count;`, the value one level in. Below a broken `=` it writes `string value =` / `(IReadOnlyList<int>)` /
+`(a + b…).Count;`, the cast and the value both on the `=`'s continuation column. Skala had no point there for a value
+with a member (SK-DIV-0608 measured the bare value).
+
+Measured with `Testing ask` on three grids written for it:
+- **c1**, 72 000 statements: five short heads, twelve casts of 3 to 35 columns, four members, six first operands, two
+  indents, the receiver's `)` from 20 columns inside the margin to 4 past it.
+- **c2**, 55 080 statements: ten heads of 3 to 7 columns (`return`, assignments, compound assignments), casts of 3 to
+  35, five members, single and doubled, at the receiver's one to three columns over and where a call's `(` lands on
+  the margin.
+- **c3**, 21 060 statements: nine short heads, a doubled parenthesis, six casts, five members, the receiver from 3 in
+  to 9 over.
+
+Round 10's m3 was read for the break below the `=`.
+
+- ⚠ **Only behind a head that keeps its `=`.** An assignment or compound assignment of six columns or more breaks its
+  `=` at the same places, and `return` (six) behaves as a five-column head. Typed and `var` locals break their `=`.
+- ⚠ **Only at two places**, and nowhere else on any grid:
+  - where the operator's `)` lands one column past the margin. The cast breaks while
+    `8·head + 8·cast − 3·min(a, 24) + 4·member` reaches 159, `a` the first operand and `member` its whole width. A
+    doubled parenthesis reads 151 where its inner `)` lands there and 143 where its outer one does.
+  - where the receiver fits and a call's `(` lands one column past the margin, or on it for a call with no arguments.
+    The cast breaks while `4·head + 3·cast + 2·min(args, 12) + [no arguments]` reaches 96. ⚠ The first operand does
+    not count there, and the head weighs twice the cast.
+- **Below a broken `=`**, the cast opens the line and breaks only where the operator's `)` lands one column past the
+  margin: `8·cast − 3·min(a, 24) + 5·member` reaches 167 (159 at a doubled inner `)`, 151 at its outer one).
+
+Every bound is safe: no measured row above it keeps the cast, and about 4 % of the rows that break lie below it.
+
+Wired as `Fitter.CastMemberBreaks`, from `GroupFacts.CastMember` (`BreakPlan.CastMemberValueOf`). The point is the
+receiver's `(`. The group spends its level, and the arguments' anchor (SK-DIV-0870) keeps a chopped list where the
+oracle puts it.
+
+- c1: 1 790 → 206 apart. c2: 13 943 → 7 158. c3, with SK-DIV-0872: 2 622 → 38. None newly wrong.
+- ⚠ c2's remaining 7 158 are not this rule's. They are the `=` of assignments of four and five columns, which Skala
+  breaks one column over where the oracle never does, and compound assignments of seven, which the oracle breaks and
+  Skala does not. Neither head is in the fresh probes' generator, and neither was changed.
+- options: none.
+- status: **fixed** at the places above, pinned by `CastBreakAndAnchorIssue598Tests`.
+
+## SK-DIV-0872 — a doubled parenthesis with a call behind a head of seven to eleven columns
+
+#598, round 11. On c3 (SK-DIV-0871), eight heads of 7 to 11 columns answer identically:
+- **cast**: the `=` breaks wherever the inner `)` lands one column past the margin, as a single parenthesis's `)` does.
+  Skala kept it for a call and broke it for a property.
+- **uncast**: the `=` never breaks once the inner `)` lands two columns past the margin or further, and the operator
+  breaks. Skala broke the `=` for a call.
+
+Wired as `Fitter.ShortParenMemberEqualsBreaks`, from `GroupFacts.ShortParenMember` (round 10's `ParenMemberValueOf`
+behind a head of 7 to 11). A property was right already and is left alone.
+
+- c3: part of 2 622 → 38. None newly wrong anywhere.
+- options: none.
+- status: **fixed**, pinned by `CastBreakAndAnchorIssue598Tests`.
+
+## SK-DIV-0873 — a short name behind a wide type: the type-and-name break one column over, and the `=` past it
+
+#598, round 11. Round 10 left a cast value behind a head of 21 columns or more with a name of four or less to the
+earlier rules (SK-DIV-0830's 18 rows). Measured on **c4**, 18 720 statements: six typed heads (types of 19 to 29
+columns, names of 1 to 4), casts of 3 to 27 columns, six members, 121 to 140 columns.
+
+- **One column over** the oracle breaks between the type and the name, `Dictionary<string, int>` /
+  `d = (T)(a + b…).M();`, behind types of 23 and 29 columns, and never behind 19 or 21. It does not where it keeps the
+  `=`, a property behind a narrow cast, `2·cast + 3·w ≤ 22` (`w` SK-DIV-0770's weight of the name). Wired in
+  `BreakPlan.BreaksBeforeACastParenMemberOneOver`, through the type-and-name gap's one-column point (SK-DIV-0127).
+- **Past one column**, while the receiver fits beside:
+  - a property keeps its `=` while `2·cast + 3·w ≤ 27`, and is left to the earlier rules above it;
+  - a call with no arguments keeps it while `2·cast + 3·w ≤ 19` and its `(` lands inside the margin;
+  - every other call answers by round 10's call score.
+- ⚠ The cast and the name act together: `(T)` keeps behind `d` and `dddd` alike, a five-column cast keeps behind `d`
+  and not behind `map`.
+
+- c4: 1 157 → 81. m3: 2 161 → 1 015 and m4: 672 → 345 with SK-DIV-0871. None newly wrong.
+- An uncast value one column over is still the `=`'s own rules (round 10). Behind a type of 23 they agree with the
+  oracle. Behind 29 the oracle breaks the type-and-name gap for a property too, which is not wired.
+- options: none.
+- status: **fixed** for a cast value, pinned by `CastBreakAndAnchorIssue598Tests`.
+
+## SK-DIV-0874 — the bands, and the one-argument boundary behind short heads: measured, not closed
+
+#598, round 11. What was measured on the classes that stay open.
+
+**The call band (844 to 847, SK-DIV-0830).** Among the brief's candidate terms, one moved it: whether the value fits on
+the line below. A value too wide for the line below breaks its `=` through 846 on every grid. Wired: `call ≤ 846`
+breaks there (26 statements fixed, none newly wrong). A value that fits below still goes both ways at 844 to 847, and
+pairs on either side differ by no measured variable.
+
+**The member band behind the receiver (908 to 915).** Each term was searched alone against round 10's score: the line
+below's end against the margin, the receiver's width, the argument width, the call's head, a doubled parenthesis, the
+first operand uncapped, and caps of 22 to 30.
+- The cap at 24 is sharp: a logistic fit misses 81 rows with it and 232 to 563 with any other.
+- No term moved the 4 485 rows near the band below 125 errors (from 144).
+- ⚠ The per-group thresholds read on m3 never overlap within a group (890 groups, each a head, cast, member and first
+  operand, one column of line at a time). Across groups they spread over 11 units of the score, more than the 8 one
+  column moves it. Regressed on every feature, the spread is ±4.3, which is the column's quantisation itself.
+- ⚠ Pairs that differ only in a first operand of 24 against 30, at the same column, go both ways in 27 of 8 000. So
+  the plateau at 24 is not quite flat, and an integer score with it cannot be exact.
+
+**The one-argument boundary behind short heads** (c5, 18 144 statements: nine heads, four casts, six one-argument
+calls, the call's `(` from 13 inside the margin to 1 past it, indents 8 and 16).
+- At indent 8, behind heads of seven and eight columns, the `=` breaks exactly where the call's `)` lands past the
+  margin.
+- At indent 16 the same heads and positions answer differently for long arguments, and the cast and the uncast value
+  answer oppositely.
+- Behind `x =`, `y +=` and `return`, a one- or two-column argument breaks the dot where its `(` lands on the margin at
+  indent 8, and chops at indent 16.
+- ⚠ No measured variable separated these. The paren's start column, the receiver's width and `10·paren − 3·column`
+  (SK-DIV-0211) each give both answers at one value.
+
+Fresh probes built after the last change, 12 000 statements: seeds 598401 to 598403, from round 8's mixed generator,
+round 10's head generator, and both with the doubled and focused generators. Round 10's commit `afaed3a50` → branch.
+No statement that matched diverges, and none takes two passes:
+
+| Class | `afaed3a50` | Branch |
+|---|---:|---:|
+| short head or `return`, with a member: the cast break | 37 | 6 |
+| short head or `return`, with a member: the argument level | 28 | 0 |
+| short head or `return`, with a member: the `=` (mostly one argument) | 72 | 37 |
+| short head or `return`, with a member: below the `=` | 4 | 4 |
+| wide head: the bands | 27 | 26 |
+| wide head: short names behind a wide type | 21 | 1 |
+| wide head: the cast below a broken `=` | 8 | 1 |
+| wide head: other | 2 | 2 |
+| a bare value | 3 | 3 |
+| **total** | **202** | **80** |
+
+Round 10's fresh probes (seeds 830101 to 830103): 180 → 60. Every grid, `afaed3a50` → branch, none newly wrong:
+- round 8's fourteen random grids: 647 → 326;
+- m1: 166 → 166, m2: 32 → 4, m3: 2 161 → 1 015, m4: 672 → 345;
+- round 9's b1 to b6: unchanged.
+
+- options: none.
+- status: ⚠ **open**: the bands, the one-argument boundary behind short heads, and the bare value's band.

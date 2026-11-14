@@ -841,6 +841,14 @@ public sealed partial class CSharpDocumentBuilder {
         //   x is A            a
         //       or B    vs    + b     ← one level, not two
         if (IsChainRoot(node) || IsPatternChainRoot(node)) {
+            // ⚠ A call on a parenthesised operator, the whole value of an `=`, anchors its arguments to the line it
+            // starts on (#598, SK-DIV-0870). See BreakPlan.AnchorsItsArguments.
+            var anchorsArguments = node is InvocationExpressionSyntax && AnchorsItsBlock(node);
+            if (anchorsArguments) {
+                EmitLeadingGap(node);
+                OpenIndent(IndentKind.Anchor);
+            }
+
             frames.Add(
                 new(
                     IsPatternChainRoot(node) ? FrameKind.Pattern : FrameKind.Chain,
@@ -884,6 +892,11 @@ public sealed partial class CSharpDocumentBuilder {
             }
 
             frames.RemoveAt(frames.Count - 1);
+            if (anchorsArguments) {
+                EmitUpTo(node.Span.End);
+                CloseIndent(IndentKind.Anchor);
+            }
+
             return;
         }
 
@@ -1033,6 +1046,10 @@ public sealed partial class CSharpDocumentBuilder {
             WithExpressionSyntax { Initializer: { } initializer }
                 when options.UseContinuousIndentInsideInitializerBraces && !AlignsFromOwnColumn(initializer) =>
                 initializer,
+            // ⚠ And the arguments of a call on a parenthesised operator, the whole value of an `=`, from the line the
+            // call starts on (#598, SK-DIV-0870): `x = (T)(a` / `* b…).Where(` / `y` / `);`. See
+            // BreakPlan.AnchorsItsArguments.
+            InvocationExpressionSyntax call when BreakPlan.AnchorsItsArguments(call) => call.ArgumentList,
             _ => null
         };
 
@@ -2134,6 +2151,17 @@ public sealed partial class CSharpDocumentBuilder {
         // delimiter reaches `alignsCloser` instead of falling through to the ambient continuation.
         var scopeKind = marker ? IndentKind.None : innerIndent;
         var levels = marker ? 1 : inside;
+
+        // ⚠ A call's arguments that nest from the line the call starts on (#598, SK-DIV-0870): a block on the
+        // anchor its call pushed, so the `=`'s continuation open behind the operator's line is not counted twice.
+        // See BreakPlan.AnchorsItsArguments.
+        if (node is ArgumentListSyntax
+            && scopeKind == IndentKind.Continuous
+            && levels == 1
+            && node.Parent is { } caller
+            && AnchoredBlockOf(caller) == node) {
+            scopeKind = IndentKind.AnchoredBlock;
+        }
 
         var savedDepth = continuousDepth;
         var pending = 0;

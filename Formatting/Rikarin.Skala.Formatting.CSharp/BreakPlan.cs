@@ -3028,6 +3028,8 @@ public sealed class BreakPlan {
             && value is IdentifierNameSyntax or AnonymousFunctionExpressionSyntax
             && (value is not AnonymousFunctionExpressionSyntax || ArrowYieldWidthOf(value) > 0)
             && BreaksItsNameOneOver(FormattedWidth(node.Type), name.Span.Length)
+            || node is { Parent: LocalDeclarationStatementSyntax, Variables.Count: 1 }
+            && BreaksBeforeACastParenMemberOneOver(node.Type, name, value)
                 ? FlatSourceWidth(value!) + 1
                 : 0;
 
@@ -3213,6 +3215,38 @@ public sealed class BreakPlan {
     ///     always, 32 up to a 50-letter name, 24 to 31 up to <c>2 · type − 41</c>, 22 and 23 up to
     ///     <c>2 · type − 43</c>, narrower never. The indent does not move it.
     /// </remarks>
+    /// <summary>
+    ///     Whether a local of a short name behind a wide type, whose value is a cast over a parenthesised operator with
+    ///     one member after it, breaks between its type and its name one column past the margin (#598, SK-DIV-0873):
+    ///     <c>Dictionary&lt;string, int&gt;</c> / <c>d = (T)(a + b…).M();</c>.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on 18 720 statements behind six heads, casts of 3 to 27 columns
+    ///     and six members: at 121 columns the oracle breaks here behind types of 23 and 29 columns with names of one to
+    ///     four, and never behind 19 and 21. A property behind a narrow cast keeps the line instead, its dot breaking
+    ///     (<c>2·cast + 3·w ≤ 22</c>, <c>w</c> SK-DIV-0770's weight of the name); so does an uncast value, by the
+    ///     <c>=</c>'s own rules, which this leaves alone.
+    /// </remarks>
+    bool BreaksBeforeACastParenMemberOneOver(TypeSyntax type, SyntaxToken name, ExpressionSyntax? value) {
+        if (value is not CastExpressionSyntax cast
+            || name.Span.Length > 4
+            || FormattedWidth(type) < 23) {
+            return false;
+        }
+
+        var call = cast.Expression as InvocationExpressionSyntax;
+        if ((call?.Expression ?? cast.Expression) is not MemberAccessExpressionSyntax {
+                Name: IdentifierNameSyntax
+            } access
+            || !access.IsKind(SyntaxKind.SimpleMemberAccessExpression)
+            || ParenthesisedOperatorOf(access.Expression) is null) {
+            return false;
+        }
+
+        var weight = Math.Min(name.Span.Length + 3, 69 - 2 * name.Span.Length);
+        return call is not null || 2 * FormattedWidth(cast.OpenParenToken, cast.CloseParenToken) + 3 * weight > 22;
+    }
+
     static bool BreaksItsNameOneOver(int type, int name) =>
         type >= 33
         || type == 32 && name <= 50
@@ -7178,7 +7212,10 @@ public sealed class BreakPlan {
                             _ => 0
                         },
                     BareParenDoubled: bareParen is not null && bareDoubled,
-                    ParenMember: ParenMemberValueOf(node, owner, equals, value)
+                    ParenMember: ParenMemberValueOf(node, owner, equals, value),
+                    // ⚠ And a doubled one behind a head of seven to eleven columns (#598, SK-DIV-0872). See
+                    // Fitter.ShortParenMemberEqualsBreaks.
+                    ShortParenMember: ParenMemberValueOf(node, owner, equals, value, true)
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -7234,13 +7271,15 @@ public sealed class BreakPlan {
         SyntaxNode node,
         EqualsOwner owner,
         SyntaxToken equals,
-        ExpressionSyntax value
+        ExpressionSyntax value,
+        bool shortHead = false
     ) {
+        var headWidth = HeadWidthThroughEquals(node, equals);
         if (owner is not (EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment)
             || options.WrapBeforeEq
             || node is AssignmentExpressionSyntax assignment
             && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
-            || HeadWidthThroughEquals(node, equals) < MinimumEqualsHead) {
+            || (shortHead ? headWidth is < 7 or >= MinimumEqualsHead : headWidth < MinimumEqualsHead)) {
             return default;
         }
 
@@ -7520,6 +7559,15 @@ public sealed class BreakPlan {
             return;
         }
 
+        // ⚠ And before a parenthesised operator with one member after it, by the measured rule (#598, SK-DIV-0871):
+        // see GroupFacts.CastMember.
+        if (node is CastExpressionSyntax memberCast && CastMemberValueOf(memberCast) is { Width: > 0 } castMember) {
+            var receiverOpen = NewGroup();
+            Point(memberCast.CloseParenToken.GetNextToken(), receiverOpen);
+            Describe(memberCast, receiverOpen, GroupMode.Preserve, new(CastMember: castMember), true);
+            return;
+        }
+
         if (node is not CastExpressionSyntax cast || !IsACastAtom(cast.Expression)) {
             return;
         }
@@ -7604,6 +7652,74 @@ public sealed class BreakPlan {
     ///     Whether a cast is the whole value of a <c>return</c>, or of a plain assignment or local
     ///     (#598).
     /// </summary>
+    /// <summary>
+    ///     <see cref="GroupFacts.CastMember" />: a cast over one parenthesis around a binary operator, or two, with one
+    ///     member after it, <c>(T)(a + b…).M(x)</c> or <c>(T)((a + b…)).Length</c>, the whole value of a <c>return</c> or
+    ///     of an assignment's right side, simple or compound (#598, SK-DIV-0871); default otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Not a local's <c>=</c>: a typed or <c>var</c> head of seven columns or more breaks its <c>=</c> where this
+    ///     breaks, and narrower ones were not measured. Only plain arguments, as the held call's table, and no comment.
+    /// </remarks>
+    ParenMemberValue CastMemberValueOf(CastExpressionSyntax cast) {
+        var call = cast.Expression as InvocationExpressionSyntax;
+        if ((call?.Expression ?? cast.Expression) is not MemberAccessExpressionSyntax {
+                Name: IdentifierNameSyntax
+            } access
+            || !access.IsKind(SyntaxKind.SimpleMemberAccessExpression)
+            || ParenthesisedOperatorOf(access.Expression) is not { } binary
+            || cast.Parent switch {
+                ReturnStatementSyntax => false,
+                AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment => assignment.Right != cast,
+                EqualsValueClauseSyntax {
+                        Parent: VariableDeclaratorSyntax { Parent.Parent: LocalDeclarationStatementSyntax }
+                    } =>
+                    false,
+                _ => true
+            }
+            || call is not null
+            && call.ArgumentList.DescendantNodes()
+                .Any(static argument => argument is AnonymousFunctionExpressionSyntax
+                    or InitializerExpressionSyntax
+                    or AnonymousObjectCreationExpressionSyntax
+                    or BaseObjectCreationExpressionSyntax
+                    or InvocationExpressionSyntax
+                    or SwitchExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or WithExpressionSyntax
+                )
+            || cast.DescendantTrivia()
+                .Any(static trivia => trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+                )) {
+            return default;
+        }
+
+        var member = call is not null
+            ? FormattedWidth(access.OperatorToken, call.ArgumentList.CloseParenToken)
+            : FormattedWidth(access.OperatorToken, access.Name.GetLastToken());
+        var head = call is not null ? FormattedWidth(access.OperatorToken, call.ArgumentList.OpenParenToken) : member;
+        return new(
+            cast.Parent switch {
+                AssignmentExpressionSyntax target => FormattedWidth(target.Left),
+                EqualsValueClauseSyntax => -1,
+                _ => 0
+            },
+            FormattedWidth(binary.Left),
+            FormattedWidth(cast.OpenParenToken, cast.CloseParenToken),
+            FormattedWidth(cast.OpenParenToken, access.Expression.GetLastToken()),
+            FormattedWidth(cast)
+            + WidthThroughSemicolon(cast)
+            + TrailingCommentWidth(cast.GetLastToken().GetNextToken()),
+            member,
+            call is null ? -1 : member - head - 1,
+            head,
+            access.Expression is ParenthesizedExpressionSyntax { Expression: ParenthesizedExpressionSyntax }
+        );
+    }
+
     static bool IsTheWholeValueOfAReturnOrAnEquals(CastExpressionSyntax cast) =>
         cast.Parent is ReturnStatementSyntax
             or AssignmentExpressionSyntax { RawKind: (int)SyntaxKind.SimpleAssignmentExpression }
@@ -8975,6 +9091,36 @@ public sealed class BreakPlan {
             AssignmentExpressionSyntax assignment => assignment.Right == whole,
             ReturnStatementSyntax => true,
             ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } } => true,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    ///     Whether a call's arguments nest from the line the call starts on: a call with arguments on one parenthesis
+    ///     around a binary operator, or two, cast or not, that is the whole value of a local's or an assignment's
+    ///     <c>=</c>, simple or compound (#598, SK-DIV-0870).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c>: <c>x = (T)(a</c> / <c>* b…).Where(</c> / <c>y</c> / <c>);</c>
+    ///     puts <c>y</c> one level past the statement and the <c>)</c> on it, in all 149 rows of the #598 grids where
+    ///     the <c>=</c> stays and the operator broke. Skala counted the <c>=</c>'s continuation and the list's own
+    ///     level, two, because the list opened on the operator's line. Under a broken <c>=</c> the call starts on the
+    ///     line below it and the arguments are two levels in, as before. <c>return</c> had it right already.
+    /// </remarks>
+    public static bool AnchorsItsArguments(SyntaxNode node) {
+        if (node is not InvocationExpressionSyntax {
+                ArgumentList.Arguments.Count: > 0, Expression: MemberAccessExpressionSyntax access
+            } call
+            || !access.IsKind(SyntaxKind.SimpleMemberAccessExpression)
+            || ParenthesisedOperatorOf(access.Expression) is null) {
+            return false;
+        }
+
+        var whole = call.Parent is CastExpressionSyntax cast && cast.Expression == call ? cast : (ExpressionSyntax)call;
+        return whole.Parent switch {
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax } => true,
+            AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment => assignment.Right == whole,
+            ReturnStatementSyntax => true,
             _ => false
         };
     }
