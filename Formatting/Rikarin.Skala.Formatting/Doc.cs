@@ -1203,6 +1203,21 @@ public sealed class Document {
 /// <param name="ArmNewHead">
 ///     With <see cref="ArmNewBody" />: the width of <c>new Holder(</c>, through the argument list's <c>(</c>.
 /// </param>
+/// <param name="ArmParenBody">
+///     ⚠ On the group of the gap after a switch arm's parenthesised query body's <c>(</c>: the body's formatted width
+///     (#576 round 14, SK-DIV-0399). Where <c>(from item</c> does not fit beside the arrow, the oracle keeps
+///     <c>=&gt; (</c> on the arrow's line and moves the query below by a measured rule on the body's width, the arrow's
+///     end and its line's start; see <c>Fitter.ArmParenBreaks</c>. <see cref="ArmQueryHead" /> rides along.
+/// </param>
+/// <param name="WhenFirstPlain">
+///     On an arm's <c>when</c> gap: the condition's first type argument nests no type argument list two deep, so the
+///     fill beside the <c>when</c> has only the outer comma and the second argument's <c>&lt;</c> to take (#576 round 14).
+///     See <c>Fitter.AtomWhenBreaks</c>.
+/// </param>
+/// <param name="ArmParenOpens">
+///     On the same arm's body group: the gap after the <c>(</c> is such a point, so the body stays on the arrow's line
+///     wherever <c>Fitter.ArmParenBreaks</c> holds.
+/// </param>
 /// <param name="ArmQueryHead">
 ///     With <see cref="ArmQueryBody" />: the width of <c>(from item</c>, the least of the query the arrow's line
 ///     must hold for the body to stay there.
@@ -2462,7 +2477,10 @@ public readonly record struct GroupFacts(
     int HeldValueNameWidth = 0,
     int HeldValueArgumentCount = 0,
     int ArmNewBody = 0,
-    int ArmNewHead = 0);
+    int ArmNewHead = 0,
+    int ArmParenBody = 0,
+    bool ArmParenOpens = false,
+    bool WhenFirstPlain = false);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator
