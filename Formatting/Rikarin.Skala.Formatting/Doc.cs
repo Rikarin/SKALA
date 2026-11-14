@@ -1996,7 +1996,9 @@ public sealed class Document {
 /// </param>
 /// <param name="ValueHeadCallee">
 ///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
-///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).
+///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596). An object
+///     creation's is the width through its first point instead — the <c>(</c> of a non-empty argument list, else the
+///     initializer's <c>{</c> (fuzz 10634966521450362568).
 /// </param>
 /// <param name="PositionalHead">
 ///     ⚠ A switch arm's body group behind a positional pattern with no <c>when</c> (#559, SK-DIV-0443): the head

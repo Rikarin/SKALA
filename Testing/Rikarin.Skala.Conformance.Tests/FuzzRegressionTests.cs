@@ -318,6 +318,12 @@ public sealed class FuzzRegressionTests {
     // flat width the floor compares, and broke after the `ref`. The yield now needs the `<` to fit, as the oracle's
     // does: it breaks after the colon or the keyword from the `<` at 122 on.
     [InlineData(354857589735471722UL)]
+    // Found 2026-11-14 (fails on a2a6de72 too): `int v172 = new ((…) First, (…) Second)() { P173 = 0xead } ? … : (…)`
+    // with the initializer's `{` past the margin. Behind a head under twelve columns #553's rule kept the `=` and
+    // chopped the initializer; pass two, the condition broken, left that rule and broke the `=`. An object creation's
+    // first point — its `(` with arguments, else its `{` — past the margin now breaks the `=` as a call's `(` does
+    // (#596), the oracle's answer on both passes.
+    [InlineData(10634966521450362568UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
