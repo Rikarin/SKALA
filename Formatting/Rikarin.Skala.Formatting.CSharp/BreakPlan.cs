@@ -1087,6 +1087,12 @@ public sealed class BreakPlan {
                 PlanFromClause(from);
                 return;
 
+            case WhereClauseSyntax {
+                Condition: LiteralExpressionSyntax or IdentifierNameSyntax or MemberAccessExpressionSyntax
+            } where:
+                PlanWhereClause(where);
+                return;
+
             case SwitchExpressionArmSyntax arm:
                 PlanArmArrow(arm);
                 return;
@@ -2649,7 +2655,8 @@ public sealed class BreakPlan {
                 // the list stays and the inner list fills (#576). See GroupFacts.WhenOuterTail.
                 WhenOuterTail: IsAWhenConditionsOuterTypeArguments(node) && node is TypeArgumentListSyntax outer
                     ? FormattedWidth(outer.Arguments[^1].GetFirstToken(), outer.GreaterThanToken)
-                    : 0
+                    : 0,
+                WhenOuterLead: WhenOuterLeadWidth(node)
             )
         );
     }
@@ -2669,6 +2676,20 @@ public sealed class BreakPlan {
     ///     list wherever it overflowed. The boundary is not the whole rule: by the line through the arm's comma, `1`
     ///     and `Value` bodies part at different widths (SK-DIV-0399).
     /// </remarks>
+    /// <summary>
+    ///     For a <c>when</c> condition's outer type argument list of two arguments whose second holds one plain type
+    ///     argument (<c>M&lt;First, IReadOnlyList&lt;T…&gt;&gt;()</c>): the width from the condition's first token
+    ///     through the outer comma, or zero (#576 round 10, <see cref="GroupFacts.WhenOuterLead" />).
+    /// </summary>
+    int WhenOuterLeadWidth(SyntaxNode node) =>
+        IsAWhenConditionsOuterTypeArguments(node)
+        && node is TypeArgumentListSyntax { Arguments.Count: 2 } list
+        && list.Arguments[1] is GenericNameSyntax { TypeArgumentList.Arguments: [var only] }
+        && !only.DescendantNodesAndSelf().Any(static part => part is TypeArgumentListSyntax)
+        && list.Ancestors().OfType<WhenClauseSyntax>().FirstOrDefault() is { } when
+            ? FormattedWidth(when.Condition.GetFirstToken(), list.Arguments.GetSeparator(0))
+            : 0;
+
     static bool IsAWhenConditionsOuterTypeArguments(SyntaxNode node) =>
         node is TypeArgumentListSyntax { Arguments.Count: > 1 } list
         && list.Arguments.Skip(1)
@@ -5436,6 +5457,26 @@ public sealed class BreakPlan {
             ? FormattedWidth(condition.GetFirstToken(), list.Arguments.GetSeparator(0))
             : 0;
 
+    /// <summary>
+    ///     For the gap after an arm's <c>when</c>: the width from a generic call condition's first token through the last
+    ///     break point of its type arguments — the last <c>&lt;</c> or comma inside them — or zero (#576 round 10,
+    ///     <see cref="GroupFacts.WhenLastPoint" />).
+    /// </summary>
+    int WhenLastPointWidth(ExpressionSyntax condition) {
+        if (condition is not InvocationExpressionSyntax {
+                Expression: GenericNameSyntax { TypeArgumentList: var list }
+            }) {
+            return 0;
+        }
+
+        var last = list.DescendantTokens()
+            .Where(static token => token.IsKind(SyntaxKind.LessThanToken)
+                || token.IsKind(SyntaxKind.CommaToken) && token.Parent is TypeArgumentListSyntax
+            )
+            .LastOrDefault();
+        return last.IsKind(SyntaxKind.None) ? 0 : FormattedWidth(condition.GetFirstToken(), last);
+    }
+
     /// <summary>The <c>[</c> of a list pattern written on one line straight after an <c>is</c>.</summary>
     bool IsAOneLineListPatternAfterIs(SyntaxToken open) =>
         open.Parent is ListPatternSyntax { Parent: IsPatternExpressionSyntax } list
@@ -6750,6 +6791,25 @@ public sealed class BreakPlan {
                 SpendsUnderDelimiters: twoLevels,
                 UnconditionalLevel: twoLevels
             )
+        );
+    }
+
+    /// <summary>
+    ///     The gap after a <c>where</c> whose condition has no break point of its own: the condition moves a level past
+    ///     the clause when <c>where condition</c> does not fit (#576 round 11, SK-DIV-0399).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured on the #576 probes: a query body kept on an arm's arrow line, its <c>where "q…"</c> line running
+    ///     past the margin, comes back as <c>where</c> / the literal one level in, in every position of the arm; Skala had
+    ///     no point there and ran the literal past the margin.
+    /// </remarks>
+    void PlanWhereClause(WhereClauseSyntax node) {
+        var group = NewGroup();
+        var pins = options.KeepsUserBreaksBetweenItems;
+        var broken = PlanItemGap(FirstToken(node.Condition), group, true, pins, true);
+        Describe(
+            node,
+            new(group, GroupMode.Preserve, new(pins && broken, BreaksIfTooLong: true), true, OwnLevel: true)
         );
     }
 
@@ -9405,7 +9465,7 @@ public sealed class BreakPlan {
         // - …)` / `=> body,` comes back from the oracle with the `??` two levels past the arm and chopped, the
         // arrow broken for width; pass two read that break as kept and did the same.
         var widthLift = -1;
-        if (!kept && !keptAfter && (liftsBraces || LiftsUnderAKeptArrow(arm))) {
+        if (!kept && !keptAfter && (liftsBraces || LiftsUnderAKeptArrow(arm)) && !HasAKeptTypeTestBreak(arm)) {
             widthLift = NewGroup();
             OpenAt(
                 arm,
@@ -9624,6 +9684,28 @@ public sealed class BreakPlan {
     ///     argument list included since the width lift made that idempotent (#576, fuzz 12955079666331923518).
     /// </summary>
     static bool LiftsUnderAKeptArrow(SwitchExpressionArmSyntax arm) => arm.WhenClause is not null;
+
+    /// <summary>
+    ///     Whether an arm's <c>when</c> condition holds a type test the author broke after its <c>is</c> or <c>as</c>
+    ///     (fuzz 17391279223121675459, #576 round 11).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ <c>{ Length: &gt; 0 } when (value is</c> / <c>null) =&gt;</c> / the body: pass one broke the arrow for width
+    ///     and the width lift put <c>null)</c> two levels past the arm; pass two, reading the arrow's break as kept, put it
+    ///     one level past — the kept arrow's lift does not reach through a type test's kept break. The oracle, on the
+    ///     same input, keeps the arrow and writes <c>null)</c> one level past the arm, so the width lift stays off there:
+    ///     both passes write one level, the oracle's line.
+    /// </remarks>
+    bool HasAKeptTypeTestBreak(SwitchExpressionArmSyntax arm) =>
+        options.KeepsUserBreaksBetweenItems
+        && arm.WhenClause is { } when
+        && when.Condition.DescendantNodesAndSelf()
+            .Any(node => node is IsPatternExpressionSyntax { IsKeyword: var isKeyword }
+                && BreaksBefore(isKeyword.GetNextToken())
+                || node is BinaryExpressionSyntax binary
+                && (binary.IsKind(SyntaxKind.IsExpression) || binary.IsKind(SyntaxKind.AsExpression))
+                && BreaksBefore(binary.OperatorToken.GetNextToken())
+            );
 
     /// <summary>A lambda's <c>=&gt;</c>: the gap after it, under the <c>=</c>'s ordering rule.</summary>
     /// <remarks>
@@ -10733,6 +10815,7 @@ public sealed class BreakPlan {
                         WhenBody: WhenBodyWidth((SwitchExpressionArmSyntax)node.Parent!),
                         WhenWideBody: WhenWideBodyWidth((SwitchExpressionArmSyntax)node.Parent!),
                         WhenLead: WhenLeadWidth(node.Condition),
+                        WhenLastPoint: WhenLastPointWidth(node.Condition),
                         WhenArrowKept: options.KeepsUserBreaksBetweenItems
                         && node.Parent is SwitchExpressionArmSyntax keptArm
                         && (BreaksBefore(keptArm.EqualsGreaterThanToken)

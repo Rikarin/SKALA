@@ -1874,6 +1874,13 @@ public sealed class Document {
 ///     only while what follows, the rest of the line included, fits below with six columns to spare; otherwise it
 ///     stays and the inner list fills. See <c>BreakPlan.IsAWhenConditionsOuterTypeArguments</c>.
 /// </param>
+/// <param name="WhenOuterLead">
+///     ⚠ With <see cref="WhenOuterTail" />, for a list of two arguments whose second holds one plain type argument
+///     (<c>M&lt;First, IReadOnlyList&lt;T…&gt;&gt;()</c>): the width from the condition's first token through the outer
+///     comma, or zero. Such a list also breaks at that comma while the line it leaves below, through <c>() =&gt;</c>, is
+///     114 columns or less (115 behind a lead of 17 or more) and the lead plus four times that width is 487 or less
+///     (#576 round 10).
+/// </param>
 /// <param name="HeldCallRest">
 ///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
 ///     <c>;</c>, or zero. Past the measured table's limit the held call still breaks before itself when
@@ -2059,6 +2066,11 @@ public sealed class Document {
 /// <param name="WhenLead">
 ///     With <see cref="WhenWideBody" />: the width from the condition's first token through the first comma of its
 ///     outermost type argument list — what a fill beside the <c>when</c> leaves on the <c>when</c>'s line — or zero.
+/// </param>
+/// <param name="WhenLastPoint">
+///     ⚠ With <see cref="WhenLead" />: the width from the condition's first token through the last break point of its
+///     type arguments, the last <c>&lt;</c> or comma inside them — what the <c>when</c>'s line keeps when the outer
+///     comma's tail does not fit below (#576 round 10, <c>Fitter.WhenBreaks</c>).
 /// </param>
 /// <param name="ValueHeadArguments">
 ///     With <see cref="ValueHeadCallee" />: the call condition's argument count, which the line below may run to
@@ -2328,7 +2340,9 @@ public readonly record struct GroupFacts(
     int BareParenWidth = 0,
     int BareParenName = 0,
     bool BareParenDoubled = false,
-    ParenMemberValue ParenMember = default);
+    ParenMemberValue ParenMember = default,
+    int WhenLastPoint = 0,
+    int WhenOuterLead = 0);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator
