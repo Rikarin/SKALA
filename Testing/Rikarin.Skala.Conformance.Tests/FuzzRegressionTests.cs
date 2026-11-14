@@ -511,6 +511,11 @@ public sealed class FuzzRegressionTests {
     // it at 120 and kept the `=`, chopping the arguments; pass two, the chopped arguments turning the callee away, fell
     // to the ordering rule and broke the `=`. The width now runs through the comment.
     [InlineData(9715006458001699096UL, "constructs/breaks/equals-before-a-single-argument-call.cs")]
+    // Coordinator, 2026-11-14 (first bad #446's rounds 9-12 merge c1592d929, a2a6de725 clean): `var length_w… =
+    // MathF.Sqrt(((to.X - from.X) * …) + (…));` inside a for loop. Pass one kept the `=` by the one-argument list limit
+    // and chopped the argument; pass two, the argument chopped, was no held call and broke the `=` by the ordering rule.
+    // Pass two now asks the limit again behind a `var` or an assignment (#446 round 13, Fitter.UntypedChopStays).
+    [InlineData(6543097749365391771UL, "real/vixen/Core/Vixen.Navigation/Baking/PolyMeshDetail.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

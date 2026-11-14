@@ -4,6 +4,8 @@ namespace Rikarin.Skala.Formatting.CSharp.Tests;
 ///     ⚠ #446 round 12 (SK-DIV-0211): the list limit's band of ±2/209 of a column where the rule before it decides, the
 ///     narrow head's integer form with a head of five, and the typed gate's corrected left line. Every expected string is
 ///     <c>jb cleanupcode</c>'s, read off the grid and cell each test names; each must also format to itself.
+///     ⚠ Round 13 removed both of round 12's bands: these cells now pass by the exact limit and gate
+///     (<see cref="HeldExactIssue446Tests" />).
 /// </summary>
 public sealed class HeldBandIssue446Tests {
     static string Wrap(string body) => "class C {\n    void M() {\n" + body + "    }\n}\n";
