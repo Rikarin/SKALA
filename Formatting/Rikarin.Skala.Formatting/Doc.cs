@@ -2149,6 +2149,10 @@ public sealed class Document {
 ///     ⚠ With <see cref="HeldValue" />: how many arguments the held call takes (#598, round 12). See
 ///     <c>Fitter.ShortHeadKeepsBeforeArguments</c>.
 /// </param>
+/// <param name="SixParenMember">
+///     ⚠ <see cref="ParenMember" />'s shape behind a head of exactly six columns through the <c>=</c>, <c>name =</c>,
+///     single or doubled (#598, round 13). See <c>Fitter.SixColumnEqualsBreaks</c>.
+/// </param>
 /// <param name="CastMember">
 ///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator with one member after it, the whole value of a
 ///     <c>return</c> or an assignment, simple or compound (#598, SK-DIV-0871): the value's widths, with
@@ -2478,7 +2482,8 @@ public readonly record struct GroupFacts(
     int HeldValueNameWidth = 0,
     int HeldValueArgumentCount = 0,
     int ArmNewBody = 0,
-    int ArmNewHead = 0);
+    int ArmNewHead = 0,
+    ParenMemberValue SixParenMember = default);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator

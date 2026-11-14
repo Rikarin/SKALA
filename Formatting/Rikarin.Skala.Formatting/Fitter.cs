@@ -405,6 +405,14 @@ public sealed class Fitter {
                     return shortMember ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
+                // ⚠ And behind a head of exactly six columns, `name =` (#598, round 13).
+                if (facts.SixParenMember.Width > 0
+                    && m.PointWidth < Unbounded
+                    && SixColumnEqualsBreaks(facts, m) is { } six
+                    && (six || !facts.SourceBroken)) {
+                    return six ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 // ⚠ And a chain body whose first call fits beside the arrow and which fits nowhere whole (#620,
                 // SK-DIV-0812): by the measured lines, read from flat widths so that pass two asks what pass one did; a
                 // break the author wrote after the arrow is kept.
@@ -3437,6 +3445,87 @@ public sealed class Fitter {
     }
 
     /// <summary>
+    ///     Whether the <c>=</c> before <c>(a + b…).M(x)</c> or <c>(T)(a + b…).Length</c>, single or doubled, breaks behind a
+    ///     head of exactly six columns through the <c>=</c>, <c>name =</c> or <c>yyy +=</c>; null where the value fits
+    ///     beside it or the measurement left it to the earlier rules (#598, round 13).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on grids e1 and e2 (43 437 statements: <c>name =</c> and
+    ///     <c>xxxx =</c>, casts of 0 to 26 columns one at a time from 3 to 19, nine members with arguments of 0 to 12
+    ///     columns, indents 8 to 20) with round 12's d5 and round 11's c2. The two heads answer cell for cell alike, and
+    ///     the six-column head sits between the two it was handed to: like <c>x =</c> it keeps its <c>=</c>, unless the
+    ///     cast is wide.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             Where the receiver fits beside, the <c>=</c> breaks only where a call's <c>(</c> lands one column past
+    ///             the margin (with arguments: <c>6·cast + 5·arguments + [indent ≥ 12] ≥ 98</c>, an uncast value read
+    ///             as a cast of seven), or on it or one past it with none
+    ///             (<c>24·cast + indent + head − 39·[one past] ≥ 378</c>, <c>head</c> the member's <c>.</c> through its
+    ///             <c>(</c>). A property never breaks it.
+    ///         </item>
+    ///         <item>
+    ///             Where the receiver's <c>)</c> (a doubled one's inner <c>)</c>) lands one column past the margin, the
+    ///             <c>=</c> stays and the operator breaks while
+    ///             <c>6·min(a, 24) − 11·cast − 11·member − 59·[uncast] − 12·[cast of 3] + [cast of 4] ≥ −26</c>
+    ///             (doubled: <c>6·min(a, 24) + a − 14·cast − 13·member − 56·[uncast] + 2·[cast of 4] ≥ −12</c>),
+    ///             <c>a</c> the first operand and <c>member</c> its whole width; otherwise the <c>=</c> and the dot break.
+    ///         </item>
+    ///         <item>Past that the <c>=</c> always stays and the operator breaks.</item>
+    ///     </list>
+    /// </remarks>
+    bool? SixColumnEqualsBreaks(in GroupFacts facts, in Measures m) {
+        var value = facts.SixParenMember;
+        var valueColumn = m.Column + m.PointWidth + 1;
+        if (valueColumn + value.Width <= width) {
+            return null;
+        }
+
+        var receiver = valueColumn + value.Receiver;
+        var inner = receiver - (value.Doubled ? 1 : 0);
+        var first = Math.Min(value.Operand, 24);
+        if (inner == width + 1) {
+            var keeps = value.Doubled
+                ? 6 * first
+                + value.Operand
+                - 14 * value.Cast
+                - 13 * value.Member
+                - (value.Cast == 0 ? 56 : 0)
+                + (value.Cast == 4 ? 2 : 0)
+                >= -12
+                : 6 * first
+                - 11 * value.Cast
+                - 11 * value.Member
+                - (value.Cast == 0 ? 59 : 0)
+                - (value.Cast == 3 ? 12 : 0)
+                + (value.Cast == 4 ? 1 : 0)
+                >= -26;
+            return !keeps;
+        }
+
+        if (inner > width + 1) {
+            return false;
+        }
+
+        if (receiver > width) {
+            return null;
+        }
+
+        if (value.Arguments < 0) {
+            return false;
+        }
+
+        var paren = receiver + value.Head;
+        var indent = m.ContinuationColumn - indentWidth;
+        if (value.Arguments > 0) {
+            var cast = value.Cast == 0 ? 7 : value.Cast;
+            return paren == width + 1 && 6 * cast + 5 * value.Arguments + (indent >= 12 ? 1 : 0) >= 98;
+        }
+
+        return (paren == width || paren == width + 1)
+            && 24 * value.Cast + indent + value.Head - (paren == width + 1 ? 39 : 0) >= 378;
+    }
+
+    /// <summary>
     ///     Whether a cast's <c>)</c> breaks before a parenthesised operator with one member after it, the whole value of a
     ///     <c>return</c> or an assignment: <c>return (IReadOnlyList&lt;int&gt;)</c> / <c>(a + b…).Count;</c> (#598,
     ///     SK-DIV-0871).
@@ -3494,9 +3583,20 @@ public sealed class Fitter {
             return false;
         }
 
+        // ⚠ Round 13: the bound was safe, not exact. Refitted on c1 to c3 and round 12's fresh probes (9 324 rows), it reads
+        // the statement's indent and a `return` apart, and is exact but for twelve rows that break below it (`x = `, a
+        // 21-column cast, two arguments of ten): with no arguments, 16·head + 12·cast + indent − 8·[return] ≥ 372 where
+        // the `(` lands on the margin and − 7·[return] ≥ 385 one past it; with arguments, one past it,
+        // 16·head + 12·cast + 7·min(args, 12) − 7·[return] ≥ 372.
         var paren = receiver + value.Head;
-        return (paren == width + 1 || paren == width && value.Arguments == 0)
-            && 4 * head + 3 * value.Cast + 2 * Math.Min(value.Arguments, 12) + (value.Arguments == 0 ? 1 : 0) >= 96;
+        var returned = value.Name == 0 ? 1 : 0;
+        if (value.Arguments == 0) {
+            var bare = 16 * head + 12 * value.Cast + lineStart;
+            return paren == width && bare - 8 * returned >= 372 || paren == width + 1 && bare - 7 * returned >= 385;
+        }
+
+        return paren == width + 1
+            && 16 * head + 12 * value.Cast + 7 * Math.Min(value.Arguments, 12) - 7 * returned >= 372;
     }
 
     /// <summary>Whether a cast's <c>)</c> breaks before a parenthesised operator (#598).</summary>

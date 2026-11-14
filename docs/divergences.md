@@ -17204,6 +17204,8 @@ oracle puts it.
   Skala does not. Neither head is in the fresh probes' generator, and neither was changed.
 - options: none.
 - status: **fixed** at the places above, pinned by `CastBreakAndAnchorIssue598Tests`.
+  - Round 13 (2026-11-14): the call's `(` place was a safe bound, not the line; refitted exactly in SK-DIV-0991. The
+    operator's `)` place is still the safe bound (SK-DIV-0992).
 
 ## SK-DIV-0872 — a doubled parenthesis with a call behind a head of seven to eleven columns
 
@@ -17324,6 +17326,7 @@ was changed:
   Measured only at indents 8 and 12; not wired.
 - options: none.
 - status: **fixed** for heads of five columns or fewer and seven or more, pinned by `ShortHeadEqualsIssue598Tests`.
+  - Round 13 (2026-11-14): six-column assignments are **fixed** in SK-DIV-0990 (c2: 1 531 → 402, d5: 432 → 0).
 
 ## SK-DIV-0921 — at indent 8 one short argument moves the dot behind a head that keeps its `=`
 
@@ -17404,3 +17407,92 @@ newly wrong; c1 206 → 116, c2 7 158 → 1 531, c5 465 → 6; d1 to d4 945 → 
 
 - options: none.
 - status: ⚠ **open**.
+  - Round 13 (2026-11-14): six-column assignments are **fixed** (SK-DIV-0990), the cast break at the call's `(`
+    (SK-DIV-0991); the bands, the bare value and the cast break at the operator's `)` stay open (SK-DIV-0992).
+
+## SK-DIV-0990 — a six-column head keeps its `=` as `x =` does, unless the cast is wide
+
+#598, round 13 (2026-11-14). `name =`, `xxxx =` (six columns through the `=`) over `(T)(a + b…).M(x)` or
+`(T)(a + b…).Length`, single or doubled. Round 12 left them to the plans of seven-column heads (SK-DIV-0920: c2 1 057 apart,
+d5 432 apart). Measured with `Testing ask` on two grids written for it, read with d5 and c2 before anything was fitted:
+- **e1**, 29 952 statements: both heads, casts of 0, 3, 8, 11, 13, 15, 17, 19 and 26 columns, eight members (no arguments,
+  one, two, ten; a property), the receiver's `)` from 112 to 124, first operands 2, 12, 24 and 30, indents 8 to 20.
+- **e2**, 13 440 statements: casts of every width from 3 to 23, twelve members with arguments of 0 to 12 columns, the call's
+  `(` on 119 to 122, indents 8 to 20; the receiver's `)` (a doubled one's inner `)`) one column over at casts 0 to 13, eight
+  members, every even first operand from 2 to 30; doubled values past the margin.
+
+- ⚠ **`name =` and `xxxx =` answer cell for cell alike**, so it is the head's width, and the six-column head sits between
+  the two it was handed to. Like `x =` it keeps its `=` and breaks the dot or chops the arguments, unless the cast is wide.
+- **The receiver fits beside.** The `=` breaks only where a call's `(` lands one column past the margin or, with no
+  arguments, on it:
+  - with arguments, one past it: `6·cast + 5·arguments + [indent ≥ 12] ≥ 98`, `arguments` the width between the
+    parentheses. An uncast value counts as a cast of seven: it breaks only before twelve columns of arguments.
+  - with none: `24·cast + indent + head − 39·[one past] ≥ 378`, `head` the member's `.` through its `(`. That is a cast of
+    16 on the margin and 17 one past it, one column less behind a deep indent or a long method name (`.ToUpperInvariant()`).
+  - A property never breaks it, nor does a `(` anywhere else.
+- **The receiver's `)` one column over** (a doubled one's inner `)`): the `=` stays and the operator breaks while
+  `6·min(a, 24) − 11·cast − 11·member − 59·[uncast] − 12·[cast of 3] + [cast of 4] ≥ −26`, `a` the first operand and
+  `member` its whole width; doubled, `6·min(a, 24) + a − 14·cast − 13·member − 56·[uncast] + 2·[cast of 4] ≥ −12`.
+  Otherwise the `=` and the dot break. Exact on every row (6 513 single, 3 751 doubled).
+  - ⚠ The cast is not linear at its narrow end: an uncast value answers as a cast of about 5.4 columns and `(T)` as one of
+    about 4.1, so `(T)` keeps behind a first operand of 12 where no cast needs 14. Both term flags are that, measured.
+- **Past that** the `=` always stays and the operator breaks (6 240 single and every doubled row of e2 past it).
+
+Wired as `Fitter.SixColumnEqualsBreaks`, from `GroupFacts.SixParenMember` (`BreakPlan.ParenMemberValueOf` behind a head of
+exactly six columns, a compound operator included). Read from the formatted tokens, before the author's break, and a
+broken `=` it breaks stays broken on pass two.
+
+- e1: 1 400 → 0. e2: 4 294 → 2 (two cells of a 3-column cast before twelve columns of arguments at indent 20, which no
+  linear form puts on the break side without moving a measured neighbour; already wrong). d5: 432 → 0. c2: 1 531 → 522.
+- options: none.
+- status: **fixed**, pinned by `SixColumnHeadIssue598Tests`. With the rule switched off, 4 of its 5 tests fail.
+
+## SK-DIV-0991 — the break after a cast before a call on the margin: the bound was safe, the line reads the indent
+
+#598, round 13. SK-DIV-0871's second place, where the receiver fits and a call's `(` lands one column past the margin (on it
+for a call with no arguments): the cast breaks while `4·head + 3·cast + 2·min(args, 12) + [no arguments] ≥ 96`, a bound no
+measured keep crossed and 4 % of breaks lay below. Refitted on c1, c2, c3 and round 12's fresh probes (9 324 rows):
+- ⚠ **The `(` on the margin is a different line from the `(` one past it, and both read the statement's indent and a
+  `return`.** With no arguments, `16·head + 12·cast + indent − 8·[return] ≥ 372` on the margin and
+  `16·head + 12·cast + indent − 7·[return] ≥ 385` one past it: exact on 5 866 rows (the old bound missed 122).
+- With arguments, one past it: `16·head + 12·cast + 7·min(args, 12) − 7·[return] ≥ 372`. It misses twelve rows, all of
+  one cell that breaks below it (`x =`, a 21-column cast, ten columns of arguments), and keeps every measured keep.
+- c1: 116 → 92, c2 (with SK-DIV-0990) 1 531 → 402, none newly wrong.
+- options: none.
+- status: **fixed**, pinned by `SixColumnHeadIssue598Tests`. With the old bound back, its cast test fails.
+
+## SK-DIV-0992 — round 13: what stays open, with the evidence
+
+#598, round 13. Measured, not wired:
+- **The wide-head band past the margin (SK-DIV-0874, SK-DIV-0924).** Within a group (head, cast, member, first operand),
+  the decision is monotone in the line: 6 874 groups of m1 to m4, none crossing back. With the fragment gate set aside
+  (`φ < 3`), one free value per first operand, per cast, per head and per member separates 6 481 of the 6 486 rows within 30
+  of the threshold, whether the value then fits below, breaks at its dot below or breaks at its operator below (the value
+  fitting below: 2 277 of 2 277). So the residue is not a missing variable. No integer form in the widths reaches it: the
+  best is round 10's own score (25 wrong where the value fits below), and weights at 16 and 24 per column give 25 and 17.
+  - ⚠ What the free values show: the first operand past 24 still counts (30 keeps where 24 breaks, by a column); the
+    name's weight for 17 columns is one less than `n + 3`; and the gate at `φ = 0` opens behind 17-column names only.
+  - ⚠ Refuted: that the value's layout below decides it (round 12's suspicion). The three regions take one table.
+- **The cast break at the operator's `)` (SK-DIV-0871).** Read with the indent, a `return` and the method's head: 20 wrong of
+  5 077 at best, the member's weight bending (`.ToUpperInvariant()` keeps above every line that fits the narrow members).
+- **The bare value** (6 on this round's probes): the outer cast's break behind compound assignments and doubled values
+  (SK-DIV-0608), and the `=` at the bounds of SK-DIV-0770's band. Not measured this round.
+
+Fresh probes built after the last change, 12 000 statements: seeds 598701 (round 12's head generator with the mixed and
+focused ones), 598702 (with the argument and doubled ones) and 598703 (with the wide-head, bare and no-argument ones). Round
+12's merge `35b7bff86` → round 13, none newly wrong and none taking two passes:
+
+| Class | `35b7bff86` | Round 13 |
+|---|---:|---:|
+| six-column assignments | 12 | 0 |
+| short head or `return`: the cast break | 6 | 2 |
+| wide head: the bands | 30 | 30 |
+| a bare value | 6 | 6 |
+| **total** | **54** | **38** |
+
+Round 12's fresh probes (seeds 598601 to 598603): 37 → 24 (six-column 10 → 0, the cast break 5 → 2). Every earlier grid
+with e1 and e2, 561 572 statements: 9 920 → 2 600, none newly wrong and none taking two passes. The coordinator's probe
+(seed 909090) stays at 11 of 3 000, none newly wrong.
+
+- options: none.
+- status: ⚠ **open**: the bands, the bare value and the cast break at the operator's `)`.

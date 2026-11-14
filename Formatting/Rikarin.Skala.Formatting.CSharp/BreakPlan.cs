@@ -7418,7 +7418,9 @@ public sealed class BreakPlan {
                             AssignmentExpressionSyntax heldAssignment => FormattedWidth(heldAssignment.Left),
                             _ => 0
                         },
-                    HeldValueArgumentCount: heldCall?.ArgumentList.Arguments.Count ?? 0
+                    HeldValueArgumentCount: heldCall?.ArgumentList.Arguments.Count ?? 0,
+                    // ⚠ And behind a head of exactly six columns (#598, round 13). See Fitter.SixColumnEqualsBreaks.
+                    SixParenMember: ParenMemberValueOf(node, owner, equals, value, sixColumns: true)
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -7475,7 +7477,8 @@ public sealed class BreakPlan {
         EqualsOwner owner,
         SyntaxToken equals,
         ExpressionSyntax value,
-        bool shortHead = false
+        bool shortHead = false,
+        bool sixColumns = false
     ) {
         var headWidth = HeadWidthThroughEquals(node, equals);
         // ⚠ A compound operator over a parenthesised operator is an assignment here (PlanAroundEquals, #598 c2).
@@ -7484,7 +7487,11 @@ public sealed class BreakPlan {
             || node is AssignmentExpressionSyntax assignment
             && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
             && !IsACompoundAssignmentOverAParenthesisedOperator(assignment, value)
-            || (shortHead ? headWidth is < 7 or >= MinimumEqualsHead : headWidth < MinimumEqualsHead)) {
+            || (sixColumns
+                ? headWidth != 6
+                : shortHead
+                    ? headWidth is < 7 or >= MinimumEqualsHead
+                    : headWidth < MinimumEqualsHead)) {
             return default;
         }
 
