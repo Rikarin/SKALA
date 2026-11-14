@@ -1220,6 +1220,16 @@ public sealed class Document {
 ///     fill beside the <c>when</c> has only the outer comma and the second argument's <c>&lt;</c> to take (#576 round 14).
 ///     See <c>Fitter.AtomWhenBreaks</c>.
 /// </param>
+/// <param name="WhenFirstNested">
+///     On an arm's <c>when</c> gap: the condition's first type argument nests exactly two deep
+///     (<c>M&lt;IEnumerable&lt;KeyValuePair&lt;…&gt;&gt;, G&lt;T…&gt;&gt;()</c>). Before an atom body such a
+///     condition's <c>when</c> is decided by <c>Fitter.AtomWhenBreaks</c> as a plain one's is (#576 round 15).
+/// </param>
+/// <param name="WhenOuterNestedAtom">
+///     On the outermost type argument list of such a condition (<see cref="WhenFirstNested" />) before an atom body:
+///     the width of the callee's name, or zero. Beside the <c>when</c> the list then takes its outer comma by
+///     <c>Fitter.NestedAtomOuterCommaTakesTheFill</c> instead of the six-columns-to-spare rule (#576 round 15).
+/// </param>
 /// <param name="ArmParenOpens">
 ///     On the same arm's body group: the gap after the <c>(</c> is such a point, so the body stays on the arrow's line
 ///     wherever <c>Fitter.ArmParenBreaks</c> holds.
@@ -1227,6 +1237,11 @@ public sealed class Document {
 /// <param name="ArmQueryHead">
 ///     With <see cref="ArmQueryBody" />: the width of <c>(from item</c>, the least of the query the arrow's line
 ///     must hold for the body to stay there.
+/// </param>
+/// <param name="ArmQueryFrom">
+///     With <see cref="ArmQueryBody" />: the width of the whole <c>from</c> clause with its <c>(</c>,
+///     <c>(from item in items</c>. Where it does not fit beside the arrow and <see cref="ArmQueryHead" /> does, the
+///     body stays by two measured regimes (#576 round 15, <c>Fitter.ArmQueryFillStays</c>).
 /// </param>
 /// <param name="ArmQueryWhenGap">
 ///     With <see cref="ArmQueryBody" />: the arm's planned <c>when</c> gap group, −2 for one the author broke, −1 for
@@ -2006,6 +2021,11 @@ public sealed class Document {
 ///     114 columns or less (115 behind a lead of 17 or more) and the lead plus four times that width is 487 or less
 ///     (#576 round 10).
 /// </param>
+/// <param name="WhenOuterGap">
+///     ⚠ With <see cref="WhenOuterLead" />: the planned gap after the arm's <c>when</c> (−2 for one the author broke, −1
+///     for none). Below a broken <c>when</c> the list, on the condition's own line, breaks at its comma by its own
+///     measured bar, not round 10's (#576 round 15, <c>Fitter.BrokenWhenOuterCommaTakesTheFill</c>).
+/// </param>
 /// <param name="WhenArrowKeptAfter">
 ///     ⚠ With <see cref="WhenArrowKept" />: the author's break is after the arrow, the body on a line of its own and the
 ///     <c>=&gt;</c> on the condition's. There the <c>when</c> is decided by the condition's flat widths, not by whether it
@@ -2560,7 +2580,11 @@ public readonly record struct GroupFacts(
     int LoneCallLambda = 0,
     int LoneCallHead = 0,
     int[]? SoleChainSegments = null,
-    bool CastParenDoubled = false);
+    bool CastParenDoubled = false,
+    bool WhenFirstNested = false,
+    int WhenOuterNestedAtom = 0,
+    int WhenOuterGap = -1,
+    int ArmQueryFrom = 0);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator

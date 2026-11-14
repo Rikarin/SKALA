@@ -2714,10 +2714,59 @@ public sealed class BreakPlan {
                 WhenOuterTail: IsAWhenConditionsOuterTypeArguments(node) && node is TypeArgumentListSyntax outer
                     ? FormattedWidth(outer.Arguments[^1].GetFirstToken(), outer.GreaterThanToken)
                     : 0,
-                WhenOuterLead: WhenOuterLeadWidth(node)
+                WhenOuterLead: WhenOuterLeadWidth(node),
+                WhenOuterNestedAtom: WhenOuterNestedAtomCallee(node),
+                // ⚠ Below a broken `when`, the list's own bar (#576 round 15). See GroupFacts.WhenOuterGap.
+                WhenOuterGap: WhenOuterLeadWidth(node) > 0
+                && node.Ancestors().OfType<WhenClauseSyntax>().FirstOrDefault() is {
+                    Parent: SwitchExpressionArmSyntax gapArm
+                }
+                    ? PlannedWhenGapOf(gapArm)
+                    : -1
             )
         );
     }
+
+    /// <summary>
+    ///     How deep type argument lists nest inside a generic call condition's first type argument: 0 for a plain name,
+    ///     1 for <c>List&lt;bool&gt;</c>, 2 for <c>IEnumerable&lt;KeyValuePair&lt;int, string&gt;&gt;</c>; −1 for any
+    ///     other condition (#576 round 15).
+    /// </summary>
+    static int FirstTypeArgumentDepth(ExpressionSyntax condition) {
+        if (condition is not InvocationExpressionSyntax {
+                Expression: GenericNameSyntax { TypeArgumentList.Arguments: [var first, ..] }
+            }) {
+            return -1;
+        }
+
+        return first.DescendantNodesAndSelf()
+            .OfType<TypeArgumentListSyntax>()
+            .Select(list => list.Ancestors()
+                    .TakeWhile(ancestor => ancestor != first)
+                    .OfType<TypeArgumentListSyntax>()
+                    .Count()
+                + 1
+            )
+            .DefaultIfEmpty(0)
+            .Max();
+    }
+
+    /// <summary>
+    ///     For a <c>when</c> condition's outer type argument list (<see cref="WhenOuterLeadWidth" />) whose first argument
+    ///     nests two deep, before an atom body: the width of the callee's name, or zero (#576 round 15,
+    ///     <see cref="GroupFacts.WhenOuterNestedAtom" />).
+    /// </summary>
+    int WhenOuterNestedAtomCallee(SyntaxNode node) =>
+        WhenOuterLeadWidth(node) > 0
+        && node.Parent is GenericNameSyntax { Parent: InvocationExpressionSyntax call } callee
+        && node.Ancestors().OfType<WhenClauseSyntax>().FirstOrDefault() is {
+            Condition: var condition, Parent: SwitchExpressionArmSyntax arm
+        }
+        && condition == call
+        && FirstTypeArgumentDepth(condition) == 2
+        && WhenBodyWidth(arm) > 0
+            ? FormattedWidth(callee.Identifier, callee.Identifier)
+            : 0;
 
     /// <summary>
     ///     Whether a type argument list is the outermost one of an arm's <c>when</c> condition whose gap is planned
@@ -5523,23 +5572,6 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
-    ///     Whether an arm's <c>when</c> condition breaks only at type argument lists, with a pattern of no break point
-    ///     of its own: the head never reads a short body through (#576, SK-DIV-0399).
-    /// </summary>
-    /// <remarks>
-    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>T… when Materialise&lt;…&gt;() =&gt; 1,</c> with the
-    ///     condition fitting beside the <c>when</c> breaks after the arrow while the line through it fits and before it
-    ///     after that, where Skala, reading the one-column body through, filled the type arguments.
-    /// </remarks>
-    /// <summary>
-    ///     ⚠ The widest such condition the head stops reading the body through for. Wider, the condition cannot fit
-    ///     beside the <c>when</c> of an arm indented eight columns or more, and where it does not fit below either the
-    ///     oracle fills its type arguments with the short body still beside the arrow, the read-through's answer.
-    ///     Measured on 828 arms: no region-one cell lies past 94 columns and no region-three cell short of 109.
-    /// </summary>
-    const int WhenReadThroughLimit = 96;
-
-    /// <summary>
     ///     Whether an arm's body <c>Receiver.Name</c> breaks at its own dot rather than being read through by the head
     ///     (#576 round 7, SK-DIV-0399). See <see cref="GroupFacts.ArmBodyDot" />.
     /// </summary>
@@ -5567,16 +5599,29 @@ public sealed class BreakPlan {
             ? 5 * FormattedWidth(name) + 6 * FormattedWidth(receiver) >= 53
             : 2 * FormattedWidth(name) + 3 * FormattedWidth(receiver) >= 22);
 
-    static bool ArmWhenHoldsOnlyTypeArguments(SwitchExpressionArmSyntax arm) =>
+    /// <summary>
+    ///     Whether an arm's <c>when</c> condition breaks only at type argument lists: the head never reads a short body
+    ///     through, whatever the pattern and the body (#576, SK-DIV-0399).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-10-14 with <c>Testing ask</c>: <c>T… when Materialise&lt;…&gt;() =&gt; 1,</c> with the
+    ///     condition fitting beside the <c>when</c> breaks after the arrow while the line through it fits and before it
+    ///     after that, where Skala, reading the one-column body through, filled the type arguments.
+    ///     <para>
+    ///         ⚠ Round 15 (2026-11-14): round 7 kept the read-through for a condition wider than 96 columns before a body
+    ///         of three columns or fewer, and behind braces, brackets, a parenthesised list or <c>or</c> for every body —
+    ///         "where it does not fit below the oracle fills its type arguments with the short body beside the arrow".
+    ///         Refuted on 20 400 atom arms (a1–a6) and the fifteen fresh probes: wherever the condition fits through its
+    ///         <c>()</c>, beside the <c>when</c> or on the line below a broken one, the oracle breaks at the arrow and
+    ///         never inside the type arguments, <c>{ Kind: not null } when M&lt;…&gt;() =&gt;</c> / <c>Value,</c> as
+    ///         <c>Xyyy when M&lt;…&gt;() =&gt;</c> / <c>Value,</c>; where it does not fit the read-through changed no
+    ///         arm. Never reading through fixes 359 grid arms and 36 probe rows and makes none wrong.
+    ///     </para>
+    /// </remarks>
+    static bool ArmWhenHoldsTypeArguments(SwitchExpressionArmSyntax arm) =>
         arm.WhenClause is { } when
         && IsAPlannedWhenGap(when)
-        && when.Condition.DescendantNodes().Any(static node => node is TypeArgumentListSyntax)
-        && !arm.Pattern.DescendantNodesAndSelf()
-            .Any(static node => node is PropertyPatternClauseSyntax
-                or ListPatternSyntax
-                or PositionalPatternClauseSyntax
-                or BinaryPatternSyntax
-            );
+        && when.Condition.DescendantNodes().Any(static node => node is TypeArgumentListSyntax);
 
     /// <summary>
     ///     Whether the gap after an arm's <c>when</c> is planned (#576): a condition whose only break points, if
@@ -10301,7 +10346,11 @@ public sealed class BreakPlan {
             && !keptAfter
             && ArmQueryBodyWidth(arm.Expression) > 0
             && arm.Expression is ParenthesizedExpressionSyntax openParen
-            && !BreaksBefore(openParen.OpenParenToken.GetNextToken());
+            && !BreaksBefore(openParen.OpenParenToken.GetNextToken())
+            // ⚠ Nor over a `)` the author broke before (fuzz 17745013003563663514, #576 round 15): the point's own level
+            // put pass one's `)` a level past the query's clauses' line start under the arrow's width break, and pass two,
+            // reading that break as kept, a level back.
+            && !BreaksBefore(openParen.CloseParenToken);
         PlanArrowBody(
             arm,
             arm.Expression,
@@ -10312,6 +10361,7 @@ public sealed class BreakPlan {
                 ArmBodyDot: BreaksAtItsOwnDot(arm, arm.Expression),
                 ArmQueryBody: kept ? 0 : ArmQueryBodyWidth(arm.Expression),
                 ArmQueryHead: kept ? 0 : ArmQueryHeadWidth(arm.Expression),
+                ArmQueryFrom: kept ? 0 : ArmQueryFromWidth(arm.Expression),
                 ArmQueryWhenGap: kept || ArmQueryBodyWidth(arm.Expression) == 0 ? -1 : PlannedWhenGapOf(arm),
                 ArmNewBody: kept || keptAfter || ArmNewCreation(arm.Expression) is not { } created
                     ? 0
@@ -10335,11 +10385,10 @@ public sealed class BreakPlan {
                     WhenClause: null,
                     Pattern: RecursivePatternSyntax { PositionalPatternClause: not null, PropertyPatternClause: null }
                 }
-                // ⚠ Nor, past the limit, before an atom of four columns or more with its comma (#576 round 7): under
-                // the `when` it breaks, the oracle breaks after the arrow, `>>() =>` / `"ss",`, not inside the type
-                // arguments.
-                || ArmWhenHoldsOnlyTypeArguments(arm)
-                && (FormattedWidth(arm.WhenClause!.Condition) <= WhenReadThroughLimit || WhenBodyWidth(arm) > 7)
+                // ⚠ Nor behind a `when` condition whose break points are type argument lists (#576 round 15): the oracle
+                // breaks at the arrow rather than inside the type arguments, behind any pattern and before any body. See
+                // ArmWhenHoldsTypeArguments.
+                || ArmWhenHoldsTypeArguments(arm)
             )
         );
 
@@ -10476,6 +10525,14 @@ public sealed class BreakPlan {
             Expression: QueryExpressionSyntax { FromClause: { Type: null } from }
         } paren
             ? FormattedWidth(paren.OpenParenToken, from.Identifier)
+            : 0;
+
+    /// <summary>The width of such a body's <c>(from item in items</c>, or zero. See <see cref="GroupFacts.ArmQueryFrom" />.</summary>
+    int ArmQueryFromWidth(ExpressionSyntax body) =>
+        body is ParenthesizedExpressionSyntax {
+            Expression: QueryExpressionSyntax { FromClause: { Type: null } from }
+        } paren
+            ? FormattedWidth(paren.OpenParenToken, from.Expression.GetLastToken())
             : 0;
 
     /// <summary>
@@ -11729,7 +11786,10 @@ public sealed class BreakPlan {
             if (options.KeepsUserBreaksBetweenItems && BreaksBefore(condition)) {
                 Mandatory(condition);
             } else {
-                var after = whenGaps.TryGetValue(Key(node), out var planned) ? planned : NewGroup();
+                if (!whenGaps.TryGetValue(Key(node), out var after)) {
+                    whenGaps[Key(node)] = after = NewGroup();
+                }
+
                 Point(condition, after);
                 Describe(
                     node.Condition,
@@ -11757,6 +11817,9 @@ public sealed class BreakPlan {
                         && !firstArgument.DescendantNodesAndSelf()
                             .OfType<TypeArgumentListSyntax>()
                             .Any(static inner => inner.DescendantNodes().OfType<TypeArgumentListSyntax>().Any()),
+                        // ⚠ Round 15: a first argument nesting two deep is decided by the same atom rule. See
+                        // Fitter.AtomWhenBreaks.
+                        WhenFirstNested: FirstTypeArgumentDepth(node.Condition) == 2,
                         WhenArrowKept: options.KeepsUserBreaksBetweenItems
                         && node.Parent is SwitchExpressionArmSyntax keptArm
                         && (BreaksBefore(keptArm.EqualsGreaterThanToken)

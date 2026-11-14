@@ -470,10 +470,39 @@ public sealed class Fitter {
                     // or more (a shorter one keeps the list there: `M<List<bool>,` and `Pick<int,`). Measured on the
                     // ten #576 arm grids, 175 rows of the fit grids and 163 of the fresh probes, none the other way.
                     var below = continuation + facts.WhenOuterTail + 5;
-                    if (!Fits(continuation, facts.WhenOuterTail + 14)
-                        && !(facts.WhenOuterLead > 0
-                            && (below <= 114 || below == 115 && facts.WhenOuterLead >= 17)
-                            && facts.WhenOuterLead + 4 * below <= 487)) {
+                    // ⚠ Round 15: below a broken `when`, on the condition's own line, the list's own bar. See
+                    // BrokenWhenOuterCommaTakesTheFill.
+                    if (facts.WhenOuterLead > 0 && WhenGapBroke(facts.WhenOuterGap)) {
+                        var conditionEnd = lineStart + facts.WhenOuterLead + 1 + facts.WhenOuterTail + 2;
+                        if (conditionEnd <= width
+                            || !BrokenWhenOuterCommaTakesTheFill(facts.WhenOuterLead, below, conditionEnd)) {
+                            return ResolvedMode.Flat;
+                        }
+
+                        return ResolvedMode.Broken;
+                    }
+
+                    if (facts.WhenOuterNestedAtom > 0 && m.Column - lineStart > facts.WhenOuterNestedAtom) {
+                        // ⚠ Round 15: beside the `when`, before an atom, behind a first argument nesting two deep.
+                        if (!NestedAtomOuterCommaTakesTheFill(
+                                facts.WhenOuterLead,
+                                below,
+                                m.Column - facts.WhenOuterNestedAtom - 1,
+                                Fits(continuation, facts.WhenOuterTail + 14)
+                            )) {
+                            return ResolvedMode.Flat;
+                        }
+                    } else if (facts.WhenOuterLead > 0
+                               && m.FlatWidth < Unbounded
+                               && m.Column + m.FlatWidth + 2 == width + 3
+                               && below <= width + 2) {
+                        // ⚠ And beside the `when`, a condition ending exactly three columns past the margin breaks at its
+                        // comma as it does below a broken one (round 15): the bar does not apply there.
+                        return ResolvedMode.Broken;
+                    } else if (!Fits(continuation, facts.WhenOuterTail + 14)
+                               && !(facts.WhenOuterLead > 0
+                                   && (below <= 114 || below == 115 && facts.WhenOuterLead >= 17)
+                                   && facts.WhenOuterLead + 4 * below <= 487)) {
                         return ResolvedMode.Flat;
                     }
 
@@ -789,6 +818,15 @@ public sealed class Fitter {
                 // author wrote after the arrow survives. See GroupFacts.FlatIfOwnerBroke.
                 if (facts.FlatIfOwnerBroke && owner >= 0 && resolved[owner] && modes[owner] == ResolvedMode.Broken) {
                     return ResolvedMode.Flat;
+                }
+
+                // ⚠ Round 15: a query whose `)` lands exactly one column past the margin beside the arrow moves below, where
+                // it fits: measured on kb5 (the whole `from` clause fitting beside arrows ending 60 to 100, lines starting 12
+                // to 32) at every such arm, and on f576e r0422. Its comma alone one column past is ArmOneOverHead's.
+                if (facts.ArmQueryBody > 0
+                    && facts.ArmQueryFrom > 0
+                    && m.Column + 1 + facts.ArmQueryBody == width + 1) {
+                    return ResolvedMode.Broken;
                 }
 
                 // ⚠ A parenthesised query after an arm's arrow stays on the arrow's line, its `from` clause filling,
@@ -4293,6 +4331,13 @@ public sealed class Fitter {
             return ArmQueryFromStays(facts.ArmQueryBody, m.Column, lineStart);
         }
 
+        // ⚠ Round 15: where `(from item` fits and the whole from clause does not, by two regimes. See ArmQueryFillStays.
+        if (facts.ArmQueryFrom > 0
+            && m.Column + 1 + facts.ArmQueryFrom > width
+            && ArmQueryFillStays(facts.ArmQueryBody, facts.ArmQueryHead, m.Column, lineStart) is { } fillStays) {
+            return fillStays;
+        }
+
         var arrow = m.Column - lineStart;
         if (WhenGapBroke(facts.ArmQueryWhenGap) && width - head <= 2 && arrow <= 81) {
             return false;
@@ -4315,7 +4360,10 @@ public sealed class Fitter {
     ///     oracle decides against the fill beside the <c>when</c> that the outer list's own rule would take
     ///     (<see cref="OuterCommaTakesTheFill" />):
     ///     <list type="bullet">
-    ///         <item>a condition that ends by 113 on the line below moves there (round 12);</item>
+    ///         <item>
+    ///             a condition that ends by 111 on the line below moves there; ⚠ round 12's 113 was the long-lead bars'
+    ///             edge (round 15: below, each column short of 114 adds 36 to the first bar and 57 to the second);
+    ///         </item>
     ///         <item>
     ///             where the fill takes the outer comma it stays beside the <c>when</c> exactly when
     ///             <c>13·L − 4·h − 23·b ≥ 127</c> and <c>7·h + 38·b − L ≤ 290</c> (round 13's long-lead regime);
@@ -4331,8 +4379,15 @@ public sealed class Fitter {
     ///     (2 664 arms where the fill takes the inner <c>&lt;</c>) under the constraint that no arm the old rules had right
     ///     goes wrong: 18 misses. The unconstrained best (<c>2·L − 5·b − h ≥ −10</c>, <c>3·X − 2·L − 4·h − 3·b ≥ 323</c>)
     ///     misses fewer on a5 and a6 alone but made eight grid arms newly wrong. ⚠ Round 13's replica of the first two
-    ///     regimes alone made 44 probe rows newly wrong: those rows were this third one. ⚠ Not before a first argument nesting
-    ///     two deep (<c>IEnumerable&lt;KeyValuePair&lt;…&gt;&gt;,</c>), whose own <c>&lt;</c>s the fill can take: unmeasured.
+    ///     regimes alone made 44 probe rows newly wrong: those rows were this third one.
+    ///     <para>
+    ///         ⚠ Round 15 (2026-11-14), measured on a7 (3 360 arms: <c>IEnumerable&lt;KeyValuePair&lt;int, string&gt;&gt;,</c>
+    ///         first, leads 41 to 54, heads 6 to 23, ends 123 to 170), a8 (2 352 arms at the line-below edge, conditions
+    ///         ending 110 to 115 below, bodies of 2 to 7 columns) and a9 (4 320 nested arms ending 160 to 193 flat, indents
+    ///         12, 16 and 24): a first argument nesting two deep follows these regimes unchanged — round 14 gated it off
+    ///         untested — except that the inner bar sits half a column lower (431); and "ends by 113 below" was these bars'
+    ///         edge, not a bound: before a one-column body the oracle fills from 112 behind a long lead.
+    ///     </para>
     /// </remarks>
     static bool AtomWhenBreaks(in GroupFacts facts, in Measures m, int tail, int lineStart) {
         var h = m.Column - lineStart;
@@ -4340,15 +4395,20 @@ public sealed class Fitter {
         var b = facts.WhenBody - 4;
         var x = m.Column + m.FlatWidth;
         var conditionEnd = m.ContinuationColumn + tail;
-        if (conditionEnd <= 113) {
+        if (conditionEnd <= 111) {
             return true;
         }
 
+        // ⚠ Round 15: "a condition that ends by 113 below moves there" is the long-lead bars' edge, not a bound of its
+        // own: each column short of 114 the line below ends at costs the fill 36 of the first bar and 57 of the second.
+        var edge = Math.Max(0, 114 - conditionEnd);
         if (OuterCommaTakesTheFill(facts.WhenOuterLead, conditionEnd - lead + 2)) {
-            return !(13 * lead - 4 * h - 23 * b >= 127 && 7 * h + 38 * b - lead <= 290);
+            return !(13 * lead - 4 * h - 23 * b - 36 * edge >= 127 && 7 * h + 38 * b - lead + 57 * edge <= 290);
         }
 
-        return !(7 * lead - 18 * b - 3 * h >= -31 && 4 * x - 3 * lead - 5 * h - 3 * b >= 433);
+        // ⚠ Round 15: behind a first argument nesting two deep the second bar sits half a column lower.
+        return !(7 * lead - 18 * b - 3 * h >= -31
+            && 4 * x - 3 * lead - 5 * h - 3 * b >= (facts.WhenFirstNested ? 431 : 433));
     }
 
     /// <summary>
@@ -4358,6 +4418,97 @@ public sealed class Fitter {
     /// </summary>
     static bool OuterCommaTakesTheFill(int lead, int below) =>
         (below <= 114 || below == 115 && lead >= 17) && lead + 4 * below <= 487;
+
+    /// <summary>
+    ///     <see cref="OuterCommaTakesTheFill" /> beside the <c>when</c> for a first argument nesting two deep before an
+    ///     atom body (#576 round 15, <see cref="GroupFacts.WhenOuterNestedAtom" />), <c>whenEnd</c> the column the
+    ///     <c>when</c> ends at.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on a7 (3 360 arms behind a first argument nesting two deep, leads
+    ///     41 to 54, heads 6 to 23) and a9: the outer list's "what follows fits below with six columns to spare" breaks the
+    ///     outer comma where the oracle takes the inner <c>&lt;</c> (48 arms); the round-10 bar alone is right on all but
+    ///     three probe arms, behind wide heads, which take the comma while <c>4·below − whenEnd ≤ 409</c>.
+    /// </remarks>
+    static bool NestedAtomOuterCommaTakesTheFill(int lead, int below, int whenEnd, bool spareFits) =>
+        below <= 114 && lead + 4 * below <= 488
+        || 12 * below - lead - 4 * whenEnd is var bar && (bar <= 1141 || bar == 1142 && spareFits);
+
+    /// <summary>
+    ///     Whether a <c>when</c> condition's outer type argument list, on the line of its own a broken <c>when</c> gives
+    ///     it, breaks at its outer comma rather than letting the inner <c>&lt;</c> take the fill (#576 round 15,
+    ///     SK-DIV-0399). <c>below</c> is the line the comma leaves below through <c>() =&gt;</c>, <c>conditionEnd</c>
+    ///     where the condition ends flat on its own line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on kb1 (2 324 arms: the condition ending 121 to 125 on its own
+    ///     line behind leads of 4 to 20, and the line below ending 111 to 116 behind leads of 26 to 42 with three first
+    ///     arguments — plain, <c>Dictionary&lt;int, string&gt;</c>, <c>HashSet&lt;long&gt;</c> — at indents 12 to 24,
+    ///     under a <c>when</c> the author broke and one broken for width, before calls, queries and atoms). Neither the
+    ///     indent, the body, the first argument nor who broke the <c>when</c> moves an edge:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             ⚠ round 10's bar, <c>lead + 4·below ≤ 487</c>, is a column off on every fourth lead: the comma takes the
+    ///             fill while <c>2·lead + 9·below ≤ 1089</c> (below 115 through lead 27, 114 through 31, 113 through 36,
+    ///             112 through 40, 111 through 45), and that alone — round 7's "the rest fits below with twelve columns
+    ///             to spare" broke the comma behind <c>IEnumerable&lt;KeyValuePair&lt;int, string&gt;&gt;,</c> leads of
+    ///             47 and 54 where the oracle takes the inner <c>&lt;</c>;
+    ///         </item>
+    ///         <item>
+    ///             and a condition ending exactly three columns past the margin breaks at its comma whenever the line it
+    ///             leaves ends by 122 through <c>() =&gt;</c> — a lead of seven or more — where at 122 and at 124 the bar
+    ///             above holds. 25 rows of the fifteen fresh probes, every one at that column.
+    ///         </item>
+    ///     </list>
+    ///     On the fifteen probes the rule answers 3 707 of 3 707 such lists as the oracle does; round 10's 3 674.
+    /// </remarks>
+    bool BrokenWhenOuterCommaTakesTheFill(int lead, int below, int conditionEnd) =>
+        conditionEnd == width + 3
+            ? below <= width + 2
+            : (below <= 114 || below == 115 && lead >= 17) && 2 * lead + 9 * below <= 1089;
+
+    /// <summary>
+    ///     Round 15's half of <see cref="ArmQueryStays" />: where <c>(from item</c> fits beside the arrow and the whole
+    ///     <c>from</c> clause does not, whether the body stays on the arrow's line, the clause filling:
+    ///     <c>=&gt; (from item in</c> / <c>items</c> or <c>=&gt; (from item</c> / <c>in items</c> (#576, SK-DIV-0399).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on three structure grids moving only the arrow's end <c>a</c> (101
+    ///     to 110), its line's start <c>s</c> (12 to 40) and the body <c>w</c> (60 to 180): kb2 (6 840 arms, even widths),
+    ///     kb3 (3 080, odd widths) and kb4 (864, wide bodies), with the arrow on the arm's own line, on the line of a
+    ///     <c>when</c> the author or the width broke, and on the condition's filled continuation. ⚠ Neither of round 9's
+    ///     distinctions holds: the arrow's line being a continuation or the arm's own moves no edge, and its "an arrow line
+    ///     of 81 columns or fewer that leaves two or fewer beside <c>(from item</c> moves below whatever its width" is a
+    ///     cut of the line's start and the arrow's end that the bar keeps on either side of. Two regimes, by what of the
+    ///     clause fits beside the arrow:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             <c>(from item in</c> fits: the body stays from <c>4·w + 3·s ≥ a + 299</c> while <c>4·a + 3·s ≤ 531</c>;
+    ///         </item>
+    ///         <item>only <c>(from item</c>: from <c>4·w + 3·s ≥ a + 304</c> while <c>4·a + 3·s ≤ 519</c>;</item>
+    ///         <item>
+    ///             past either cut only a wide body stays, from <c>2·w − s ≥ 232</c> (236 behind the second cut; there the
+    ///             oracle steps two columns of body either way with the arrow's end, and four arms of kb4 keep earlier).
+    ///         </item>
+    ///     </list>
+    ///     Three columns of body per four of line start, as round 13 saw on p2 — round 9's <c>2·w &gt; a − s + 88</c> had
+    ///     two per four. On kb2 and kb3 it misses 6 of 8 460 arms (five at a body of 130 behind the first cut).
+    /// </remarks>
+    bool? ArmQueryFillStays(int body, int head, int arrowEnd, int lineStart) {
+        var inFits = arrowEnd + 1 + head + " in".Length <= width;
+        var cut = 4 * arrowEnd + 3 * lineStart <= (inFits ? 531 : 519);
+        if (!cut) {
+            // ⚠ Behind the second cut the oracle keeps from 232 to 236 by the arrow's end, not monotonically (kb2, kb4):
+            // that band is handed back to round 9's rule, which the merged round found right on one kb2 arm 236 broke.
+            var wide = 2 * body - lineStart;
+            return inFits ? wide >= 232
+                : wide >= 236 ? true
+                : wide < 232 ? false
+                : null;
+        }
+
+        return 4 * body + 3 * lineStart >= arrowEnd + (inFits ? 299 : 304);
+    }
 
     /// <summary>
     ///     Round 13's half of <see cref="ArmQueryStays" />: where <c>(from item</c> does not fit beside the arrow, whether
@@ -4559,8 +4710,10 @@ public sealed class Fitter {
         }
 
         // ⚠ Behind a head of twelve or more before `M<First, G<T…>>()`: round 14's three regimes. See AtomWhenBreaks.
+        // ⚠ Round 15: a first argument nesting two deep (`IEnumerable<KeyValuePair<…>>,`) follows them too.
         if (m.Column - lineStart >= 12
-            && facts is { WhenOuterLead: > 0, WhenFirstPlain: true, WhenLead: > 0 }
+            && facts is { WhenOuterLead: > 0, WhenLead: > 0 }
+            && (facts.WhenFirstPlain || facts.WhenFirstNested)
             && tail < Unbounded) {
             return AtomWhenBreaks(facts, m, tail, lineStart);
         }
