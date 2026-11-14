@@ -335,6 +335,12 @@ public sealed class FuzzRegressionTests {
     // brackets, so the `=`'s ParenCloseEnd rule (#598) read the cast's `)` on column 121 where the writer puts it on
     // 116 and broke, while the block, measured as written, stayed on one line at 119. Pinned so it does not return.
     [InlineData(14580176773931760767UL)]
+    // Found 2026-11-14 (fails on a2a6de72 too): `(Guid First, StringBuilder Second` / `) typed71 when (… && … & …) =>
+    // "…",` in an arm whose arrow breaks for width. The width lift lifted the positional clause's own level, so pass one
+    // put the `)` two levels past the arm and chopped the condition; pass two, the arrow's break kept, let the arm's
+    // group pay the level, the clause spending none, and put the `)` one level past. An arm pattern's list is no longer
+    // lifted by the arrow's width lift, the oracle's `)` under either break.
+    [InlineData(2309143029249313673UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

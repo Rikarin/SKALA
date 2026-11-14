@@ -623,10 +623,25 @@ public sealed class LayoutWriter {
         if (kind is IndentKind.Continuous or IndentKind.OneLevel
             && (flags & (IndentFlags.Delimiter | IndentFlags.Grouping | IndentFlags.ChainLevel)) != 0) {
             lifted = LiftedLevel(ancestors, outer, (flags & IndentFlags.ChainLevel) != 0, node, kind, columns);
+            var path = ancestors.ToArray();
+            var around = lifted >= 0 ? InnermostBrokenConstruct(path) : -1;
+
+            // ⚠ Never an arm pattern's own list by an arrow's width lift opened for the `when` clause (fuzz
+            // 2309143029249313673): under the kept arrow that break reads back as, the arm's group pays the level and
+            // the list spends none of its own, so `(Guid First, StringBuilder Second` / `) typed71 when (…)` / `=> …`
+            // puts the `)` one level past the arm. Lifted, pass one put it two levels past and pass two one; the oracle
+            // writes one under either break. A lift opened for braces or brackets lifts them (GroupFacts
+            // .LeavesPatternListsUnlifted).
+            if (around >= 0
+                && (flags & IndentFlags.ArmPattern) != 0
+                && document.FactsOf(document.Nodes[path[around].Node].Arg1) is {
+                    LiftsIfArrowBreaks: true, LeavesPatternListsUnlifted: true
+                }) {
+                lifted = -1;
+            }
+
             if (lifted >= 0) {
                 outer = lifted;
-                var path = ancestors.ToArray();
-                var around = InnermostBrokenConstruct(path);
                 liftsThrough = around >= 0
                     && (flags & IndentFlags.ArmPattern) == 0
                     && document.FactsOf(document.Nodes[path[around].Node].Arg1).LiftsThroughInnerBreaks;

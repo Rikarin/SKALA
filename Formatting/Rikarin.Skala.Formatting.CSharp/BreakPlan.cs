@@ -9641,7 +9641,12 @@ public sealed class BreakPlan {
                 new(
                     widthLift,
                     GroupMode.Flat,
-                    new(Continues: true, LiftsIfArrowBreaks: true, LiftsThroughInnerBreaks: arm.WhenClause is not null),
+                    new(
+                        Continues: true,
+                        LiftsIfArrowBreaks: true,
+                        LiftsThroughInnerBreaks: arm.WhenClause is not null,
+                        LeavesPatternListsUnlifted: !liftsBraces
+                    ),
                     true,
                     false
                 )

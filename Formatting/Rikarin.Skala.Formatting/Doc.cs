@@ -1270,6 +1270,12 @@ public sealed class Document {
 ///     and a `.Member` two levels past the arm, where under a broken chain those lines continue the
 ///     ordinary way (#418).
 /// </param>
+/// <param name="LeavesPatternListsUnlifted">
+///     ⚠ A <see cref="LiftsIfArrowBreaks" /> group opened for the arm's <c>when</c> clause rather than for braces or
+///     brackets in its pattern: broken, it lifts no list in the pattern (<see cref="IndentFlags.ArmPattern" />), as
+///     the kept arrow's break that pass two reads back lifts none (fuzz 2309143029249313673). The oracle puts a
+///     positional clause's broken <c>)</c> one level past the arm under either break.
+/// </param>
 /// <param name="PatternHead">
 ///     ⚠ A local's <c>=</c> before <c>operand is A or B</c>: the head's width through the <c>=</c>. With
 ///     <see cref="PatternWidth" /> it decides the <c>=</c> by <see cref="EqualsFloor.BreaksBeforeAPattern" />
@@ -2212,6 +2218,7 @@ public readonly record struct GroupFacts(
     int ArmHead = 0,
     int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,
+    bool LeavesPatternListsUnlifted = false,
     int PatternHead = 0,
     int PatternWidth = 0,
     int HeadSlack = 0,
