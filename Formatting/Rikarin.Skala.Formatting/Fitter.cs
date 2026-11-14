@@ -2844,7 +2844,7 @@ public sealed class Fitter {
         }
 
         var slack = SoleCallsSlack(facts, m);
-        return slack > -60 && slack < 60;
+        return slack is > -60 and < 60;
     }
 
     /// <summary>
@@ -3438,10 +3438,8 @@ public sealed class Fitter {
     /// </remarks>
     int KeptFillLineEnd(int[] dots, int arrowEnd) {
         var end = arrowEnd + 1 + dots[0];
-        foreach (var dot in dots) {
-            if (arrowEnd + 1 + dot <= width) {
-                end = arrowEnd + 1 + dot;
-            }
+        foreach (var dot in dots.Where(dot => arrowEnd + 1 + dot <= width)) {
+            end = arrowEnd + 1 + dot;
         }
 
         return end;

@@ -10570,11 +10570,9 @@ public sealed class BreakPlan {
         }
 
         segments.Add(FormattedWidth(start, body.GetLastToken()) - before);
-        if (start.IsKind(SyntaxKind.ThisKeyword) || start.IsKind(SyntaxKind.BaseKeyword)) {
-            if (segments.Count > 1) {
-                segments[1] += segments[0] + 1;
-                segments.RemoveAt(0);
-            }
+        if ((start.IsKind(SyntaxKind.ThisKeyword) || start.IsKind(SyntaxKind.BaseKeyword)) && segments.Count > 1) {
+            segments[1] += segments[0] + 1;
+            segments.RemoveAt(0);
         }
 
         return [..segments];
