@@ -12878,6 +12878,76 @@ Pinned by `ArmNewIssue576Tests`, 19 cells: with rule 1's answer forced back to t
 Grid scripts: worktree `artifacts/scratch-i576e/` (`gene.py` — n1–n4, p1, p2, a3, a4 — `n1tab.py`, `n4tab.py`, `ptab.py`, `a4tab.py`,
 `a4fit.py`, `atommodel.py`, `qparen.py`), uncommitted.
 
+⚠ **#576 round 14 (2026-11-14).** The instrument first: the base `cd67b402e` rebuilt reproduces round 13's 215 rows on the twelve
+fresh probes to the row and class (f576l 17). Two new atom grids were built with the condition reaching past column 140, the range
+round 13's grids never left: a5 (2 730 arms: conditions ending 140 to 172 flat, heads 12 to 23, leads 10 to 46 in steps of three, four
+bodies, indents 12 and 20) and a6 (1 640: the same at ends 152 and 164, the lead in steps of one). Three rules are wired.
+
+**1. `=> (` / the query below.** Round 13's open `P` cells. Where `(from item` does not fit beside the arrow but `=> (` does, and round
+13's `=> (from` does not keep the body, the oracle keeps the arrow and the `(` and moves the whole query a level past the arm, its
+clauses on `from`'s column and the `)` after `select`: while `a + s ≤ 127` from `20·w − 5·a + 16·s ≥ 1535` (any bar from 1533 to 1537),
+past it from `18·w + 6·a − 11·s ≥ 2766` (2765 or 2766) — every one of p1/p2's 309 `P` cells and no other. ⚠ The first region is not
+round 13's `4·a + 3·s ≤ 496`: that bounds (115, 12) and (112, 16) alike, and the oracle takes `=> (` in the first and not the second.
+Skala had no point after a parenthesised body's `(`; the arm plans one now, a *yielding* point, so that the arrow's own measure still
+reads through it to the first clause as before, and the arrow group answers `=> (` explicitly (`Fitter.ArmParenBreaks`,
+`GroupFacts.ArmParenBody`, `ArmParenOpens`).
+
+**2. Atom bodies' `when` behind a head of twelve or more: three regimes, the fill's own point deciding which.** The oracle decides against
+the fill beside the `when` that the outer list's own rule would take (round 10's `OuterCommaTakesTheFill`): a condition ending by 113
+below moves there; where the fill takes the outer comma, round 13's long-lead regime (`13·L − 4·h − 23·b ≥ 127` and
+`7·h + 38·b − L ≤ 290`); ⚠ where it takes the inner `<` — round 13's 44 "newly wrong" rows — the condition stays beside the `when`
+exactly when `7·L − 18·b − 3·h ≥ −31` and `4·X − 3·L − 5·h − 3·b ≥ 433`: too short a lead for the body and it moves below, too long
+against where it ends and it moves below again. a6 shows both edges cleanly (`b6`, head 18, end 164: below from 8 to 18, filled at the
+inner `<` from 19 to 38, below from 39). The bars were searched over integer coefficients on a1–a6 and the fresh probes' 2 664 such arms
+under the constraint that no arm the old rules had right goes wrong: 18 misses; the unconstrained best (`2·L − 5·b − h ≥ −10`,
+`3·X − 2·L − 4·h − 3·b ≥ 323`) fixed 16 more probe rows but made eight grid arms newly wrong, so it is not the one wired. Only before a
+first argument nesting at most one deep: behind `IEnumerable<KeyValuePair<…>>,` the fill has inner points of its own (unmeasured). A
+tuple's comma is not the lead's (`Convert<(int, string),`): the first replica read it as the outer comma and miscounted six rows.
+(`Fitter.AtomWhenBreaks`, `GroupFacts.WhenFirstPlain`, `WhenOuterLead` now on the `when` group too.)
+
+**3. ⚠ A wide body's "the fill takes an inner point" was a bound of its own, not the list's rule.** Round 11's inner bar applied where the
+line the outer comma leaves below is past 117; the list itself gives the break to the inner `<` from 115, and from 114 down behind a
+long lead. Where the two disagree the oracle fills beside the `when` by the inner bar — clear of it by 26 a column of head: three probe
+rows closer (−40, −6, −6) and three of e4 at a line of 114 behind a 38-column lead (−132, −188, −80) break, where e4 fills from −216 and
+−296 down; on e1, e4, e5 and the fifteen probes no arm reclassed under that margin breaks. Not before a first argument nesting two deep:
+the probe written after the first cut (f576m, seed 5760826) found one 150 under the bar that breaks.
+
+Diverging rows (round 13 = the base `cd67b402e`; none non-idempotent anywhere, none newly diverging against the base on any row):
+
+| Grid | Rows | Round 13 | Now |
+|---|---|---|---|
+| a1 / a2 / a3 / a4 (rounds 12–13 atom grids) | 5 610 / 3 168 / 3 276 / 3 640 | 647 / 673 / 686 / 806 | 235 / 112 / 133 / 160 |
+| a5 / a6 (atom, fit) | 2 730 / 1 640 | 552 / 423 | 32 / 17 |
+| p1 / p2 (query structure, fit) | 1 872 / 2 736 | 119 / 236 | 8 / 38 |
+| e3 / e4 / d576 / b576 | 513 / 1 536 / 2 300 / 1 216 | 83 / 24 / 34 / 10 | 2 / 13 / 32 / 8 |
+| e1, e5, s576, w576 (and q1, q2, k1, e2 with the round's first cut) | — | unchanged | unchanged |
+| the twelve fresh probes (f576a–k, coordQ) | 11 900 | 215 | 170 |
+| f576l (round 13's fresh) | 1 000 | 17 | 15 |
+| f576m (fresh, seed 5760826, after rules 1–3; then used for rule 3's first-argument gate) | 1 000 | 25 | 17 |
+| **f576n (fresh, seed 5760827, after the last change)** | 1 000 | **14** | **8** |
+
+On the twelve probes, round 13 → now: the arrow class 9 → 0; atom bodies' `when` 56 → 22; the `when` before calls, queries and chains
+58 → 54; where the type arguments break 24 → 24; inside bodies 58 → 60 (two rows whose `when` is now right still differ inside the body);
+the kept-arrow rows 7 + 3, unchanged.
+
+⚠ Still open, measured, not wired:
+- **Where the type arguments break, 24 rows**: ten are a `{ Kind: not null } when` arm whose condition fits beside the `when` — the
+  oracle breaks at the arrow (before `=>` when `… >>()` ends at 119 or 120, after it otherwise) and Skala fills the type arguments. The
+  braces are the trigger: the same arm behind a plain 18-column pattern comes back right. Not the `when` rule; the brace lift's
+  write-ahead (`LayoutWriter.DecideByTheArrow`) is the place to look.
+- **The `when` before calls, queries and chains, 54**: wide bodies behind heads under twelve, nearly all Skala breaking where the oracle
+  fills (on every arm of the twelve probes whose `when` decision differs: 28 at the outer comma, mostly leads past 34 and `X when` at
+  conditions ending 123 to 137; 28 at the inner `<`). The stacked bars of rounds 8–11 are each a column or a cap off here; rule 3's
+  margin gives up 14 rows a looser cut fixed, to keep e4 and three probe rows.
+- **Atom bodies, 22**: of the 37 atom arms whose `when` decision differs, 26 sit behind a nested first argument (`List<bool>,`,
+  `HashSet<long>,`, `IEnumerable<KeyValuePair<…>>,`), which no grid held; the rest are the bars' own misses (`1,` behind head 23 at a
+  lead of 11) and heads under twelve.
+- Inside bodies (60) and the kept-arrow rows (10), not reworked this round.
+
+Pinned by `ArmParenAndAtomWhenIssue576Tests`, 27 cells: with rule 1 off 7 fail (its first region alone, 3); with rule 2's branch off 4;
+with rule 3's reclassing off 4. Grid scripts: worktree `artifacts/scratch-i576f/` (`genf.py` — a5, a6, the fresh probes — `pfit.py`,
+`ifit.py`–`ifit3.py`, `atomdata.py`, `atomeval2.py`, `innerbar.py`, `e4re.py`, `a5tab.py`), uncommitted.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as

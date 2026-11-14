@@ -10197,11 +10197,18 @@ public sealed class BreakPlan {
             )
         );
 
+        // ⚠ A parenthesised query's `(` is a point of its own (#576 round 14). See ArmParenOpens below.
+        var parenOpens = !kept
+            && !keptAfter
+            && ArmQueryBodyWidth(arm.Expression) > 0
+            && arm.Expression is ParenthesizedExpressionSyntax openParen
+            && !BreaksBefore(openParen.OpenParenToken.GetNextToken());
         PlanArrowBody(
             arm,
             arm.Expression,
             new(
                 BreaksIfTooLong: true,
+                ArmParenOpens: parenOpens,
                 ArmBodyTrail: arm.GetLastToken().GetNextToken().IsKind(SyntaxKind.CommaToken) ? 1 : 0,
                 ArmBodyDot: BreaksAtItsOwnDot(arm, arm.Expression),
                 ArmQueryBody: kept ? 0 : ArmQueryBodyWidth(arm.Expression),
@@ -10270,6 +10277,30 @@ public sealed class BreakPlan {
                     BreaksIfTooLong: true,
                     BreaksOnlyIfHeadOverflows: true,
                     Owner: arrowGroup,
+                    FlatIfOwnerBroke: true
+                ),
+                true,
+                ownLevel: true
+            );
+        }
+
+        // ⚠ And so is the gap after a parenthesised query's `(` (#576 round 14): where `(from item` does not fit beside
+        // the arrow the oracle keeps `=> (` and moves the whole query a level past the arm, its clauses on `from`'s
+        // column and the `)` after `select`, by Fitter.ArmParenBreaks. A yielding point, so that the arrow's own
+        // measure still reads through it to the query's first clause, as before.
+        if (parenOpens
+            && arm.Expression is ParenthesizedExpressionSyntax parenthesised
+            && arrowGroups.TryGetValue(Key(arm), out var queryArrowGroup)) {
+            var parenGap = NewGroup();
+            Point(parenthesised.OpenParenToken.GetNextToken(), parenGap, yields: true);
+            Describe(
+                parenthesised,
+                parenGap,
+                GroupMode.Preserve,
+                new(
+                    ArmParenBody: ArmQueryBodyWidth(parenthesised),
+                    ArmQueryHead: ArmQueryHeadWidth(parenthesised),
+                    Owner: queryArrowGroup,
                     FlatIfOwnerBroke: true
                 ),
                 true,
@@ -11551,6 +11582,18 @@ public sealed class BreakPlan {
                         WhenWideBody: WhenWideBodyWidth((SwitchExpressionArmSyntax)node.Parent!),
                         WhenLead: WhenLeadWidth(node.Condition),
                         WhenLastPoint: WhenLastPointWidth(node.Condition),
+                        // ⚠ The outer list's own lead (#576 round 14): the `when` asks which point the fill beside it
+                        // would take by the list's rule, not by a bound of its own. See Fitter.WhenBreaks.
+                        WhenOuterLead: node.Condition.DescendantNodes()
+                            .OfType<TypeArgumentListSyntax>()
+                            .Select(WhenOuterLeadWidth)
+                            .FirstOrDefault(static lead => lead > 0),
+                        WhenFirstPlain: node.Condition is InvocationExpressionSyntax {
+                            Expression: GenericNameSyntax { TypeArgumentList.Arguments: [var firstArgument, ..] }
+                        }
+                        && !firstArgument.DescendantNodesAndSelf()
+                            .OfType<TypeArgumentListSyntax>()
+                            .Any(static inner => inner.DescendantNodes().OfType<TypeArgumentListSyntax>().Any()),
                         WhenArrowKept: options.KeepsUserBreaksBetweenItems
                         && node.Parent is SwitchExpressionArmSyntax keptArm
                         && (BreaksBefore(keptArm.EqualsGreaterThanToken)
