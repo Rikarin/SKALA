@@ -14378,6 +14378,74 @@ one held one-over call. Every one of these was wrong on master too.
 - status: #619 **fixed** — group I's band, the held limit within the margin and past it, both one-column-over lines and
   the moved call after a broken `=`. The type-test lambda's arrow is #618/#620's.
 
+⚠ **Round 7 (2026-11-14): round 6's three single statements were each the visible corner of a class, and the largest
+was 9 % of the statements built for it.** Each was swept one feature at a time on random series (the probe scripts are
+in this round's uncommitted scratch, `scratch-i619c/`; the exact simplex is round 6's).
+
+- ⚠ **A value that fits below behind a line through the held call that fits** (`Fitter.HeldChainThroughBreaksTheEquals`).
+  Round 2 had the oracle keep the `=` there and break before the next link, and Skala left it to the ordering rule, whose
+  limit is 109 less a quarter of the continuation — an indent rule. On 1 399 series swept a column at a time (10 490
+  statements: six heads, indents 8 to 20, names of 3 to 45, receivers of 1 to 14, fourteen callees, rests of 5 to 44) the
+  oracle breaks the `=` up to a value ending at a limit with group I's shape — rising 0.119 a column of name to a hinge
+  at 22, falling 0.243 past it, plus a sixtieth of a column per column of rest past ten and of indent — and keeps it past
+  it, every series switching once. Solved exactly over the 9 876 statements under names of seven or more, it separates
+  all of them by 0.0017. A name of six breaks only before a fragment #590 calls short, five or less never. Master missed
+  1 067 of the 10 490. It was round 6's "rest of 8" single only because a short rest is what puts such a value under 105.
+- ⚠ **The held call never moves while its limit leaves the whole value ending before column 113 below**
+  (`Fitter.HeldLambdaStaysBesideTheEquals`, behind a local's or an assignment's `=` only, `GroupFacts.HeldCallAfterEquals`).
+  Round 6's "rest of 8, a column inside the limit" is one of 106 statements, among 11 760 behind a kept `=` whose line
+  is within the limit, where the oracle breaks the arrow instead of moving the call: every one has receiver + limit +
+  rest at 112.98 or less, and no move is under 113.06. Only short rests and short receivers behind long names get there,
+  and past the margin below it cannot bite. ⚠ Refuted on the way: a lower limit for short rests (the rest's term is
+  linear from 5 to 16 on 700 series), a value-end limit, and group I's region widened for short rests — none separates.
+  Where the call cannot move, under the held limit's cap the `=` breaks only within group I's plateau (`HeldChainBand`),
+  the arrow past it.
+- ⚠ **Round 4's fits-below table broke the `=` a column late at whole-column edges.** The third region's limit read
+  111.002 for a name of 12 and a receiver of 9; the oracle stops at 110 under every head, indent, callee and rest. Of 22
+  (name, receiver) pairs within 0.03 of a whole column, probed in 40 random contexts each (3 520 statements, every pair
+  answering alike in all 40), four sat on the wrong side. Solved again exactly, each piece takes its own receiver term:
+  `113.0366 + 0.12195·name − 0.39024·receiver` and `121.0965 − 0.24561·name − 0.38597·receiver`; a probe of the nine pairs
+  the first solve moved (1 080 statements) refuted one of its moves (`n20 r14`) and fixed the low piece. Past names of 45
+  round 4's pieces stand: names of 53 to 58 behind an `=` past column 84 answer otherwise, and the refit made 12 of them
+  newly wrong.
+- **One column over, the held call** (`Fitter.HeldLambdaOneOverMoves`): two new fresh sets of 3 000 (seeds 61904, 61905)
+  found four statements 0.012 on the wrong side; solved again on 9 214, two more (61911, 61912) found one 0.003 over;
+  solved on all 12 704, the receiver's term goes to zero and the head's falls from 0.6243 to 0.6154 (margin 0.0055), and
+  two more fresh sets (61913, 61914) agree on all 6 000. ⚠ The column, head, rest and line alone decide — no two of
+  11 186 distinct statements sharing them answer differently — but no small-denominator form exists: the first integer
+  form separating the first 9 214 (denominator 82) failed on the next set, and floor terms on the column, rest or head
+  do worse than the plain line. The margin is the measurement's resolution, not an explanation.
+
+Sabotage: with group I's one-over line read as the plateau, 2 of the 50 #619 cells fail; the held one-over line off, 2;
+round 6's one-over coefficients back, 1; the through-fits rule off, 3; the no-move rule off, 3; round 4's third-region
+pieces back, 1. Pinned by `HeldChainRound7Issue619Tests` (12).
+
+| probe (statements differing from the oracle) | statements | master 309ae5f0f | now | newly wrong |
+|---|---:|---:|---:|---:|
+| through fits, the line swept / the value's end swept (fit) | 4 277 / 6 213 | 145 / 922 | 0 / 0 | 0 |
+| held series across the limit / fits-below held series, two grids (fit) | 5 569 / 4 976 / 3 320 | 18 / 82 / 24 | 2 / 4 / 1 | 0 |
+| third region swept / its whole-column pairs / the moved pairs (fit) | 4 424 / 3 520 / 1 080 | 9 / 160 / 119 | 2 / 0 / 89 | 0 |
+| one-over held call, four sets (fit) | 12 000 | 11 | 0 | 0 |
+| **fresh one-over held call, seeds 61913 and 61914, after the last solve** | 6 000 | 1 | 0 | 0 |
+| **fresh through-fits series, seed 61917** | 4 307 | 628 | 0 | 0 |
+| **fresh fits-below held series, seed 61918** | 4 990 | 144 | 2 | 0 |
+| **fresh third-region series, seed 61919** | 4 445 | 20 | 0 | 0 |
+| **fresh random, seeds 61915 and 61916 (six heads, fourteen callees, four tails, three bodies, rests 5–42, names 3–45)** | 6 000 / 6 000 | 5 / 3 | 3 / 3 | 0 |
+| round 6's 28 probes and grids (all of its fresh ones included) | 160 953 | 66 | 57 | 0 |
+
+None takes two passes on any probe.
+
+Still open, all wrong on master too:
+- the type-test lambda's arrow (`x is A` kept on the arrow's line, the `or` operands chopped): all 6 of the fresh random
+  probes' and 56 of round 6's 57, #618's;
+- the no-move rule's `=` where the held limit's floor decides, behind names of 33 to 44 and rests of 5 (9 statements of
+  four grids built for it, none in a random probe): group I's plateau, fitted on names of 31 or less, is not it there;
+- names past 45 in the third region (the 89 above), one one-over `=` before a rest of 8 (round 6's 57th), and a
+  fits-below `=` in round 4's never-breaks region under a rest of 6 (one statement), and a held line on the held limit
+  itself (a line of 107 within 0.01 of the limit).
+- status: #619 **fixed** for every class round 6 left in its own scope; what is listed above is another rule's or outside
+  the measured range.
+
 ## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
 
 Found by group C's #602 probes (2026-10-14), not attempted. A sole lambda argument whose whole body is a type test the
