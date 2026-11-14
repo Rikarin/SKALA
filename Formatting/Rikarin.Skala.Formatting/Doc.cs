@@ -515,7 +515,13 @@ public enum IndentFlags {
     ///     the arrow's width break lifts through, and not on pass two, where that break read back as kept does not
     ///     (fuzz 7817611539049315985).
     /// </summary>
-    ArmPattern = 65536
+    ArmPattern = 65536,
+
+    /// <summary>
+    ///     ⚠ An <see cref="ArmPattern" /> list that is a positional clause: the one list an arrow's width lift for the
+    ///     <c>when</c> clause leaves unlifted. See <c>GroupFacts.LeavesPositionalClausesUnlifted</c>.
+    /// </summary>
+    PositionalClause = 131072
 }
 
 /// <summary>The indentation flavours from docs/plan/04 § "Indentation".</summary>
@@ -1286,11 +1292,13 @@ public sealed class Document {
 ///     and a `.Member` two levels past the arm, where under a broken chain those lines continue the
 ///     ordinary way (#418).
 /// </param>
-/// <param name="LeavesPatternListsUnlifted">
+/// <param name="LeavesPositionalClausesUnlifted">
 ///     ⚠ A <see cref="LiftsIfArrowBreaks" /> group opened for the arm's <c>when</c> clause rather than for braces or
-///     brackets in its pattern: broken, it lifts no list in the pattern (<see cref="IndentFlags.ArmPattern" />), as
-///     the kept arrow's break that pass two reads back lifts none (fuzz 2309143029249313673). The oracle puts a
-///     positional clause's broken <c>)</c> one level past the arm under either break.
+///     brackets in its pattern: broken, it lifts no positional clause in the pattern
+///     (<see cref="IndentFlags.PositionalClause" />), as the kept arrow's break that pass two reads back lifts none
+///     (fuzz 2309143029249313673). The oracle puts a positional clause's broken <c>)</c> one level past the arm under
+///     either break. ⚠ Not any other list in the pattern (fuzz 11669359355389207626): a parenthesised pattern's
+///     <c>)</c> is lifted by the kept break as by the width's.
 /// </param>
 /// <param name="PatternHead">
 ///     ⚠ A local's <c>=</c> before <c>operand is A or B</c>: the head's width through the <c>=</c>. With
@@ -2291,7 +2299,7 @@ public readonly record struct GroupFacts(
     int ArmHead = 0,
     int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,
-    bool LeavesPatternListsUnlifted = false,
+    bool LeavesPositionalClausesUnlifted = false,
     int PatternHead = 0,
     int PatternWidth = 0,
     int HeadSlack = 0,

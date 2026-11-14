@@ -2289,6 +2289,9 @@ public sealed partial class CSharpDocumentBuilder {
                                 ? IndentFlags.Grouping | (brokenAfter ? IndentFlags.BrokenAfter : IndentFlags.None)
                                 : IndentFlags.Delimiter
                                 | (IsInAnArmsPattern(node) ? IndentFlags.ArmPattern : IndentFlags.None)
+                                | (node is PositionalPatternClauseSyntax && IsInAnArmsPattern(node)
+                                    ? IndentFlags.PositionalClause
+                                    : IndentFlags.None)
                         );
                     }
 

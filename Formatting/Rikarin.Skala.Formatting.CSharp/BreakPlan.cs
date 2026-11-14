@@ -10005,7 +10005,7 @@ public sealed class BreakPlan {
                         Continues: true,
                         LiftsIfArrowBreaks: true,
                         LiftsThroughInnerBreaks: arm.WhenClause is not null,
-                        LeavesPatternListsUnlifted: !liftsBraces
+                        LeavesPositionalClausesUnlifted: !liftsBraces
                     ),
                     true,
                     false
