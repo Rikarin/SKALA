@@ -380,6 +380,15 @@ public sealed class Fitter {
                     return ResolvedMode.Broken;
                 }
 
+                // ⚠ A parenthesised operator with one member after it, behind a wide head: by its measured form (#598,
+                // SK-DIV-0830). A broken `=` the form breaks stays broken on pass two; one it keeps is the author's.
+                if (facts.ParenMember.Width > 0
+                    && m.PointWidth < Unbounded
+                    && ParenMemberEqualsBreaks(facts, m) is { } member
+                    && (member || !facts.SourceBroken)) {
+                    return member ? ResolvedMode.Broken : ResolvedMode.Flat;
+                }
+
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
                 }
@@ -808,9 +817,14 @@ public sealed class Fitter {
                     if (!Fits(m.Column, m.FlatWidth - tail)) {
                         // ⚠ With arguments, the receiver's last line keeps the call while its `(` fits there: the
                         // arguments chop, `+ b…).M(` / `x` / `);` (#598, round 8).
+                        // ⚠ Except on a line one column over, where the dot breaks, as below a broken `=` (#598,
+                        // SK-DIV-0831).
                         return facts.ParenReceiverTail > 0
                             && (facts.ParenReceiverHeld && facts.HeldCallHead > 0
                                 ? !Fits(lineStart + indentWidth, facts.ParenReceiverTail + facts.HeldCallHead)
+                                || facts.ParenReceiverArguments <= 10
+                                && !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing)
+                                && Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail - 1, m.Trailing)
                                 : !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing))
                                 ? ResolvedMode.Broken
                                 : ResolvedMode.Flat;
@@ -838,12 +852,18 @@ public sealed class Fitter {
                     // ⚠ The single column moves the dot only while the `(` lands far enough right of where the value
                     // starts: `10·paren − 3·column ≥ 871`, the `(` 1-based, the value's column 0-based — beside a kept
                     // `=` and below a broken one alike. Short of it the oracle chops (#446, SK-DIV-0211 round 7).
+                    // ⚠ On a parenthesised operator, two arguments move the dot one column over too, while they are ten
+                    // columns or less (#598, SK-DIV-0831).
                     if (facts.HeldCall >= 3) {
                         return Fits(m.Column, receiver)
                             && (paren > width
                                 || facts.HeldCall == 3
                                 && m.Column + m.FlatWidth + m.Trailing == width + 1
-                                && OneOverMovesTheDot(paren, m.Column))
+                                && OneOverMovesTheDot(paren, m.Column)
+                                || facts.HeldCall == 4
+                                && facts.ParenReceiverHeld
+                                && facts.ParenReceiverArguments <= 10
+                                && m.Column + m.FlatWidth + m.Trailing == width + 1)
                                 ? ResolvedMode.Broken
                                 : ResolvedMode.Flat;
                     }
@@ -2357,6 +2377,98 @@ public sealed class Fitter {
         var v = 128 * parenthesis + 49 * first + 34 * cast - 16 * weight;
         var (breaks, keeps) = facts.BareParenDoubled ? (14749, 14767) : (14695, 14724);
         return v <= breaks ? true : v >= keeps ? false : null;
+    }
+
+    /// <summary>
+    ///     Whether the <c>=</c> before <c>(a + b…).M(x)</c> or <c>(T)(a + b…).Length</c>, single or doubled, breaks behind
+    ///     a head of twelve columns or more; null where the value fits beside it, or inside a band the measurement left to
+    ///     the earlier rules (#598, SK-DIV-0830).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> on 220 056 statements. One score answers on both sides of the
+    ///     receiver: <c>8·p + 3·min(f, 24) + 2·cast − w</c>, where <c>p</c> is a parenthesis's end on the line below
+    ///     without its cast, <c>f</c> is the fragment the kept <c>=</c> would hold beside it, and
+    ///     <c>w = min(n + 3, 69 − 2n)</c> is SK-DIV-0770's weight of the name the <c>=</c> assigns.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             Past the margin, the kept <c>=</c> holds the first operand and carries the member below it:
+    ///             <c>φ = 3·min(a, 24) + 2·cast − w − 5·member</c>. The <c>=</c> breaks while <c>φ &lt; 0</c> (a call
+    ///             with arguments while <c>φ ≤ 1</c>), and past that while <c>8·p + φ ≤ 907</c>, <c>p</c> the receiver's
+    ///             <c>)</c> below; it stays from 916. A doubled parenthesis reads 16 more. A receiver whose <c>)</c> lands
+    ///             one column past the margin breaks it whenever the value fits below.
+    ///         </item>
+    ///         <item>
+    ///             While the receiver fits beside, the kept <c>=</c> holds the whole receiver and the dot takes the
+    ///             break, so the first operand stops counting. With <c>e</c> the value's end below without its cast and
+    ///             <c>s = 8·e + 2·cast − w</c>: a call breaks the <c>=</c> one column over when the head through its
+    ///             space and the cast are wider than eighteen (round 6's rule), while its <c>(</c> lands on the margin or
+    ///             one past it, and past that while <c>s − 13·args ≤ 843</c>, <c>args</c> the width between its
+    ///             parentheses; it stays from 848. A property breaks it while <c>s ≤ 816</c> and keeps it from 821;
+    ///             uncast behind a name of seven columns or less it never does.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ Names of one column follow neither: uncast, with arguments two columns wide or none, the
+    ///             <c>=</c> breaks only while a call's <c>(</c> lands on the margin or one past it. Cast, behind a head of
+    ///             21 columns or more through its space, a name of four or less is left to the earlier rules.
+    ///         </item>
+    ///     </list>
+    ///     Between the bounds the earlier rules answer, and no measured statement they had right moves.
+    /// </remarks>
+    bool? ParenMemberEqualsBreaks(in GroupFacts facts, in Measures m) {
+        var value = facts.ParenMember;
+        var valueColumn = m.Column + m.PointWidth + 1;
+        var end = valueColumn + value.Width;
+        if (end <= width) {
+            return null;
+        }
+
+        var over = end - width;
+        var continuation = m.ContinuationColumn;
+        var weight = Math.Min(value.Name + 3, 69 - 2 * value.Name);
+        var receiverBeside = valueColumn + value.Receiver;
+        if (receiverBeside <= width) {
+            var score = 8 * (continuation + value.Width - value.Cast) + 2 * value.Cast - weight;
+            var property = value.Arguments < 0;
+            var head = valueColumn - (continuation - indentWidth);
+            if (value.Cast > 0 && value.Name <= 4 && head > 20) {
+                return null;
+            }
+
+            if (value.Cast == 0 && value.Name <= 1 && value.Arguments <= 2) {
+                return !property && over >= 2 && receiverBeside + value.Head <= width + 1;
+            }
+
+            if (property) {
+                return value.Cast == 0 && value.Name <= 7 ? false : score <= 816 ? true : score >= 821 ? false : null;
+            }
+
+            if (over == 1) {
+                return value.Arguments > 0 || head + value.Cast > 18;
+            }
+
+            if (receiverBeside + value.Head <= width + 1) {
+                return true;
+            }
+
+            var call = score - 13 * value.Arguments;
+            return call <= 843 ? true : call >= 848 ? false : null;
+        }
+
+        if (receiverBeside == width + 1 && continuation + value.Width <= width) {
+            return true;
+        }
+
+        var fragment = 3 * Math.Min(value.Operand, 24) + 2 * value.Cast - weight - 5 * value.Member;
+        if (fragment < 0 || fragment == 1 && value.Arguments > 0) {
+            return true;
+        }
+
+        if (fragment == 0) {
+            return null;
+        }
+
+        var keeps = 8 * (continuation + value.Receiver - value.Cast) + fragment - (value.Doubled ? 16 : 0);
+        return keeps <= 907 ? true : keeps >= 916 ? false : null;
     }
 
     /// <summary>Whether a cast's <c>)</c> breaks before a parenthesised operator (#598).</summary>

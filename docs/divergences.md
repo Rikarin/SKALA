@@ -15407,10 +15407,11 @@ No statement that matched on master diverges, and none takes two passes, in any 
   - With master's, the first pass's eight fail 8 of 8.
   - ⚠ **Open:**
     - a bare value with no member, cast or not: **fixed** in SK-DIV-0770, behind heads of twelve or more;
-    - the uncast family behind wide heads;
+    - the uncast family behind wide heads: **fixed** in SK-DIV-0830 (round 10), with the name the `=` assigns;
     - each wired form's band between its safe bounds. Splitting on whether the receiver fits below narrowed the band
       past the receiver (round 6's form) from 1 076–1 185 to 1 098–1 128. The operator, the operator line and the
-      first operand's width separated nothing further.
+      first operand's width separated nothing further. ⚠ They were missing the name: SK-DIV-0830 replaces these forms
+      behind wide heads with one score whose bands are a few columns wide.
 
 ## SK-DIV-0565 — a held single call behind a parenthesised receiver that is no operator: the dot's level
 
@@ -15852,4 +15853,124 @@ remaining member classes.
 - options: none.
 - status: **fixed** for a bare single or doubled parenthesis behind a head of twelve or more, outside the band between
   the bounds. Pinned by `BareParenNameIssue598Tests`. With the form switched off, 5 of 5 fail. With `n` held at 9, 2
-  of 5 fail. ⚠ **Open:** the band, the doubled outer-cast break (SK-DIV-0608), and the member classes above.
+  of 5 fail. ⚠ **Open:** the band, the doubled outer-cast break (SK-DIV-0608), and the member classes above. The member
+  classes behind wide heads are **fixed** in SK-DIV-0830: the lead held, with the member counted at five columns.
+
+## SK-DIV-0830 — a parenthesised operator with a member behind a wide head: one score, with the name, on both sides of the receiver
+
+#598, round 10 (2026-11-13). Some values are one parenthesis around a binary operator, or two, with one member after
+it, cast or not: `string value = (a + b…).M();`, `x = (T)(a ?? b…).Select(x);`, `var v = ((a && b…)).Length;`. This
+entry covers them past the margin, behind a head of twelve columns or more. Round 8 left them on four tables fitted
+without the name:
+- round 6's cast table;
+- round 8's cast forms;
+- master's held table, for the uncast form;
+- the ordering rule, for an uncast property.
+
+SK-DIV-0770 found that the name the `=` assigns decides the bare value. It also found that 90 % of the remaining misses
+with a member were the `=`'s decision too.
+
+Measured with `Testing ask`. Two dense grids were written for this round:
+- **m3**, 134 396 statements: sixteen heads with names of 1 to 31 columns behind types of 0 to 29, four casts, seven
+  members, ten first operands, and every line from 121 to 150.
+- **m4**, 18 900 statements: names of 1 to 8 behind `Dictionary<int, string>` and `IReadOnlyList<string>`.
+
+Round 9's m1 and m2 and round 8's eleven random grids were fitted with them.
+
+- ⚠ **One score answers on both sides of the receiver, and it is the bare value's.** The score is
+  `8·p + 3·min(f, 24) + 2·cast − w`:
+  - `w = min(n + 3, 69 − 2n)` is SK-DIV-0770's weight of the name;
+  - `p` is a parenthesis's end on the line below, without its cast;
+  - `f` is the fragment the kept `=` would hold beside it.
+
+  Round 9's bare form, divided by sixteen, is the same expression.
+  - **Past the margin**, the kept `=` holds the first operand (`f = a`). The member rides below it, and every column of
+    member costs five. The gate is `φ = 3·min(a, 24) + 2·cast − w − 5·member`.
+    - The `=` breaks while `φ < 0`.
+    - Past that, it breaks while `8·p + φ ≤ 907`, `p` the receiver's `)` below, and stays from 916.
+    - A doubled parenthesis reads sixteen more, two columns, as round 9 found for the bare value.
+  - **While the receiver fits beside**, the kept `=` holds the whole receiver and the dot breaks. The receiver is
+    always wider than 24, so the first operand stops counting. That is why no earlier round found the score here. Let
+    `s = 8·e + 2·cast − w`, `e` the value's end below.
+    - A call breaks the `=` while `s − 13·args ≤ 843`, `args` the width between its parentheses. It keeps it from 848.
+      Calls with no arguments, one and two answer alike.
+    - A property breaks it while `s ≤ 816` and keeps it from 821. ⚠ The 27 between a property and a call with no
+      arguments is not the member's width.
+- **Position rules come first.**
+  - One column over, a call breaks the `=` when the head through its space and the cast are wider than eighteen.
+    That is round 6's rule, now for calls only. A call with arguments always breaks it.
+  - A call whose `(` lands on the margin or one past it breaks the `=`.
+  - A receiver whose `)` lands one column past the margin breaks the `=` whenever the value fits below. That is
+    `ParenCloseEnd`'s rule, which the member had hidden.
+  - A call with arguments also breaks it at `φ = 1`.
+- ⚠ **Short names do not follow the score.**
+  - Uncast, behind a name of one column, the `=` breaks only while a call's `(` lands on the margin or one past it.
+    For example, `Dictionary<int, string> v = (a + b…).Select(x);` keeps its `=` and breaks the dot at every width past
+    that.
+  - Uncast, a property behind a name of seven columns or less never breaks it.
+  - Cast, behind a head of 21 columns or more through its space, names of four columns or less are left to the earlier
+    rules. There the oracle goes both ways at one score, and the type-and-name break below is part of it.
+- **The bands.** Between the bounds (844 to 847, 817 to 820, 908 to 915, and `φ = 0`) the earlier rules answer. On every
+  grid, each statement those rules had right lies in a band or on the right side of a bound. The bands were set after a
+  first wiring without them made 174 of 220 056 statements newly wrong. Most lay within four columns of a bound. The
+  rest were a receiver one column past the margin and `φ = 1` under arguments, which are now rules of their own.
+
+Wired as `Fitter.ParenMemberEqualsBreaks`, from one planner fact, `GroupFacts.ParenMember`
+(`BreakPlan.ParenMemberValueOf`).
+- It is read from the formatted tokens, so a break pass one wrote inside the value does not move it.
+- It is asked before the author's break, and keeps that break whenever it breaks the `=` itself.
+- It applies to locals and plain assignments only.
+
+Since round 8, a typed local's uncast call with two arguments on a parenthesised operator had no dot point
+(`BreakPlan.PlanHeldSingleCall`), so `int[] items = (a + b…)` / `.Substring(1, 2);` broke at the operator. It now gets
+the held call's dot.
+
+Statements apart from the oracle, master `b56ab6d3` (round 9 merged) → branch. No statement that matched on master
+diverges on the branch, in any grid or probe, and none takes two passes:
+
+| Grid | Statements | Master | Branch |
+|---|---:|---:|---:|
+| m1, round 9's member grid (fit) | 16 200 | 2 688 | 166 |
+| m2, round 9's member gate grid (fit) | 3 060 | 828 | 32 |
+| m3, heads with names of 1 to 31 (fit) | 134 396 | 14 962 | 2 161 |
+| m4, names of 1 to 8 behind long types (fit) | 18 900 | 3 019 | 672 |
+| round 8's eleven random grids (f1, f2, g1, g2, p1–p7) | 37 500 | 2 184 | 538 |
+| round 9's fresh probes, seeds 770001–770003 | 10 000 | 409 | 109 |
+| **fresh**, seed 830101, round 8's mixed generator | 4 000 | 247 | 53 |
+| **fresh**, seed 830102, wider heads, single and doubled | 4 000 | 239 | 62 |
+| **fresh**, seed 830103, wide heads, members, doubled | 4 000 | 276 | 65 |
+
+The three fresh probes were built after the last change. Their 12 000 statements by class, master → branch:
+- a single parenthesis with a member, behind a wide head: uncast 240 → 3, cast 252 → 44;
+- doubled with a member, behind a wide head: 117 → 16;
+- behind a short head or `return`, with a member: 150 → 114, which SK-DIV-0831 moved;
+- a bare value: 3 → 3.
+
+⚠ **Open:**
+- Of the 63 left behind wide heads, 35 are in the bands. Another 18 are names of four columns or less behind a long
+  head with a cast. Five are the oracle's break after an outer cast (SK-DIV-0608), and five are other.
+- The oracle's break between the type and the name, `Dictionary<int, string>` / `v = (a + b…).M();`, answers one column
+  over behind a long type and a short name. Skala has no point there for this value.
+- Short heads and `return` are outside this entry. Their one-argument boundary is round 8's, and it did not separate
+  on the name either. A linear fit over head, line, indent, name and cast still misses 15 % of 2 116 rows.
+
+- options: none.
+- status: **fixed** behind heads of twelve columns or more outside the bands, single and doubled, cast or not. Pinned
+  by `ParenMemberNameIssue598Tests`. With this form and SK-DIV-0831's two rules switched off, 9 of 9 fail.
+
+## SK-DIV-0831 — two arguments one column over: the dot breaks rather than the arguments chop
+
+#598, round 10. Below a broken `=`, `(a + b…).M(aaaa, bbbb);` one column over breaks its dot:
+`(a + b…)` / `.M(aaaa, bbbb);`. That held in 792 of 792 such rows over the grids. Skala chopped the arguments, as #528
+measured for receivers that are no parenthesis. The same holds on a receiver's last line after its operator broke:
+`+ b…)` / `.Select(x);` one column over breaks the dot, with one argument or two, in 94 of 94 rows. Skala chopped there
+too, by round 8's "while the call's `(` fits".
+
+Arguments wider than ten columns are the exception. `.Replace(oldValue, newValue)` chops in 18 of 28 rows, so it stays
+as it was.
+
+Wired in `Fitter`'s held call and parenthesised-receiver rules through `GroupFacts.ParenReceiverArguments`, the width
+between the call's parentheses. The branch now answers 791 of the 792 and 92 of the 94.
+
+- options: none.
+- status: **fixed**, pinned by `ParenMemberNameIssue598Tests`.
