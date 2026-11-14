@@ -8548,10 +8548,22 @@ public sealed class BreakPlan {
     int GapWidth(SyntaxToken previous, SyntaxToken token) {
         // ⚠ Inside an interpolated string, the space the builder's respacing writes (fuzz 1052827977788418967). See
         // CSharpDocumentBuilder.GapInAnInterpolatedString.
-        var width = (CSharpDocumentBuilder.GapInAnInterpolatedString(previous, token, options)
-            ?? SpaceRules.Decide(previous, token, options)) switch {
+        var interpolated = CSharpDocumentBuilder.GapInAnInterpolatedString(previous, token, options);
+        var comments = CommentsWidth(previous, token);
+
+        // ⚠ After a block comment the gap is SpaceRules.AfterBlockComment's, not the two tokens' (fuzz
+        // 17342664064147206020): `o. /** d */ SelectTokens(…)` keeps the author's space after the comment where the
+        // rules forbid one after the dot, so its value measured a column short, fitted at 120 beside a typed local's
+        // `=` that the line overflowed at 121, and pass one kept the `=` and chopped; pass two, the chop no longer
+        // the held table's question, broke it. The builder answers the gap the same way (GapSpace).
+        var kind = interpolated
+            ?? (comments > 0
+                ? SpaceRules.AfterBlockComment(previous, token, options)
+                : SpaceRules.Decide(previous, token, options));
+        var width = kind switch {
             SpaceKind.Required => 1,
             SpaceKind.Forbidden => 0,
+            _ when comments > 0 && interpolated is null => SpaceAfterTheLastComment(previous, token) ? 1 : 0,
             _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
         };
 
@@ -8559,7 +8571,18 @@ public sealed class BreakPlan {
         // (Nightly fuzz, case 1267273925188459665: `JsonConvert /** d */ .DeserializeObject<T>(x)` behind an
         // `=`, where #528's held-value width missed the comment as it once missed `/* */`). ⚠ Its full span:
         // the `/**` is the structure's exterior trivia, outside the trivia's `Span`.
-        return width + CommentsWidth(previous, token);
+        return width + comments;
+    }
+
+    /// <summary>
+    ///     Whether the author left a space or a line break between the last block comment of a gap and the token after
+    ///     it: the builder's answer to a gap <see cref="SpaceRules.AfterBlockComment" /> preserves.
+    /// </summary>
+    static bool SpaceAfterTheLastComment(SyntaxToken previous, SyntaxToken token) {
+        var trivia = previous.TrailingTrivia.Concat(token.LeadingTrivia).ToList();
+        var last = trivia.FindLastIndex(IsBlockComment);
+        return trivia.Skip(last + 1)
+            .Any(static t => t.IsKind(SyntaxKind.WhitespaceTrivia) || t.IsKind(SyntaxKind.EndOfLineTrivia));
     }
 
     /// <summary>
