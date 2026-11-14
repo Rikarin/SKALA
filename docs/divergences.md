@@ -14446,6 +14446,82 @@ Still open, all wrong on master too:
 - status: #619 **fixed** for every class round 6 left in its own scope; what is listed above is another rule's or outside
   the measured range.
 
+⚠ **Round 8 (2026-11-14): round 7's "names past 45" were never the name. They were an `=` past column 83, and that
+column turns over three rules at once.** Every item round 7 left was swept one feature at a time on random series (the
+scripts are in this round's uncommitted scratch, `scratch-i619d/`; the exact simplex is round 6's, as `lp.py`).
+
+- ⚠ **The third region's limit rises 0.5088 a column of `=` past 83** (`Fitter.HeldChainEqualsPast83`). On 1 700 series
+  (names of 20 to 62, indents 8 to 32, the value's end swept across the limit and from 110 to 120; 16 882 statements),
+  every series under an `=` at column 83 or left of it answers round 7's pieces, names of 46 to 62 included. Past it the
+  exact largest-margin slope is 0.508772 (29/57, the pieces' own denominator), by 0.0088 over 1 232 series. Once the
+  raised limit reaches 113 the `=` breaks before any value that fits below: round 4's cap of 112 holds only at 83 or left.
+  Round 7's refit made "names 53 to 58" newly wrong because those statements' `=` sat past 84.
+- ⚠ **The held limit's floor turns over at a receiver's column of 84 by the same 0.5088** (`Fitter.HeldLambdaLimitWithin`).
+  On 2 450 held series behind a kept `=` (receivers' columns 67 to 109), read at the saturation, the intervals for the
+  oracle's limit less round 6's are zero to 84 and fall 0.51 a column from there (−4.07 at 92, −8.61 at 101), within the
+  margin and past it alike. Round 6's grids ended at column 80. Solved again over every floor-decided series of rounds 6
+  to 8 (2 597), the floor with that hinge is 69.9 + 0.44561·column + 0.56842·receiver + 1.18246·(head − 7) and the hinge
+  solves to 0.508772 exactly, by 0.0018. Round 6's floor sat up to 0.012 high from column 69: round 7's single "held
+  line within 0.01 of the limit" (`k1` 1899) and six more of this round's grids.
+- **An arrow past the margin beside the kept `=` moves the call whatever its line below**, where the call has a rest
+  after it behind a reach of twelve or more: past column 84 the limit no longer reaches the margin, and the oracle never
+  answers with an arrow past it (7 923 statements, the moved line swept to 140).
+- ⚠ **Where the value fits below, the third region's `=` reads whether the call would move.** Behind a kept `=` the
+  call moves while its line is within the limit (and it can move, round 7's `HeldLambdaStaysBesideTheEquals`), or its
+  arrow would overflow; then the `=` breaks by the region's limit. Where it would not, the `=` breaks only within group
+  I's plateau, and the arrow breaks past it — round 7's no-move rule was the visible part. ⚠ And **under the floor the
+  plateau is raised by the floor's lead over the cap** (`Fitter.HeldLambdaFloorOverCap`): round 7's 9 statements "under
+  the held limit's floor, names 33 to 44, rests of 5" are exactly that (94 of 94 series on a grid built for it, 36 of them
+  under the floor). The plateau keeps round 6's floor there, unhinged: 14 series past column 90 refute the hinge in it.
+- ⚠ **Outside group I's region an `=` far enough right breaks before a value that does not fit below**
+  (`Fitter.HeldChainFarBreaksTheEquals`): from column 67.1481 + 0.48148·name + 0.75926·receiver, for every line within the
+  raised plateau and for every line when the arrow would overflow beside the kept `=`. On 2 683 series (38 060
+  statements) every series answers alike across those lines, and the cut separates them by 0.0185. ⚠ The first solve
+  (66.9545 + 0.48485·name + 0.75758·receiver, 2 050 series) was refuted by a fresh set whose series sat 0.02 past it.
+- ⚠ **Round 4's "never breaks" region (`9·name + 8·head − 3·receiver ≤ 153`) was the third region seen through rests of
+  ten and more**: there a value that fits below by the limit leaves the line through the held call within the margin, so
+  no statement could show the `=` breaking. Under rests of 5 to 9 the oracle breaks it by the third region's whole rule for
+  every name of ten or more — round 6's "one-over `=` before a rest of 8" and round 7's "fits-below `=` under a rest of 6"
+  are two of them. Shorter names keep round 4's answer.
+- ⚠ **Refuted: an exact form of `HeldLambdaOneOverMoves` with `max`/`min` terms.** Over its 14 136 distinct statements
+  (no two sharing column, head, rest and line answer differently) hinges on the column at 20 to 70, on the rest at 20 and
+  30, on the head at 10 and 12 and on the receiver at 5 either come out zero or move the margin from 0.0055 to 0.0064; the
+  held limit's own cap and floor as a term leave no separating plane (−0.115). Hinges past column 40 are unconstrained:
+  the one-over line puts the receiver there only behind reaches no probe holds. The plane stands; its rest term is two
+  thirds within 0.004.
+
+Sabotage, over the 65 #619 cells: the `=` past 83 off, 7 fail; the floor's hinge off, 3; round 6's floor back, 1; the far
+cut off, 2; the floor's lead off the plateau, 1; the third region's move test reduced to round 7's, 1; round 4's
+never-breaks region back, 1; the arrow-past-the-margin move bounded by the margin again, 2. Pinned by
+`HeldChainRound8Issue619Tests` (15).
+
+| probe (statements differing from the oracle) | statements | master ba702f7aa | now | newly wrong |
+|---|---:|---:|---:|---:|
+| third region past 83, three grids (fit) | 16 882 | 3 941 | 0 | 0 |
+| no-move series under the floor (fit) | 6 300 | 90 | 0 | 0 |
+| held past column 84, five grids (fit) | 36 565 | 8 167 | 0 | 0 |
+| never-breaks region / one-over statements (fit) | 5 471 / 4 000 | 134 / 5 | 2 / 0 | 0 |
+| rounds 6 and 7's 52 probes and grids (every fresh probe of theirs included) | 305 293 | 207 | 106 | 0 |
+| random (seed 619801) / deep indents and names to 62 (619802), written before the last two changes and fed them | 6 000 / 6 000 | 1 / 174 | 0 / 3 | 0 |
+| third-region / no-move / never / one-over series (619803, 619804, 619807, 619808) | 14 174 | 608 | 1 | 0 |
+| held / far series (619805, 619806; they refuted the first far cut and fed the second) | 9 418 | 2 269 | 1 | 0 |
+| **fresh, written after the final rule: random (619901) / deep (619902)** | 6 000 / 6 000 | 5 / 235 | 4 / 2 | 0 / 0 |
+| **fresh third-region / held-and-far / never series (619903–619905)** | 9 054 | 1 071 | 0 | 0 |
+| the coordinator's probes: #619 / #618 / #598 / #603 / #620 / #576 | 6 000 / 2 400 / 3 000 / 3 500 / 2 700 / 1 000 | — | — | 0 each |
+
+None takes two passes on any probe.
+
+Still open, every one wrong on master too:
+- the type-test lambda's arrow (`x is A` kept on the arrow's line, the `or` operands chopped), #618's: all 106 of rounds 6
+  and 7's probes and all 6 of the two fresh random probes;
+- four single statements at the edges of this round's cuts, each within a tenth of a column: a held call 0.01 past the cap
+  (`var`, a 28-column name, a 9-column receiver); a no-move series one column past the raised plateau; one far `=` line
+  past the plateau; and a group I `=` before a 15-column call head past the margin;
+- names of 6 and 9 in the never-breaks region whose line through the held call is one column over: the oracle keeps
+  everything and gives the `)` a line of its own (2 statements).
+- status: #619 **fixed** for every class rounds 6 and 7 left in its scope and the three this round found under them (the
+  `=` past column 83, the floor past 84, the far `=`). What is left is #618's or a single statement at a measured edge.
+
 ## SK-DIV-0520 — where a sole lambda breaks after its arrow, in front of a broken type test
 
 Found by group C's #602 probes (2026-10-14), not attempted. A sole lambda argument whose whole body is a type test the
