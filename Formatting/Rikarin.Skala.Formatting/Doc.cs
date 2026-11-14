@@ -314,7 +314,15 @@ public enum LineFlags {
     ///     as the oracle writes `xs is [` / elements / `]`. The writer takes the break ahead, watches the list's group
     ///     (<see cref="GroupFacts.WholeList" />) and rolls back.
     /// </summary>
-    BreaksOnlyIfListStaysWhole = 32768
+    BreaksOnlyIfListStaysWhole = 32768,
+
+    /// <summary>
+    ///     ⚠ A fill point at a dot after a name one column wide, <c>x.Name</c> (#620, SK-DIV-0810): it stays flat while
+    ///     that name is all its line holds. The oracle writes <c>x.Name</c> past the margin as a chopped argument, under
+    ///     a broken arrow and after a broken <c>=</c>, where <c>ab</c> / <c>.Name</c> breaks, and breaks it after
+    ///     <c>var v = x</c>, where the name follows something on its line.
+    /// </summary>
+    OneColumnReceiver = 65536
 }
 
 /// <summary>
@@ -1535,6 +1543,45 @@ public sealed class Document {
 ///     With <see cref="SoleCallHead" />: the author broke inside the body, which keeps the arrow, as
 ///     <see cref="LambdaTestKept" /> does — and before a link, which the oracle keeps the same way.
 /// </param>
+/// <param name="SoleChainHead">
+///     ⚠ The arrow of a sole lambda argument whose whole body is a chain that starts with a call —
+///     <c>Use(x =&gt; Open().Analyze(a, b))</c>, <c>this.cache.Get(x).Name</c> — the width from the body's start through
+///     that first call's <c>)</c>, or zero for any other group (#620, SK-DIV-0812). Where that call fits beside the
+///     arrow and the body fits neither there nor on the line below, the arrow breaks unless it ends within twelve
+///     columns of the line's start or two measured lines keep it (<c>Fitter.KeepsTheChainArrow</c>).
+/// </param>
+/// <param name="SoleChainBody">With <see cref="SoleChainHead" />: the body's width written on one line.</param>
+/// <param name="SoleChainKept">
+///     With <see cref="SoleChainHead" />: the author broke inside the body; the measured lines then only keep the arrow.
+/// </param>
+/// <param name="TestedCallHead">
+///     ⚠ The argument list of a one-argument call that is the operand of a type test written on one line —
+///     <c>return Head(arg) is SyntaxNode node;</c>, <c>Head(arg) as Node</c>: the call's width from its first token
+///     through its <c>(</c>, or zero for any other group (#620, SK-DIV-0811). Past the margin the oracle keeps the
+///     list whole and breaks inside the test by one measured line (<c>Fitter.TestedCallMode</c>).
+/// </param>
+/// <param name="TestedCallSoleBody">With <see cref="TestedCallHead" />: the test is a sole lambda's whole body.</param>
+/// <param name="TestedCallTerminator">
+///     With <see cref="TestedCallHead" />: the width of the <c>;</c> that ends the test's statement, or zero.
+/// </param>
+/// <param name="TestedCallTail">
+///     With <see cref="TestedCallHead" />: what follows the call's <c>)</c> on its line, written flat — the test with
+///     its space, and the <c>;</c> — read flat so that a break the test took on pass one does not change it.
+/// </param>
+/// <param name="SoleLambdaEqualsCallee">
+///     ⚠ A <c>var</c> local's <c>=</c> before a call whose one argument is a lambda —
+///     <c>var symbols = context.Compilation.Use(x =&gt; …);</c>: the callee's width through its name, or zero for any
+///     other group (#620, SK-DIV-0880). Where the value fits on the line below, the oracle breaks the <c>=</c> by one
+///     measured line in the callee, the name, the indent and the parameters (<c>Fitter.SoleLambdaEqualsBreaks</c>).
+/// </param>
+/// <param name="SoleLambdaEqualsName">With <see cref="SoleLambdaEqualsCallee" />: the local's name.</param>
+/// <param name="SoleLambdaEqualsParameters">
+///     With <see cref="SoleLambdaEqualsCallee" />: the lambda's parameters before <c>=&gt;</c>, modifiers and parentheses
+///     counted.
+/// </param>
+/// <param name="SoleLambdaEqualsValue">
+///     With <see cref="SoleLambdaEqualsCallee" />: the value's width written on one line, its <c>;</c> included.
+/// </param>
 /// <param name="LambdaChainHead">
 ///     ⚠ The arrow of a sole lambda argument whose body is a chain of calls: the width from the lambda's start
 ///     to its first call's dot, or zero for any other group (#571). Past the margin the arrow breaks for a
@@ -2243,6 +2290,17 @@ public readonly record struct GroupFacts(
     bool SoleCallKept = false,
     int[]? SolePropertyChain = null,
     bool SolePropertyChainKept = false,
+    int SoleChainHead = 0,
+    int SoleChainBody = 0,
+    bool SoleChainKept = false,
+    int TestedCallHead = 0,
+    bool TestedCallSoleBody = false,
+    int TestedCallTerminator = 0,
+    int TestedCallTail = 0,
+    int SoleLambdaEqualsCallee = 0,
+    int SoleLambdaEqualsName = 0,
+    int SoleLambdaEqualsParameters = 0,
+    int SoleLambdaEqualsValue = 0,
     bool BreaksIfItOverflows = false,
     bool BreaksIfReceiverOverflows = false,
     bool TailStopsAtLastResort = false,

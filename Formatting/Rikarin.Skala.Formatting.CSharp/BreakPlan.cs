@@ -700,6 +700,7 @@ public sealed class BreakPlan {
         PlanJoinAfterADot(node);
         PlanCastBeforeACollection(node);
         PlanCastOperand(node);
+        PlanSuppressedArgument(node);
 
         switch (node) {
             case EnumDeclarationSyntax enumeration:
@@ -732,6 +733,7 @@ public sealed class BreakPlan {
                     options.MaxInvocationArgumentsOnLine,
                     wrapBeforeOpen: options.WrapBeforeInvocationLpar
                 );
+                MarkTestedCall(arguments);
                 return;
 
             case AttributeArgumentListSyntax attributeArguments: {
@@ -5859,6 +5861,9 @@ public sealed class BreakPlan {
                 && BrokenTestedOperandOf(lambda, (ExpressionSyntax)test) is not null
                 && arrowGroups.TryGetValue(Key(lambda), out var arrow)) {
                 testArrowHolds[group] = arrow;
+            } else if (testedCallGroups.Contains(group)) {
+                // ⚠ A test whose own gaps are a fill spends the level once it breaks at one (#620, SK-DIV-0811).
+                testArrowHolds[group] = group;
             }
 
             // ⚠ The operand's chain where it has one: its links breaking stack the level as its arguments do
@@ -6979,6 +6984,9 @@ public sealed class BreakPlan {
 
         // ⚠ Not a broken collection as a conditional's condition, which keeps its `=` whatever the line (fuzz 7777).
         var brokenBrace = InitializerBrokenAfterItsBrace(value) && value is not ConditionalExpressionSyntax;
+        var soleLambdaEquals = owner == EqualsOwner.VarLocal && !options.WrapBeforeEq
+            ? SoleLambdaEqualsOf(node, equals, value)
+            : null;
         Describe(
             node,
             new(
@@ -7288,7 +7296,11 @@ public sealed class BreakPlan {
                     ParenMember: ParenMemberValueOf(node, owner, equals, value),
                     // ⚠ And a doubled one behind a head of seven to eleven columns (#598, SK-DIV-0872). See
                     // Fitter.ShortParenMemberEqualsBreaks.
-                    ShortParenMember: ParenMemberValueOf(node, owner, equals, value, true)
+                    ShortParenMember: ParenMemberValueOf(node, owner, equals, value, true),
+                    SoleLambdaEqualsCallee: soleLambdaEquals?.Callee ?? 0,
+                    SoleLambdaEqualsName: soleLambdaEquals?.Name ?? 0,
+                    SoleLambdaEqualsParameters: soleLambdaEquals?.Parameters ?? 0,
+                    SoleLambdaEqualsValue: soleLambdaEquals?.Value ?? 0
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -7612,6 +7624,179 @@ public sealed class BreakPlan {
     ///     parenthesised operator — breaks there instead, whichever context. A break the author wrote after the
     ///     cast is kept. A switch arm's arrow asks its own question about it (<see cref="ArmCastWidth" />).
     /// </remarks>
+    /// <summary>
+    ///     Arms <see cref="GroupFacts.TestedCallHead" /> on the argument list of a one-argument call that is the
+    ///     operand of a type test written on one line (#620, SK-DIV-0811).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c>, on <c>ok = Head(arg) is T;</c>, <c>return</c>, a discard,
+    ///     <c>var b =</c> and a sole lambda's body under a broken arrow — heads of 2 to 46 columns, indents 8 to 20,
+    ///     four tests, lines of 121 to 151. A pattern with braces is not this shape (it breaks inside its braces),
+    ///     nor a call of two arguments or more, which the oracle chops.
+    /// </remarks>
+    void MarkTestedCall(ArgumentListSyntax arguments) {
+        if (arguments is not {
+                Arguments: [{ NameColon: null, RefKindKeyword.RawKind: 0, Expression: var argument }],
+                Parent: InvocationExpressionSyntax call
+            }
+            || argument is LambdaExpressionSyntax or AnonymousMethodExpressionSyntax
+            || CalleeName(call) is not { Length: > 1 }) {
+            return;
+        }
+
+        SyntaxNode test;
+        switch (call.Parent) {
+            case BinaryExpressionSyntax binary when IsTypeTest(binary) && binary.Left == call:
+                test = binary;
+                break;
+
+            case IsPatternExpressionSyntax isPattern
+                when isPattern.Expression == call && IsASimpleTestPattern(isPattern.Pattern):
+                test = isPattern;
+                break;
+
+            default:
+                return;
+        }
+
+        // ⚠ Nor a test the author broke before its keyword, which is #618's (SK-DIV-0811 reached those and broke 41
+        // members of #618's probe, 28 files unstable on pass two). A break after the keyword, a `not` or before a
+        // designation is this rule's own answer on pass one, and stays with it.
+        if (HasLineBreakIn(call)
+            || BreaksBefore(
+                test is BinaryExpressionSyntax tested
+                    ? tested.OperatorToken
+                    : ((IsPatternExpressionSyntax)test).IsKeyword
+            )
+            || test.DescendantTrivia(test.Span)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsDirective
+                )) {
+            return;
+        }
+
+        var soleBody = options.PlaceSingleMethodArgumentLambdaOnSameLine && IsTheBodyOfASoleLambda(test);
+        var terminator = test.Parent switch {
+            ReturnStatementSyntax => 1,
+            AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment
+                when assignment.Right == test && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) => 1,
+            EqualsValueClauseSyntax {
+                Parent: VariableDeclaratorSyntax {
+                    Parent: VariableDeclarationSyntax { Variables.Count: 1, Parent: LocalDeclarationStatementSyntax }
+                }
+            } => 1,
+            _ => 0
+        };
+        // ⚠ The test's gaps join the type test's own group, whose levels are measured (#440, #445, #602): a group of its
+        // own with a level from the line moved a kept arrow's chopped arguments off the oracle's column.
+        if (terminator == 0 && !soleBody
+            || !groups.TryGetValue(Key(arguments), out var plans)
+            || plans.Count == 0
+            || !groups.TryGetValue(Key(test), out var testPlans)
+            || testPlans.FindIndex(static p => p.Facts is {
+                    BreaksIfTooLong: true, KeywordWidth: 0, PatternDotPoint: false
+                }
+            )
+                is not (>= 0 and var at)) {
+            return;
+        }
+
+        var (keyword, pattern) = test switch {
+            BinaryExpressionSyntax binary => (binary.OperatorToken, (SyntaxNode)binary.Right),
+            _ => (((IsPatternExpressionSyntax)test).IsKeyword, ((IsPatternExpressionSyntax)test).Pattern)
+        };
+
+        var plan = plans[^1] with {
+            Facts = plans[^1].Facts with {
+                TestedCallHead = FormattedWidth(call.GetFirstToken(), arguments.OpenParenToken),
+                TestedCallSoleBody = soleBody,
+                TestedCallTerminator = terminator,
+                TestedCallTail = 1 + FormattedWidth(keyword, test.GetLastToken()) + terminator
+            }
+        };
+        plans[^1] = plan;
+        byId[plan.Id] = plan;
+
+        // ⚠ The test's own gaps are one fill (#620, SK-DIV-0811): before the keyword, after it, after a `not` and
+        // before a designation, each taken only when what follows it to the next does not fit — `… is not` / `null;`,
+        // `… is SyntaxNode` / `node;`, `…)` / `as INamedTypeSymbol;` in the oracle. A break the author wrote there
+        // is kept. They replace the type test's last-resort point after the keyword and the one before it.
+        var fill = testPlans[at].Id;
+        testedCallGroups.Add(fill);
+        FillPointOf(keyword);
+        FillPointOf(FirstToken(pattern));
+        switch (pattern) {
+            case UnaryPatternSyntax unary:
+                FillPointOf(FirstToken(unary.Pattern));
+                break;
+
+            case DeclarationPatternSyntax declaration:
+                FillPointOf(declaration.Designation.GetFirstToken());
+                break;
+        }
+
+        void FillPointOf(SyntaxToken token) {
+            gaps[token.SpanStart] = options.KeepsUserBreaksBetweenItems && BreaksBefore(token)
+                ? new(GapRule.Mandatory, -1)
+                : new(GapRule.FillPoint, fill);
+        }
+    }
+
+    /// <summary>The name a call is made through: <c>Name</c> in <c>a.b.Name&lt;T&gt;(…)</c>.</summary>
+    static string? CalleeName(InvocationExpressionSyntax call) =>
+        call.Expression switch {
+            SimpleNameSyntax name => name.Identifier.ValueText,
+            MemberAccessExpressionSyntax { Name: var name } => name.Identifier.ValueText,
+            _ => null
+        };
+
+    /// <summary>
+    ///     A pattern that is one word or two after <c>is</c>: a type, a declaration, a constant, or <c>not</c> over a
+    ///     type or a constant.
+    /// </summary>
+    static bool IsASimpleTestPattern(PatternSyntax pattern) =>
+        pattern switch {
+            TypePatternSyntax => true,
+            DeclarationPatternSyntax { Designation: SingleVariableDesignationSyntax } => true,
+            ConstantPatternSyntax { Expression: LiteralExpressionSyntax or IdentifierNameSyntax } => true,
+            UnaryPatternSyntax {
+                Pattern: TypePatternSyntax
+                or ConstantPatternSyntax { Expression: LiteralExpressionSyntax or IdentifierNameSyntax }
+            } => true,
+            _ => false
+        };
+
+    /// <summary>
+    ///     The gap before a whole argument's <c>!</c>, <c>Head(name!)</c>: a last-resort point at the argument's own
+    ///     column (#620, SK-DIV-0810).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c>: an argument <c>name!</c> on its own line whose line, with
+    ///     what follows it to the next break, runs past the margin comes back as <c>name</c> / <c>!</c>, the
+    ///     <c>!</c> on the argument's column — even where the name alone still overflows. Under a kept arrow, an
+    ///     <c>=</c>, a plain call and a second argument alike, every one of 2 × 34 columns at two indents.
+    /// </remarks>
+    void PlanSuppressedArgument(SyntaxNode node) {
+        if (node is not PostfixUnaryExpressionSyntax {
+                RawKind: (int)SyntaxKind.SuppressNullableWarningExpression,
+                Operand: IdentifierNameSyntax,
+                Parent: ArgumentSyntax { NameColon: null, RefKindKeyword.RawKind: 0, Parent: ArgumentListSyntax }
+            } suppressed) {
+            return;
+        }
+
+        var bang = suppressed.OperatorToken;
+        if (options.KeepsUserBreaksBetweenItems && BreaksBefore(bang)) {
+            Mandatory(bang);
+            return;
+        }
+
+        var group = NewGroup();
+        Point(bang, group, lastResort: true);
+        Describe(suppressed, group, GroupMode.Preserve, new(BreaksIfTooLong: true));
+    }
+
     void PlanCastOperand(SyntaxNode node) {
         if (node is CastExpressionSyntax { Expression: ParenthesizedExpressionSyntax parenthesis } wide
             && IsTheWholeValueOfAReturnOrAnEquals(wide)
@@ -8562,6 +8747,58 @@ public sealed class BreakPlan {
         && declarator.Identifier.Span.Length <= 9;
 
     /// <summary>
+    ///     A <c>var</c> local's <c>=</c> before a call on a path of names whose one argument is a lambda with an
+    ///     expression body — <c>var symbols = context.Compilation.Use(x =&gt; …);</c> — written on one line, behind a head
+    ///     of 12 to 26 columns through the <c>=</c>: the callee's width, the name's and the parameters' (#620,
+    ///     SK-DIV-0880); null otherwise. ⚠ Not over a lone call of two arguments or more, whose arrow the oracle keeps
+    ///     over chopped arguments, and whose <c>=</c> it then reads otherwise.
+    /// </summary>
+    (int Callee, int Name, int Parameters, int Value)? SoleLambdaEqualsOf(
+        SyntaxNode node,
+        SyntaxToken equals,
+        ExpressionSyntax value
+    ) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine
+            || node is not EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax declarator }
+            || value is not InvocationExpressionSyntax {
+                ArgumentList.Arguments: [
+                    {
+                        NameColon: null,
+                        RefKindKeyword.RawKind: 0,
+                        Expression: LambdaExpressionSyntax { ExpressionBody: { } body } lambda
+                    }
+                ]
+            } call
+            || body is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 } lone
+            && IsAPathOfNames(lone.Expression)
+            || !IsAPathOfNames(call.Expression)
+            || HeadWidthThroughEquals(node, equals) is < MinimumEqualsHead or > 26
+            || HasLineBreakIn(value)
+            || value.DescendantTrivia(value.Span)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsDirective
+                )) {
+            return null;
+        }
+
+        return (
+            FormattedWidth(value.GetFirstToken(), call.ArgumentList.OpenParenToken.GetPreviousToken()),
+            declarator.Identifier.Span.Length,
+            FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken.GetPreviousToken()),
+            FormattedWidth(value) + WidthThroughSemicolon(value)
+        );
+
+        static bool IsAPathOfNames(ExpressionSyntax expression) =>
+            expression switch {
+                SimpleNameSyntax or ThisExpressionSyntax or BaseExpressionSyntax => true,
+                MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access =>
+                    IsAPathOfNames(access.Expression),
+                _ => false
+            };
+    }
+
+    /// <summary>
     ///     A local's <c>=</c> before a lambda with a bare-name body: the gates its declarator's name and
     ///     type widths open (#558). See <see cref="LambdaLocal" />.
     /// </summary>
@@ -9095,6 +9332,13 @@ public sealed class BreakPlan {
 
     /// <summary>See <see cref="TestArrowHeldAgainst" />.</summary>
     readonly Dictionary<int, int> testArrowHolds = [];
+
+    /// <summary>
+    ///     The type test groups <see cref="MarkTestedCall" /> made a fill of: held while the operand's arguments stay
+    ///     flat, and spent once the test itself breaks (#620, SK-DIV-0811) — `Use(x =&gt;` / `Head(arg) is SyntaxNode` /
+    ///     `node` one level past the body's line.
+    /// </summary>
+    readonly HashSet<int> testedCallGroups = [];
 
     /// <summary>
     ///     The group of the dot after a parenthesised receiver, when the receiver's own continuation nests a level
@@ -9881,20 +10125,83 @@ public sealed class BreakPlan {
         PlanArrowBody(
             lambda,
             body,
-            WithThePropertyChain(
+            WithTheChainHead(
                 lambda,
                 body,
-                WithTheSoleCall(
+                WithThePropertyChain(
                     lambda,
                     body,
-                    WithTheHeldCall(
+                    WithTheSoleCall(
                         lambda,
                         body,
-                        WithTheLinkedCall(lambda, body, WithTheLaterCall(lambda, body, ArrowFactsOf(lambda, body)))
+                        WithTheHeldCall(
+                            lambda,
+                            body,
+                            WithTheLinkedCall(lambda, body, WithTheLaterCall(lambda, body, ArrowFactsOf(lambda, body)))
+                        )
                     )
                 )
             )
         );
+
+    /// <summary>
+    ///     <paramref name="facts" /> with <see cref="GroupFacts.SoleChainHead" /> set where a sole lambda's whole body is
+    ///     a chain that starts with a call — <c>Open().Analyze(a, b)</c>, <c>this.cache.Get(x).Name</c> — with at least one
+    ///     link after that call (#620, SK-DIV-0812).
+    /// </summary>
+    GroupFacts WithTheChainHead(LambdaExpressionSyntax lambda, ExpressionSyntax body, GroupFacts facts) {
+        if (!options.PlaceSingleMethodArgumentLambdaOnSameLine
+            || !IsTheBodyOfASoleLambda(body)
+            || body is not (InvocationExpressionSyntax or MemberAccessExpressionSyntax)
+            || FirstCallOfAChain(body) is not { } first
+            || first == body
+            || first.ArgumentList.Arguments.Any(static argument =>
+                argument.Expression is LambdaExpressionSyntax or AnonymousMethodExpressionSyntax
+            )
+            || body.DescendantTrivia(body.Span)
+                .Any(static trivia => trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                    || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                    || trivia.IsDirective
+                )) {
+            return facts;
+        }
+
+        return facts with {
+            SoleChainHead = FormattedWidth(body.GetFirstToken(), first.ArgumentList.CloseParenToken),
+            SoleChainBody = FormattedWidth(body),
+            SoleChainKept = HasLineBreakIn(body),
+            SoleCallLambda = FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
+        };
+    }
+
+    /// <summary>
+    ///     The innermost call on a chain's spine — the chain's first call — where everything before it is a name,
+    ///     <c>this</c> or <c>base</c> and member accesses of names, generic or not, and everything after it member
+    ///     accesses and calls; null otherwise.
+    /// </summary>
+    static InvocationExpressionSyntax? FirstCallOfAChain(ExpressionSyntax body) {
+        InvocationExpressionSyntax? first = null;
+        var node = body;
+        while (true) {
+            switch (node) {
+                case InvocationExpressionSyntax invocation:
+                    first = invocation;
+                    node = invocation.Expression;
+                    continue;
+
+                case MemberAccessExpressionSyntax { RawKind: (int)SyntaxKind.SimpleMemberAccessExpression } access:
+                    node = access.Expression;
+                    continue;
+            }
+
+            break;
+        }
+
+        // The root: a name, `this` or `base`, with only names between it and the first call.
+        return first is not null && node is SimpleNameSyntax or ThisExpressionSyntax or BaseExpressionSyntax
+            ? first
+            : null;
+    }
 
     /// <summary>
     ///     <paramref name="facts" /> with <see cref="GroupFacts.SolePropertyChain" /> set where a sole lambda's whole
