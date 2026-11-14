@@ -3908,7 +3908,9 @@ public sealed class BreakPlan {
         if (whole.Parent is not ReturnStatementSyntax
             && !(whole.Parent is AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } compound
                 && !compound.IsKind(SyntaxKind.SimpleAssignmentExpression)
-                && compound.Right == whole)) {
+                && compound.Right == whole
+                // ⚠ Not behind six columns or more, where the operator answers as a plain `=` (PlanAroundEquals).
+                && HeadWidthThroughEquals(compound, compound.OperatorToken) < 6)) {
             return;
         }
 
@@ -3994,6 +3996,28 @@ public sealed class BreakPlan {
     ///     The binary operator one parenthesis holds, or two around it, <c>(a + b)</c> or <c>((a + b))</c>, as a
     ///     receiver (#598, SK-DIV-0575 round 8); null for a type test or anything else.
     /// </summary>
+    /// <summary>
+    ///     Whether a compound assignment statement's value is one parenthesis around a binary operator, or two, cast or
+    ///     not, with at most one member after it: <c>y += (T)(a + b…).M(x);</c> (#598).
+    /// </summary>
+    static bool IsACompoundAssignmentOverAParenthesisedOperator(SyntaxNode node, ExpressionSyntax value) {
+        if (node is not AssignmentExpressionSyntax { Parent: ExpressionStatementSyntax } assignment
+            || assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)) {
+            return false;
+        }
+
+        var inner = value is CastExpressionSyntax cast ? cast.Expression : value;
+        if (inner is InvocationExpressionSyntax call) {
+            inner = call.Expression;
+        }
+
+        if (inner is MemberAccessExpressionSyntax access && access.IsKind(SyntaxKind.SimpleMemberAccessExpression)) {
+            inner = access.Expression;
+        }
+
+        return ParenthesisedOperatorOf(inner) is not null;
+    }
+
     static BinaryExpressionSyntax? ParenthesisedOperatorOf(ExpressionSyntax receiver) {
         var inside = receiver is ParenthesizedExpressionSyntax { Expression: var once } ? once : null;
         if (inside is ParenthesizedExpressionSyntax { Expression: var twice }) {
@@ -6899,6 +6923,14 @@ public sealed class BreakPlan {
         // group's own point width is the head.
         var yieldsToTheBracket = BreakYieldsToTheBracket(value);
         var owner = EqualsOwnerOf(node);
+        // ⚠ A compound assignment's operator answers as a plain assignment's `=` of the same width over a parenthesised
+        // operator (#598, c2): `yyyy +=` breaks where `xxxxx =` does and `yy +=` keeps where `xxx =` does.
+        if (owner == EqualsOwner.None
+            && IsACompoundAssignmentOverAParenthesisedOperator(node, value)
+            && HeadWidthThroughEquals(node, equals) >= 6) {
+            owner = EqualsOwner.Assignment;
+        }
+
         var callee = owner == EqualsOwner.None ? 0 : CalleeWidthOf(value);
 
         // ⚠ A conditional value measures its whole condition (#553, GroupFacts.ValueHeadWidth), with the
@@ -7307,7 +7339,17 @@ public sealed class BreakPlan {
                     SoleLambdaEqualsCallee: soleLambdaEquals?.Callee ?? 0,
                     SoleLambdaEqualsName: soleLambdaEquals?.Name ?? 0,
                     SoleLambdaEqualsParameters: soleLambdaEquals?.Parameters ?? 0,
-                    SoleLambdaEqualsValue: soleLambdaEquals?.Value ?? 0
+                    SoleLambdaEqualsValue: soleLambdaEquals?.Value ?? 0,
+                    // ⚠ The name a held call's `=` assigns (#598, round 12). See Fitter.ShortHeadKeepsBeforeOneArgument.
+                    HeldValueNameWidth: !holds
+                        ? 0
+                        : node switch {
+                            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Identifier: var heldName } } =>
+                                heldName.Span.Length,
+                            AssignmentExpressionSyntax heldAssignment => FormattedWidth(heldAssignment.Left),
+                            _ => 0
+                        },
+                    HeldValueArgumentCount: heldCall?.ArgumentList.Arguments.Count ?? 0
                 ),
                 true,
                 // ⚠ And so does the `=` of a name a comment has already broken onto a continuation line:
@@ -7367,10 +7409,12 @@ public sealed class BreakPlan {
         bool shortHead = false
     ) {
         var headWidth = HeadWidthThroughEquals(node, equals);
+        // ⚠ A compound operator over a parenthesised operator is an assignment here (PlanAroundEquals, #598 c2).
         if (owner is not (EqualsOwner.VarLocal or EqualsOwner.TypedLocal or EqualsOwner.Assignment)
             || options.WrapBeforeEq
             || node is AssignmentExpressionSyntax assignment
             && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+            && !IsACompoundAssignmentOverAParenthesisedOperator(assignment, value)
             || (shortHead ? headWidth is < 7 or >= MinimumEqualsHead : headWidth < MinimumEqualsHead)) {
             return default;
         }
@@ -7463,9 +7507,12 @@ public sealed class BreakPlan {
     ///     parenthesis behind another operand (<c>yy + (…)</c> breaks the outer <c>+</c>).
     /// </remarks>
     int ParenCloseEndOf(SyntaxNode node, ExpressionSyntax value) {
+        // ⚠ A compound operator behind six columns or more answers as a plain `=` (#598, c2).
         if (options.WrapBeforeEq
             || node is AssignmentExpressionSyntax assignment
-            && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)) {
+            && !assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+            && !(IsACompoundAssignmentOverAParenthesisedOperator(assignment, value)
+                && HeadWidthThroughEquals(assignment, assignment.OperatorToken) >= 6)) {
             return 0;
         }
 

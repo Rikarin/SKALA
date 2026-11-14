@@ -484,9 +484,12 @@ public sealed class Fitter {
                 // ⚠ An `=` whose value's leading parenthesis closes one column past the margin breaks when the
                 // value through that `)` fits below, what follows it breaking on its own (#598): `var x =` /
                 // `(string)(…)` / `+ c;`. See GroupFacts.ParenCloseEnd.
+                // ⚠ Not behind a head of five columns or fewer, which answers as `x =` does, whose value starts on the
+                // continuation column (#598, c2: `xx =` and `xxx =` keep the `=` wherever `x =` does).
                 if (facts.ParenCloseEnd > 0
                     && m.PointWidth < Unbounded
                     && m.FlatWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 > m.ContinuationColumn + 2
                     && m.Column + m.PointWidth + 1 + facts.ParenCloseEnd == width + 1
                     && Fits(
                         m.ContinuationColumn,
@@ -500,6 +503,7 @@ public sealed class Fitter {
                 if (facts.ParenCloseEndInner > 0
                     && m.PointWidth < Unbounded
                     && m.FlatWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 > m.ContinuationColumn + 2
                     && m.Column + m.PointWidth + 1 + facts.ParenCloseEndInner == width + 1
                     && Fits(m.ContinuationColumn, facts.ParenCloseEnd)) {
                     return ResolvedMode.Broken;
@@ -945,8 +949,14 @@ public sealed class Fitter {
                                 && OneOverMovesTheDot(paren, m.Column)
                                 || facts.HeldCall == 4
                                 && facts.ParenReceiverHeld
-                                && facts.ParenReceiverArguments <= 10
-                                && m.Column + m.FlatWidth + m.Trailing == width + 1)
+                                // ⚠ Wider arguments move it too once the receiver is 71 columns or more (#598, round
+                                // 12, d3: 0 of 64 one-over rows either side of it, arguments of 16 and 18 alike).
+                                && (facts.ParenReceiverArguments <= 10 || receiver >= 71)
+                                && m.Column + m.FlatWidth + m.Trailing == width + 1
+                                || facts.HeldCall == 3
+                                && facts.ParenReceiverHeld
+                                && !Fits(m.Column, m.FlatWidth, m.Trailing)
+                                && ShortArgumentMovesTheDot(facts.ParenReceiverArguments, paren, m.Column, lineStart))
                                 ? ResolvedMode.Broken
                                 : ResolvedMode.Flat;
                     }
@@ -3691,6 +3701,59 @@ public sealed class Fitter {
     static bool OneOverMovesTheDot(int paren, int column) => 10 * paren - 3 * column >= 871;
 
     /// <summary>
+    ///     Whether a call of one or two short arguments on a parenthesised operator, its <c>(</c> fitting beside a head
+    ///     that keeps its <c>=</c> or <c>return</c>, breaks its dot rather than chop: <c>x = (T)(a + b…)</c> /
+    ///     <c>.M(q);</c> (#598, round 12).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> (grid d1, 3 600 cells; c5, c2): five heads of 3 to 6 columns,
+    ///     casts of 0 to 13, arguments of 1 to 4 columns, the <c>(</c> on columns 118 to 120, indents 8, 12 and 16, nested
+    ///     by <c>if</c> blocks and by namespaces alike. ⚠ The dot breaks only where the statement starts on column 8: at 12
+    ///     and 16, by either nesting, every cell chops. There it is a window in the receiver's column <c>r</c> (0-based)
+    ///     and the <c>(</c>'s <c>p</c> (1-based), with <c>a</c> the argument's width:
+    ///     <c>r + p ≥ 127 + 4·a</c> and <c>3·p − 2·r ≥ 312 + 4·a</c>. Over the measured cells it is exact; from three
+    ///     columns of argument the window is empty, and the method's name plays no part.
+    /// </remarks>
+    /// <summary>
+    ///     Whether the <c>=</c> of a local or an assignment of seven to eleven columns stays before one argument on a
+    ///     parenthesised operator whose <c>(</c> fits beside it, the arguments chopping: <c>var x = (a + b…).M(</c> /
+    ///     <c>q</c> / <c>);</c> (#598, round 12).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> (grid d2, 4 374 cells; c5 and the fresh probes, 10 044 rows in
+    ///     all): nine heads of 7 to 11 columns, casts of 0 to 26, arguments of 1 to 10 columns, the <c>(</c> on columns 105
+    ///     to 120, indents 8 to 20. ⚠ The decision reads the head, the indent, the argument's width and the <c>(</c>'s
+    ///     column only: no row in 4 497 groups changes with the cast, the method's name or the first operand, which is
+    ///     why the round-8 forms, built on the cast and the value's end, could not separate it. Behind nine columns or
+    ///     more the <c>=</c> always breaks; behind seven and eight,
+    ///     <c>16·indent + 22·argument − 170·[head = 8] − 3·name − 4·paren ≥ −226</c> keeps it, exact on every row: a
+    ///     column of indent is worth four of the <c>(</c>, and the eighth column of head forty.
+    /// </remarks>
+    static bool ShortHeadKeepsBeforeOneArgument(int head, int indent, int argument, int name, int paren) =>
+        head <= 8 && 16 * indent + 22 * argument - (head == 8 ? 170 : 0) - 3 * name - 4 * paren >= -226;
+
+    /// <summary>
+    ///     <see cref="ShortHeadKeepsBeforeOneArgument" /> for two or three arguments: the <c>=</c> of a local or an
+    ///     assignment of ten or eleven columns stays and the arguments chop (#598, round 12).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> (grids d3 and d4, 7 284 cells, and every #598 grid with such a
+    ///     call: 7 772 rows): heads of 7 to 9 columns always keep it. Behind ten and eleven,
+    ///     <c>12·indent + 15·arguments − 60·[head = 11] − 3·name − 4·paren − 5·[three arguments] ≥ −333</c> keeps it,
+    ///     exact on every row; again nothing else is read, the cast included.
+    /// </remarks>
+    static bool ShortHeadKeepsBeforeArguments(int head, int indent, int arguments, int name, int paren, int count) =>
+        head <= 9
+        || head <= 11
+        && 12 * indent + 15 * arguments - (head == 11 ? 60 : 0) - 3 * name - 4 * paren - (count >= 3 ? 5 : 0) >= -333;
+
+    static bool ShortArgumentMovesTheDot(int arguments, int paren, int column, int lineStart) =>
+        lineStart == 8
+        && arguments is >= 1 and <= 2
+        && column + paren >= 127 + 4 * arguments
+        && 3 * paren - 2 * column >= 312 + 4 * arguments;
+
+    /// <summary>
     ///     The held lambda call's line below, as its limit reads it: a line past the margin is read as the margin once a
     ///     rest of the chain follows the call (#619).
     /// </summary>
@@ -4024,7 +4087,7 @@ public sealed class Fitter {
                     || valueColumn + facts.HeldValueReceiver - (continuation - indentWidth) > HeldReceiverEnd;
             case 2:
                 // ⚠ One column over beside it, a lone argument's dot breaks instead, as it does below.
-                if (valueColumn <= continuation
+                if (valueColumn <= continuation + 2
                     || !facts.HeldValueManyArgs
                     && valueColumn + facts.HeldValueWidth == width + 1) {
                     return false;
@@ -4056,6 +4119,39 @@ public sealed class Fitter {
                 // those the `=` stays and the argument chops, master's answer for a cast.
                 if (facts.HeldValueParenCall && parenBeside >= width + 2) {
                     return false;
+                }
+
+                // ⚠ One argument whose `(` fits beside a head of seven columns or more: by the head, the indent, the
+                // argument's width and where the `(` lands, nothing else (#598, round 12). See
+                // ShortHeadKeepsBeforeOneArgument.
+                if (facts.HeldValueParenCall
+                    && !facts.HeldValueManyArgs
+                    && parenBeside <= width
+                    && valueColumn - (continuation - indentWidth) >= 8) {
+                    return !ShortHeadKeepsBeforeOneArgument(
+                        valueColumn - (continuation - indentWidth) - 1,
+                        continuation - indentWidth,
+                        facts.HeldValueMember - facts.HeldValueHead - 1,
+                        facts.HeldValueNameWidth,
+                        parenBeside
+                    );
+                }
+
+                // ⚠ And two or three, behind ten columns or more: by the same four widths (#598, round 12). See
+                // ShortHeadKeepsBeforeArguments.
+                if (facts.HeldValueParenCall
+                    && facts.HeldValueManyArgs
+                    && parenBeside <= width
+                    && valueColumn + facts.HeldValueWidth > width + 1
+                    && valueColumn - (continuation - indentWidth) >= 11) {
+                    return !ShortHeadKeepsBeforeArguments(
+                        valueColumn - (continuation - indentWidth) - 1,
+                        continuation - indentWidth,
+                        facts.HeldValueMember - facts.HeldValueHead - 1,
+                        facts.HeldValueNameWidth,
+                        parenBeside,
+                        facts.HeldValueArgumentCount
+                    );
                 }
 
                 if (facts.HeldValueParenCall

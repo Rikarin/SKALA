@@ -16734,3 +16734,109 @@ Round 10's fresh probes (seeds 830101 to 830103): 180 → 60. Every grid, `afaed
 
 - options: none.
 - status: ⚠ **open**: the bands, the one-argument boundary behind short heads, and the bare value's band.
+  - Round 12 (2026-11-14): the one-argument boundary behind short heads is **fixed** in SK-DIV-0921 and SK-DIV-0922 (it
+    reads the head, the indent, the argument and the `(`, never the cast); the bands are still open (SK-DIV-0924).
+
+## SK-DIV-0920 — short assignments answer as `x =` does, and a compound operator of six or more as a plain `=`
+
+#598, round 12 (2026-11-14). Round 11's grid c2 (55 080 statements, ten heads of 3 to 7 columns at indent 8) left 7 158
+apart, and SK-DIV-0871 named them: the `=` of four- and five-column assignments, which Skala broke and the oracle never
+did, and seven-column compound assignments, which the oracle broke and Skala did not. Read on c2's maps before anything
+was changed:
+- ⚠ **`xx =` and `xxx =` are laid out exactly as `x =`**, cell for cell, and so are `yy +=` and `y ??=`. The held call's
+  short-head table already kept the `=` where the value starts on the continuation column (`x =`); the gain from
+  breaking is the head less three columns, and up to two of it the oracle never takes it. `Fitter.HeldValueBreaks`
+  now keeps it while the value starts within two columns of the continuation, and `ParenCloseEnd`'s one-over break no
+  longer fires there either (the `.Count` rows one column over).
+- ⚠ **A compound operator answers as a plain `=` of its width.** `yyyy +=` matched `xxxxx =` on every cell once
+  `PlanAroundEquals` treated a compound assignment over a parenthesised operator, behind six columns or more, as an
+  assignment (`BreakPlan.IsACompoundAssignmentOverAParenthesisedOperator`): the held call, `ParenCloseEnd` and
+  `ShortParenMember` all read it, and the returned call's plan stands down for it. Behind five or fewer it stays on the
+  `return`-like plan, which was already right; mapping those as well made pass one indent the operator a level short.
+- c2: 7 158 → 1 531 (`xx =` 1 406 → 56, `xxx =` 1 495 → 32, `yyyy +=` 2 550 → 60), none newly wrong.
+- ⚠ **Open: six-column assignments** (`name =`, `xxxx =`, 1 057 of c2's 1 531, grid d5: 474 → 432). There the oracle
+  switches between the dot and the broken `=` on the cast's width (about 17 columns for a call with no arguments, 15 or 17
+  for `.ToUpperInvariant()` by position) and, one column over, between `d` and `O` on the cast and the first operand.
+  Measured only at indents 8 and 12; not wired.
+- options: none.
+- status: **fixed** for heads of five columns or fewer and seven or more, pinned by `ShortHeadEqualsIssue598Tests`.
+
+## SK-DIV-0921 — at indent 8 one short argument moves the dot behind a head that keeps its `=`
+
+#598, round 12. Behind `x =`, `y +=` and `return` the oracle writes `x = (T)(a + b…)` / `.M(q);` where Skala chopped
+`.M(` / `q` / `);`, with the `(` on columns 118 to 120. Grid **d1** (3 600 statements: five heads, casts of 0 to 13,
+arguments of 1 to 4, the `(` on 118 to 120, indents 8, 12 and 16 reached through `if` blocks and through namespaces):
+- ⚠ **Only at indent 8.** At 12 and 16 every cell chops, by either nesting, so it is the column and not the block.
+- At 8 it is a window in the receiver's column `r` (0-based) and the `(`'s `p` (1-based), `a` the argument's width:
+  `r + p ≥ 127 + 4·a` and `3·p − 2·r ≥ 312 + 4·a`. From three columns of argument the window is empty; the method's
+  name, the first operand and the cast through `r` are all it reads.
+- Wired as `Fitter.ShortArgumentMovesTheDot`, on the held call's dot (kind 3) when the line overflows. d1: 250 → 0.
+- options: none.
+- status: **fixed**, pinned by `ShortHeadEqualsIssue598Tests`.
+
+## SK-DIV-0922 — the `=` before one argument behind seven to eleven columns reads four widths
+
+#598, round 12. SK-DIV-0874's one-argument boundary: "at fixed margin positions indent 8 and indent 16 answer
+differently, and cast and uncast answer oppositely". Grid **d2** (4 374 statements: nine heads of 7 to 11 columns,
+casts of 0 to 8, arguments of 1 to 10, the `(` on 110 to 120, indents 8 to 16), read with c5 and every random grid,
+10 044 rows where the `(` fits beside and the line overflows by two or more:
+- ⚠ **The cast plays no part, nor the method's name, nor the first operand**: 4 497 groups, none changing with any of
+  them. The decision is a function of the head, the indent, the argument's width and the `(`'s column, 1 127 groups and
+  not one in conflict. ⚠ So round 11's "cast and uncast answer oppositely" was Skala's split, not the oracle's: the
+  round-8 forms it ran on were built from the cast and the value's end below.
+- Behind nine columns or more the `=` always breaks. Behind seven and eight the `=` stays and the argument chops while
+  `16·indent + 22·argument − 170·[head = 8] − 3·name − 4·paren ≥ −226`, exact on all 6 869 rows; a column of indent is
+  worth four of the `(`, and the eighth column of head forty.
+- Wired as `Fitter.ShortHeadKeepsBeforeOneArgument` in the held call's short-head table, from a new fact
+  `GroupFacts.HeldValueNameWidth`. d2: 321 → 0; c5: 465 → 6.
+- options: none.
+- status: **fixed**, pinned by `ShortHeadEqualsIssue598Tests`.
+
+## SK-DIV-0923 — two or three arguments: the `=` behind ten and eleven columns, and the dot one column over
+
+#598, round 12. Grids **d3** (4 512: eight heads, six calls of two or three arguments, casts of 0 to 8, the `(` on 108
+to 120 and one column over, indents 8 to 20) and **d4** (2 772: seven heads of 9 to 11 columns):
+- Heads of 7 to 9 always keep the `=`. Behind ten and eleven it stays while
+  `12·indent + 15·arguments − 60·[head = 11] − 3·name − 4·paren − 5·[three arguments] ≥ −333`, exact on 7 772 rows of
+  every grid with such a call (`Fitter.ShortHeadKeepsBeforeArguments`, a new fact `HeldValueArgumentCount`). Not one
+  column over, where the `=` stays and the dot answers.
+- One column over, arguments wider than ten columns (`.Replace(oldValue, newValue)`, SK-DIV-0831's exception) move the
+  dot exactly when the receiver is 71 columns or more, for 16 and 18 columns of arguments alike, behind every head.
+- d3: 146 → 0, d4: 228 → 0, none newly wrong.
+- options: none.
+- status: **fixed**, pinned by `ShortHeadEqualsIssue598Tests`.
+
+## SK-DIV-0924 — round 12: what stays open, with the evidence
+
+#598, round 12. Measured, not wired:
+- **The member band behind the receiver (SK-DIV-0874).** On m1 to m4's 7 548 rows within 30 of the threshold, an exact
+  integer search over the receiver's line, the cast, the capped and uncapped first operand, the name's weight, the
+  member's width, the call's head and the head's width finds nothing better than round 10's own score, 145 wrong. The
+  per-group thresholds sit −0.4 to 1.25 columns from it; the cast's weight drifts (residual 0.59 at no cast, 0.28 at 20),
+  but no single term closes it.
+- **The cast break behind a head that keeps its `=` (SK-DIV-0871)**, where the operator's `)` lands on 121: an exact
+  search over the head, the cast, the capped operand, the member, `return` and the call's head finds round 11's form
+  again (`8·head + 8·cast − 3·min(a, 24) + 5·member ≥ 162`), 20 wrong of 5 077. The indent plays no part there.
+- **Six-column assignments** (SK-DIV-0920).
+
+Fresh probes built after the last change, 12 000 statements: seeds 598601 (round 8's mixed generator with round 10's
+heads and the focused one), 598602 and 598603 (a generator carrying c2's heads, `xx =` to `yyyy +=`, `name =` and
+`total -=`, with the argument, doubled, wide-head and bare generators). Round 11's merge `007053a82` → round 12, no
+statement that matched diverging and none taking two passes:
+
+| Class | `007053a82` | Round 12 |
+|---|---:|---:|
+| short head or `return`: the `=` | 84 | 0 |
+| short head or `return`: the dot and the layout below | 13 | 0 |
+| short head or `return`: the cast break (SK-DIV-0871's safe bound) | 7 | 5 |
+| six-column assignments | 10 | 10 |
+| wide head: the bands | 18 | 18 |
+| wide head: other | 1 | 1 |
+| a bare value | 4 | 3 |
+| **total** | **137** | **37** |
+
+Round 11's fresh probes (seeds 598401 to 598403): 80 → 37. Every earlier grid, 398 506 statements: 2 460 → 2 172, none
+newly wrong; c1 206 → 116, c2 7 158 → 1 531, c5 465 → 6; d1 to d4 945 → 0.
+
+- options: none.
+- status: ⚠ **open**.
