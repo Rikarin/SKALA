@@ -324,6 +324,11 @@ public sealed class FuzzRegressionTests {
     // first point — its `(` with arguments, else its `{` — past the margin now breaks the `=` as a call's `(` does
     // (#596), the oracle's answer on both passes.
     [InlineData(10634966521450362568UL)]
+    // Found 2026-11-14 (fails on a2a6de72 too): `using var u18 = (IReadOnlyDictionary<…>)((Dictionary<…>)"""` / … /
+    // `""");` at 123 columns. The `=`'s tail stops at the inner cast's last resort, but the walk read that cast's group
+    // as unbounded before reaching the point — for the raw string behind it — so pass one kept the `=` and broke before
+    // the `"""`; pass two, that break required, ended the tail there, found it fitting below and broke the `=`.
+    [InlineData(15648357818547915787UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

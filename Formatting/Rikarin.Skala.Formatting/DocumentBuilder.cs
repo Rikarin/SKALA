@@ -1002,8 +1002,14 @@ public sealed class DocumentBuilder {
                     // A nested group can require a break using only soft points (for example,
                     // a switch expression). Splicing its children must not restore a flat form
                     // the group itself has already ruled out.
+                    // ⚠ Except under a tail that stops at a last resort (fuzz 15648357818547915787): the inner cast's
+                    // group of `(A)((B)"""` / … / `""")` is unbounded only for the raw string past its last-resort
+                    // point, where the tail ends. Read up front, the tail ran to the string, pass one kept the `=` and
+                    // broke before the `"""`; pass two, that break required, ended the tail there and broke the `=`.
+                    // Spliced, a width before the point still counts, as every child's does.
                     if (current >= 0
                         && !ended
+                        && !stopsAtLastResort
                         && node.Kind == DocKind.Group
                         && flatWidth[child] >= Document.Unbounded) {
                         flat = Document.Unbounded;
