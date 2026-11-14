@@ -1456,6 +1456,12 @@ public sealed class Document {
 ///     overflows, the call breaks too and every link chops (#582). Not behind a call chain the receiver
 ///     ends with a `!` or a `?.`, which the oracle keeps holding (ChainLinksIssue454Tests).
 /// </param>
+/// <param name="HeldCallTestArrow">
+///     ⚠ The arrow group of the sole lambda whose broken type test this held first call is the operand of, or −1
+///     (#618 round eight, SK-DIV-0520). The arrow is decided first, on entry at the body, so the held call can read
+///     whether it stayed: beside a kept arrow a one-argument call with links after it moves below its receiver by a
+///     line of its own (<c>Fitter.HeldCallMovesBesideAKeptArrow</c>), not by <see cref="HeldCall" />'s table.
+/// </param>
 /// <param name="BreaksIfItOverflows">
 ///     ⚠ Broken exactly when the group's own flat width overflows its line, nothing after it counted but what
 ///     stands before the next point — a comment after the receiver (#631): a call chain's receiver that is
@@ -1553,6 +1559,11 @@ public sealed class Document {
 ///     Where the line does not hold it, a one-argument call breaks the arrow by
 ///     <c>5·(c + t) − 3·(p + h) ≥ min(9, 7·e − 790)</c>, <c>e = i + 8 + a</c>. See
 ///     <c>Fitter.KeptLineBreaksTheTestArrow</c>.
+/// </param>
+/// <param name="LambdaTestDots">
+///     With <see cref="LambdaTestProperties" />: the chain's width up to each dot on its spine, nearest the receiver
+///     first (#618, SK-DIV-0520 round six). The kept arrow fills the chain beside it up to the last dot that fits, and
+///     where that first line ends weighs in the arrow's decision. See <c>Fitter.KeptFillLineEnd</c>.
 /// </param>
 /// <param name="LambdaTestProperties">
 ///     ⚠ With <see cref="LambdaTestCallHead" /> −1: the operand is a property chain with no call on it (#618,
@@ -2369,6 +2380,7 @@ public readonly record struct GroupFacts(
     int LambdaTestFirstLink = 0,
     int LambdaTestFirstCall = 0,
     int LambdaTestHeldCall = 0,
+    int[]? LambdaTestDots = null,
     bool LambdaTestProperties = false,
     LambdaBodyKind LambdaBodyKind = LambdaBodyKind.BrokenTest,
     int SoleCallHead = 0,
@@ -2395,6 +2407,7 @@ public readonly record struct GroupFacts(
     bool BreaksIfReceiverOverflows = false,
     bool TailStopsAtLastResort = false,
     bool HeldCallOnAPath = false,
+    int HeldCallTestArrow = -1,
     bool HeldCallLambda = false,
     bool HeldCallAfterEquals = false,
     int LambdaOperandParameters = 0,

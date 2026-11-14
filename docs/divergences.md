@@ -15282,12 +15282,214 @@ member, but every class line already implies it, and with it removed nothing mov
   ⚠ Measuring the call's line a level further in, where it stacks, fixed 7 members and broke 6 whose tail
   (`.Name.Length`) overflows. It is #528's held-call table (SK-DIV-0331), not this entry's arrow. Not wired.
 
+**#618 round six (2026-11-14): where the arguments end, and where the kept line ends.** Measured on round five's
+twenty-three probes (55 020 members) with Skala forced to keep and to break every such arrow: in 38 333 of the 38 344
+members where the two layouts differ, the oracle writes one of them to the byte. So the question is only the arrow, and both candidate
+layouts can be read.
+
+- **A first call of two or more that the arrow's line cannot hold**, links after it or none. Round five's open class and
+  the two-argument call with nothing after it turn out to be one class. With `c` the head through the outer call's `(`,
+  `p` the parameters, `h` the call's head through its `(`, `a` its arguments, `r` the links after its `)` and `i` the
+  line's start: the links weigh as the head before the lambda does and the call's head as the parameters do, the spread
+  `5·(c + r) − 3·(p + h)` of round three's one-argument rule. Against it stands where the arguments end, `i + a`.
+  ⚠ Round five's "not monotonic in where the call ends" was the axis, not the class: where the call ends a level in,
+  `i + 4 + h + a`, puts the call's head on the wrong side. Per column of `i + a` the members separate at one threshold
+  each (2 apart of 3 319). The threshold rises seven and a half points a column and is flat at 165 from about column 106.
+  Wired as `83·c + 84·r − 49·p − 51·h − 126·(i + a) ≥ −10581` or a spread of 165
+  (`Fitter.KeptLineBreaksOverACallOfTwo`): 0 of 7 752 apart on the fit, whether or not the call fits a level in. ⚠ The
+  cap is what breaks the arrow where the call fits nowhere and the links are long (`.Name.Length.ToList()` behind
+  `bool ok = nodes.ExecuteWithRetry(`).
+- **A property chain held beside the arrow.** ⚠ Round four's and five's lines read only the head, the line's start and
+  the parameters, and left members a column of head either side at random. A head-width grid that changes only the
+  chain's width (1 408 members, `bP`) shows what decides inside that band: `e`, where the kept arrow's fill would end its
+  first line, before the last dot that fits (`Fitter.KeptFillLineEnd`, `GroupFacts.LambdaTestDots`). The arrow stays
+  where that line comes near the margin and breaks where it would leave a gap: `47·c − 13·p + 9·i − e ≥ 54`. It always
+  breaks where the chain fits a level in with ten columns to spare, and with nine it gets fifty points toward breaking.
+  3 of 5 585 members apart, of every head.
+- **The same column decides two more classes.** A property run ending in a call of no arguments (`x.Alpha.Build()`):
+  `38·c − 10·p + 7·i − e ≥ −36`, always breaking with seven columns to spare a level in. A first call of two or more
+  with links, held beside the arrow, where `e` is the call's `)`: `21·c − 5·p + 4·i − e ≥ −33`, with fifty points
+  toward breaking at ten columns to spare a level in and ten at nine. These replace round five's class lines and their
+  margins for the three classes, and with them the members round five left inside the margins.
+
+| probes (members agreeing) | master | round five | now | newly wrong vs master |
+|---|---:|---:|---:|---:|
+| round five's twenty-three (fit; 55 020) | 54 215 | 54 671 | 54 936 | 0 |
+| targeted (fit): calls of two `tB3`, band grids `bP`, `bL`, `bN` (6 624) | 6 136 | 6 234 | 6 622 | 0 |
+| fresh x: `xP` (seed 618701), `xQ` (618702), band `xB` (7201); written before the last two refits (6 208) | 5 731 | 5 851 | 6 203 | 1 |
+| **fresh y: `yP` (618801), `yQ` (618802), band `yB` (7301); written after the last change (6 208)** | **5 722** | **5 839** | **6 203** | **0** |
+
+On the y probes, members wrong master → round five → now: links 25 → 21 → 0, calls of two with nothing after them
+5 → 5 → 0, property chains 436 → 339 → 3, runs ending in a call 2 → 2 → 0, later calls 4 → 0 → 0, one-argument calls
+4 → 2 → 2, too-wide one-argument calls 9 → 0 → 0. On round five's own fresh probes (the coordinator's, N, O and grid G)
+48 → 10: links 27 → 0, calls of two 6 → 0. Probe O's two members and grid F's four, which round four had made wrong
+against master, are right again. Every probe re-formats to itself. Pinned by `SoleLambdaTestRoundSixIssue618Tests`
+(5 tests). Switching off the call line, its cap, the chain's column, the run's column or the held call's column fails
+at least one test each.
+
+**A held call's lambda over a pattern combinator** (`r.SkipWhile(x => x is A or B)`, `and` alike), handed over from #619,
+whose agent measured it and could not reach it: #578's `EqualsFloor.BreaksTheOperandArrow` reads the arrow against
+`max(floor, min(ceiling, line))`. A level or two in, the line's own column falls short of #619's floor (twelve columns
+past the line's start), so the floor alone decided and the arrow broke. The oracle instead keeps it wherever the arrow
+is short of the ceiling and the body, moved a level in, would leave three columns or fewer to the margin; it keeps
+`x is A` beside the arrow and chops the `or` operands. With four columns or more it breaks it. Over #619's thirteen
+probes and a fit probe of 4 000 pattern statements (seed 61806) the members separate at that one column. Wired with the
+body's end a level in passed from `Fitter` (`below`). Measured with `Testing ask` against master `309ae5f0f`, which
+holds #619 round six:
+
+| #619-shape probes (statements agreeing) | master | now | newly wrong |
+|---|---:|---:|---:|
+| #619's thirteen probes and fit probe `zp` (seed 61806; 80 709) | 80 656 | 80 692 | 0 |
+| **fresh `zq` (seed 61807, written before the last refit; 4 000)** | **3 987** | **3 997** | **0** |
+
+Over all fifteen, pattern-body statements wrong go 63 → 17 (on `zq`, 13 → 3). Every probe re-formats to itself. Pinned by
+`SoleLambdaTestRoundSixIssue618Tests.AHeldCallsPatternBody_StaysBesideTheArrowWhereItWouldNearlyFillTheLineBelow`.
+
+⚠ **Refuted:** that the links class has no separating line (round five: "a linear fit leaves 213 of 2 250 apart").
+⚠ **Refuted:** that the call of two with nothing after it is a class of its own. It is the links class with `r = 0`.
+⚠ **Refuted:** that the oracle compares the two layouts by their lines. The oracle keeps arrows whose layout is up to six
+lines longer, and no count of lines, overflow or widest line separates the members.
+
+⚠ **Still not closed**, all measured:
+- Fresh probe x's `xP` M1296 (`await q.ForEach((SyntaxNode n) => model.GetSymbolInfo(…, …)`) is three points on the wrong
+  side of the call line and newly wrong against master. Refitting with it found no plane that separates all 8 343
+  members: the boundary has about three points of noise (a fiftieth of a column). The y probes, written after, have no
+  member there.
+- A later call behind a head of two to five columns: 51 members of the fit. The kept line's column (`e` through the first
+  call's `)`) separates them no better than round five's lines. It fixes 30 and breaks 7, so nothing moved.
+- The held first call behind a path receiver (`this.cache.Read(a…)` / `.Value`, #528's table): 17 one-argument members of
+  the fit and 2 of the y probes, unchanged. The 11 too-wide one-argument calls of the fit stay at round five's line.
+
+**#618 round seven (2026-11-14): the head at two thirds, a first call read to 24 columns, and the argument's own line
+from column 110.** Measured against master `78763ee7e` (which holds round five) with grids that hold every width but one
+fixed around xP M1296 and sweep the arguments a column at a time (6 900 members, `n1`–`n4`, `g1`), a knife-edge probe
+placed within a twentieth of a column of the line (`n5`, 1 201), and four fresh probe sets.
+
+- **The call of two.** Swept one width at a time around M1296, the threshold in `i + a` moves exactly two thirds of a
+  column per column of the head and of the links alike, and very nearly two fifths per column of the parameters and of
+  the call's head, in every sweep (`c` 7 to 29, `r` 2 to 24, `p` 1 to 30, `h` 8 to 32, the indent 8 to 20; the number
+  and split of the arguments, the test and the statement kind never move it). ⚠ Round six's `83·c` against `84·r` was
+  the term out: the head weighs the same as the links. On the lattice `S = 10·(c + r) − 6·(p + h) − 15·(i + a)` every
+  member off three values of `S` is separated; on them the parameters weigh a little less than the call's head. Wired as
+  `1000·(c + r) − 576·p − 605·h − 1500·(i + a) ≥ −125679`, and a column lower, `−127098`, behind an arrow ending at
+  column 65 or later (a grid of heads and parameters to 30 columns: below it every member there breaks).
+  ⚠ **Refuted** that a missing width explains the rest: no plane, and no quadratic surface, in the head, links,
+  parameters, call head, indent and arguments separates the knife-edge probe (max margin −0.0046 column), while no two
+  members with the same six widths disagree. The oracle has a sub-lattice tie-break the widths alone do not carry, seen
+  as single dips: `c = 10` at indent 12 with `p = 14`, `h = 20` keeps where `c` 7, 13 and 16 break on the same lattice
+  point, and the dip walks three columns of head per four of indent. Realistic probes reach that band in about one
+  member in two hundred; the knife-edge probe was built to sit in it.
+- **A later call behind a head of two to five columns** is the same line as every other head once the first call
+  through its `)`, `f`, counts in full only up to 24 columns: `1080·c − 328·p + 189·i − 24·f − 498·min(f, 24) ≥ −10584`.
+  ⚠ Round five's and six's "no separating column" read `f` at one weight: a linear fit left 43 of 2 106 apart, the cap
+  at 24 none of 10 090 (every head, every probe). It replaces round five's later-call line and its margin.
+- **A too-wide one-argument call** decides at its own line from column 110, `5·(c + t) − 3·(p + h) ≥ 7·e − 790`, not two
+  points short of it, and short of 114 a call that does not fit a level in gets no point toward keeping. The eleven of
+  the fit sat a point or two under the line ending at 111 to 113; short of 110 the margin stays (eight of ten such
+  members break there).
+
+| probes (members agreeing) | master | round six | now | newly wrong vs master |
+|---|---:|---:|---:|---:|
+| round five's twenty-three (55 020) | 54 671 | 54 936 | 54 995 | 0 |
+| targeted `tB3`, `bP`, `bL`, `bN` (6 624) | 6 234 | 6 622 | 6 622 | 0 |
+| x (`xP`, `xQ`, `xB`; 6 208) | 5 851 | 6 203 | 6 207 | 0 (round six: 1) |
+| y (`yP`, `yQ`, `yB`; 6 208) | 5 839 | 6 203 | 6 203 | 0 |
+| fresh z, w, v (618901–3, 618911–3, 618921–2; 19 200), refitted after v | 19 099 | — | 19 191 | 0 |
+| **fresh u (618931–3, written after the last change; 7 200)** | **7 174** | — | **7 198** | **0** |
+| grids `n1`–`n4`, `g1` (around M1296; 5 494) | 4 896 | — | 5 478 | 1 (a dip) |
+| knife-edge `n5` (1 201) | 834 | — | 1 144 | 42 |
+
+Every probe re-formats to itself. The coordinator's cross-issue probes (#603, #598, #619, #618 `coordK`, #620, #576
+`coordQ`) and #619's `zp`, `zq` and `fr1`–`fr5` lose none. Pinned by `SoleLambdaTestRoundSevenIssue618Tests`
+(4 tests); switching off the far-arrow line fails 1, round six's coefficients 2, the later-call line 1, the too-wide
+argument's column 110 and its point each fail theirs.
+
+⚠ **Still not closed**, all measured:
+- The held first call behind a path receiver (`this.cache.Read(a…)` / `.Value`): under a kept arrow the oracle holds the
+  call and chops its argument wherever the call moved below would end its line at column 112 or later (6 of the fit and
+  of y, every one of them; it moves only at 102 and 109). A held-call rule keyed on that column fixed all 11 such members
+  and broke 3 under a broken arrow, and a guard on the continuation column broke 3 more: the held decision is taken
+  before the arrow's, and its continuation column does not tell which arrow it sits under. Not wired; it needs the
+  arrow's mode at #528's held decision.
+- Lattice ties of the call of two (above): 1 of the grids, 42 of the knife-edge probe, none of any realistic probe.
+- Fit and fresh residue outside these: one-argument calls kept by the oracle under a short head (`Map((int i) => Q(…).Name`,
+  6 fresh), no-argument links (4), property chains in the band grids (7), and four too-wide arguments ending past column
+  130 that master also had wrong.
+
+**#618 round eight (2026-11-14): the lattice band handed back, one line for the one-argument call, and the held call
+beside a kept arrow.** Measured with `Testing ask` against master `35b7bff86` (which holds round five; rounds six and
+seven were never merged and are folded into this commit) on round seven's forty-four probes and grids, three probes of
+held first calls under a sole lambda's test (`hp1`–`hp3`, seeds 61851–61853), three of them under a broken arrow
+(`hb1`–`hb3`, 61861–61863), and four written after the last change (`hp4`, `hp5`, 61854–61855; realistic `rP`, `rQ`,
+618951–618952, round six's generator).
+
+- **The lattice ties, a measured deferral.** Every member any probe or grid put newly wrong against master sits from 0
+  to 15 points past the call of two's line (1 500 points to a column of the arguments): 42 of the knife-edge probe `n5`
+  and `n4` M508, all kept by the oracle. Within sixteen points on the breaking side
+  (`Fitter.LatticeTieBand`) the call of two now returns no answer and the rounds before decide, as master does. ⚠ A band
+  on both sides needs the same sixteen and gives back thirteen cells more for nothing. The one-sided band gives back
+  49 cells round seven had fixed: 2 on realistic probes (`xQ` M337, `yP` M1145, both wrong on master too), 13 on the
+  grids, 34 on `n5`, where it fixes 42. Newly wrong against master: 0 on every probe and grid. Not closed: no width
+  carries the tie (round seven).
+- **A one-argument call short of column 114 is the call of two's line.** Over 8 190 one-argument members of forty-four
+  probes whose argument line under a kept arrow ends short of 114, the arrow breaks exactly where
+  `1000·(c + t) − 576·p − 605·h − 1500·(i + a) ≥ −157215` (`t` the properties after the call, `h` its head through the
+  `(`): none apart, 43 points between the nearest keep (−157 266) and break (−157 194). ⚠ **Refuted:** rounds five to
+  seven's `5·(c + t) − 3·(p + h)` against `7·e − 790`, its margin of two, round seven's column 110 and its point for an
+  operand that does not fit a level in. They were this line rounded: the fresh held probes broke two members (`hp2`
+  M303 at e = 110, `hp3` M64 at 111) a point under round seven's line, both right on master. From 114 the cap
+  (`spread ≥ 9`) stays; its six misses are lattice ties too (`P = 1000·(c + t) − 576·p − 605·h` of 1 744 breaking and
+  1 745 keeping; no integer weights separate them, 4 apart at best).
+- **The held call beside a kept arrow** (`x => this.cache.Read(a…).Value`). ⚠ **Refuted:** round seven's "the held
+  decision is taken before the arrow's". The arrow group opens at the body's first token and resolves first; the held
+  group, entered at the same token, reads its mode. `GroupFacts.HeldCallTestArrow` names the arrow (planner fact,
+  `BreakPlan.TestArrowOver`), and #528's rule is untouched. ⚠ **Refuted:** round seven's "the oracle chops wherever the
+  moved call would end at column 112 or later". With one link after the call it chops from 109, with two from 113,
+  with three from 116; with no link, or two arguments, at every column, as the table does. Over 1 069 one-argument
+  members with links the call moves where
+  `−1500·(i + a) − 590·h + 1000·t − 180·e − 20·i − 30·r ≥ −145640` (`e` the arrow's end, `r` the receiver, `t` the
+  links): the links at two thirds of a column and the call's head at two fifths, the call of two's fractions. Five are
+  apart: three within 150 points, and two where the moved call would end at the margin itself (where the oracle moved
+  six and chopped two, one of them 1 990 points out). There, and within 151 points, the table decides
+  (`Fitter.HeldCallMovesBesideAKeptArrow`).
+- **Not wired: the held call below a broken arrow.** A line of the same shape, `−1500·a − 1688·s − 780·h + 700·t`, fits
+  3 074 members within a column and a half, but each of three fresh probes put a member beyond any band (1.8, 1.8 and
+  3.6 columns), all with a call head of 15. The receiver's structure (one to four names, widths 4 to 22) is not the
+  missing term. `hb1`–`hb3` stay at master's 6 383 of 7 200; realistic probes hold 8 such members, all behind
+  `context.Workspace`.
+
+| probes (members agreeing) | master | round seven | now | newly wrong vs master |
+|---|---:|---:|---:|---:|
+| round five's twenty-three (55 020) | 54 671 | 54 995 | 55 001 | 0 |
+| targeted `tB3`, `bP`, `bL`, `bN` (6 624) | 6 234 | 6 622 | 6 622 | 0 |
+| x, y (12 416) | 11 690 | 12 410 | 12 409 | 0 |
+| z, w, v, u (26 400) | 26 273 | 26 389 | 26 391 | 0 |
+| grids `n1`–`n4`, `g1` (5 494) | 4 896 | 5 478 | 5 466 | 0 (round seven: 1) |
+| knife-edge `n5` (1 201) | 834 | 1 144 | 1 152 | 0 (round seven: 42) |
+| held, fit `hp1`–`hp3` (6 340) | 5 967 | — | 6 236 | 0 |
+| held below a broken arrow `hb1`–`hb3` (7 200) | 6 383 | — | 6 383 | 0 |
+| **fresh held `hp4`, `hp5` (4 800)** | **4 510** | — | **4 720** | **0** |
+| **fresh realistic `rP`, `rQ` (4 800)** | **4 782** | — | **4 799** | **0** |
+
+Rebased onto master `d3ba1cece` (#620 round five), master and this round score the same on all sixty probes. Every
+probe re-formats to itself. The coordinator's cross-issue probes (#603, #598, #619, #618 `coordK`, #620, #576 `coordQ`)
+lose none. Pinned by `SoleLambdaTestRoundEightIssue618Tests` (3 tests): returning the band's
+answer fails the band's test, switching off the one-argument line fails its test and round seven's column-110 test, and
+an unbounded held band fails the held test.
+
+⚠ **Still not closed**, all measured: the lattice ties (call of two and the one-argument cap), the held call below a
+broken arrow (8 realistic members), one-argument calls kept by the oracle under a short head (7; not linearly separable
+in head, parameters, indent, operand and held-call end over 271 members, 28 keeps), property chains in the band grids
+(7), no-argument links (5), and one later call.
+
 - status: **partly resolved** (#618): the three classes above, pinned by `SoleLambdaTestArrowIssue618Tests`, the later
   call of two or more (round two), pinned by `SoleLambdaTestLaterCallArrowIssue618Tests`, round three's classes, pinned
   by `SoleLambdaTestRoundThreeIssue618Tests`, round four's head-width lines, pinned by
-  `SoleLambdaTestRoundFourIssue618Tests`, and round five's kept-line rules and the trailing run's call, pinned by
-  `SoleLambdaTestRoundFiveIssue618Tests`. **Open:** a first call with links too wide beside the arrow, and the boundary
-  members listed above.
+  `SoleLambdaTestRoundFourIssue618Tests`, round five's kept-line rules and the trailing run's call, pinned by
+  `SoleLambdaTestRoundFiveIssue618Tests`, round six's call of two and kept-line columns, pinned by
+  `SoleLambdaTestRoundSixIssue618Tests`, round seven's call-of-two weights and later-call cap, pinned by
+  `SoleLambdaTestRoundSevenIssue618Tests`, and round eight's lattice band, one-argument line and held call beside a kept
+  arrow, pinned by `SoleLambdaTestRoundEightIssue618Tests`. **Open:** the residue listed in round eight.
 
 ## SK-DIV-0540 — a constant pattern that is a member access breaks before its own dot
 
