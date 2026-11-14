@@ -2043,6 +2043,15 @@ public sealed class Document {
 ///     ⚠ A parenthesised operator with one member after it, cast or not, behind a head of twelve columns or more:
 ///     its <c>=</c> answers by a measured form of its own (#598, SK-DIV-0830). See <see cref="ParenMemberValue" />.
 /// </param>
+/// <param name="ShortParenMember">
+///     ⚠ <see cref="ParenMember" />'s shape behind a head of seven to eleven columns through the <c>=</c>, read only for a
+///     doubled parenthesis with a call after it (#598, SK-DIV-0872). See <c>Fitter.ShortParenMemberEqualsBreaks</c>.
+/// </param>
+/// <param name="CastMember">
+///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator with one member after it, the whole value of a
+///     <c>return</c> or an assignment, simple or compound (#598, SK-DIV-0871): the value's widths, with
+///     <see cref="ParenMemberValue.Name" /> zero for a <c>return</c>. See <c>Fitter.CastMemberBreaks</c>.
+/// </param>
 /// <param name="CastParenFirst">
 ///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator, the whole value of a <c>return</c> or a
 ///     plain <c>=</c> (#598): the width of the operator's first operand, or zero. See
@@ -2342,7 +2351,9 @@ public readonly record struct GroupFacts(
     bool BareParenDoubled = false,
     ParenMemberValue ParenMember = default,
     int WhenLastPoint = 0,
-    int WhenOuterLead = 0);
+    int WhenOuterLead = 0,
+    ParenMemberValue CastMember = default,
+    ParenMemberValue ShortParenMember = default);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator
