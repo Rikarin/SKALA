@@ -810,6 +810,21 @@ public sealed class Fitter {
                     }
                 }
 
+                // ⚠ And before any lambda without parentheses whose `=>` lands past the margin beside the `=`, whatever
+                // owns it and whatever its body (fuzz 1396520641513665324): nothing between the `=` and the arrow can end
+                // the line in time, #595's reason. A field's `static readonly Func<…> F = value_w… =>` at 124 over an
+                // operand chain kept the `=` because the arrow won over the chain (BreakPlan.ArrowWinsOverTheChain),
+                // and chopped the chain below; pass two, the chain now the author's broken one, no longer let the arrow
+                // win and broke the `=`. Measured 2026-11-14 with `Testing ask`: the oracle breaks it for a static and
+                // an instance field, an assignment and a `??=`, the arrow ending at 121 and 124, the body fitting
+                // below the arrow or not; at 116 it keeps it.
+                if (facts.LambdaIsSimple
+                    && m.PointWidth < Unbounded
+                    && m.AfterPoint < Unbounded
+                    && !Fits(m.Column, m.PointWidth + m.AfterPoint)) {
+                    return ResolvedMode.Broken;
+                }
+
                 // ⚠ An `=` before `operand is A or B`: a measured table (#446, SK-DIV-0211).
                 // ⚠ A line comment in the pattern ends the line, so what follows the value does not land on it.
                 if (facts.PatternHead > 0

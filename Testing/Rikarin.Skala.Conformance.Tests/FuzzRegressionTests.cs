@@ -527,6 +527,11 @@ public sealed class FuzzRegressionTests {
         17342664064147206020UL,
         "real/newtonsoft/Newtonsoft.Json.Tests/Documentation/Samples/JsonPath/QueryJsonSelectTokenJsonPath.cs"
     )]
+    // Found 2026-11-14 (fails on a2a6de72 too): `static readonly Func_w…<int, string> F = value_w… =>` at 124 over an
+    // operand chain, identifiers widened. The arrow won over the chain the author wrote flat and the field's `=` stayed,
+    // the chain chopping below; pass two, the chain broken, no longer let the arrow win and broke the `=`. A
+    // parenthesis-less lambda whose `=>` lands past the margin now breaks its `=` whatever owns it, as the oracle does.
+    [InlineData(1396520641513665324UL, "constructs/wrapping/lambda-arrow-over-a-chain.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
