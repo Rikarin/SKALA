@@ -8052,9 +8052,14 @@ public sealed class BreakPlan {
     }
 
     void PlanCastOperand(SyntaxNode node) {
+        // ⚠ And a compound assignment's whole value, and a doubled parenthesis (#598, round 14): `y += (T)` /
+        // `(a + b…);` and `return (T)` / `((a + b…));` break by the same measured rule.
         if (node is CastExpressionSyntax { Expression: ParenthesizedExpressionSyntax parenthesis } wide
-            && IsTheWholeValueOfAReturnOrAnEquals(wide)
-            && parenthesis.Expression is BinaryExpressionSyntax binary
+            && (IsTheWholeValueOfAReturnOrAnEquals(wide)
+                || wide.Parent is AssignmentExpressionSyntax compound && compound.Right == wide)
+            && (parenthesis.Expression as BinaryExpressionSyntax
+                ?? (parenthesis.Expression as
+                    ParenthesizedExpressionSyntax)?.Expression as BinaryExpressionSyntax) is { } binary
             && !binary.IsKind(SyntaxKind.IsExpression)
             && !binary.IsKind(SyntaxKind.AsExpression)) {
             // ⚠ Before a parenthesised operator, by the measured rule (#598): see GroupFacts.CastParenFirst.
@@ -8065,7 +8070,10 @@ public sealed class BreakPlan {
                 wide,
                 after,
                 GroupMode.Preserve,
-                new(CastParenFirst: Math.Max(1, FormattedWidth(binary.Left))),
+                new(
+                    CastParenFirst: Math.Max(1, FormattedWidth(binary.Left)),
+                    CastParenDoubled: parenthesis.Expression is ParenthesizedExpressionSyntax
+                ),
                 true
             );
             return;
