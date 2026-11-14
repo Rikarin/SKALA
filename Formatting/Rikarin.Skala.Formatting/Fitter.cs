@@ -747,6 +747,13 @@ public sealed class Fitter {
                     return ResolvedMode.Flat;
                 }
 
+                // ⚠ An object creation after an arm's arrow keeps `new` on the arrow's line and breaks after it by a
+                // measured rule (#576 round 13). See ArmNewStays.
+                // ⚠ Its head reads the line to that point, not to the arguments' `(`, so the rule answers both ways.
+                if (facts.ArmNewBody > 0 && ArmNewStays(facts, m, lineStart) is { } stays) {
+                    return stays ? ResolvedMode.Flat : ResolvedMode.Broken;
+                }
+
                 // ⚠ A wide-named local's `=` before a lambda over a call (#453 round 2): broken exactly by the
                 // measured reach and floor, read from the planner's widths so that a kept break inside the lambda
                 // on pass two does not change the answer. See GroupFacts.EqualsLambdaArguments.
@@ -3110,7 +3117,21 @@ public sealed class Fitter {
     bool ArmQueryStays(in GroupFacts facts, in Measures m, int lineStart) {
         var head = m.Column + 1 + facts.ArmQueryHead;
         if (head > width) {
-            return false;
+            // ⚠ #576 round 13: where `(from item` does not fit beside the arrow but `(from` does, the oracle still keeps
+            // the body, `=> (from` / `item in items`, by the creation's two regimes (ArmNewStays) on its own constants:
+            // measured on two structure grids (p1, p2: 4 608 arms, the arrow ending 100 to 118, lines starting 12 to 24).
+            // While `4·a + 3·s ≤ 496` from `w + s ≥ 110` (narrower bodies there take `=> (` / the query, a point Skala
+            // does not have, and stay broken), else from `18·w + 6·a − 11·s ≥ 2756` — the creation's second bar with the
+            // arrow four columns further on.
+            var arrowEnd = m.Column;
+            if (arrowEnd + 1 + "(from".Length > width) {
+                return false;
+            }
+
+            var w = facts.ArmQueryBody;
+            return 4 * arrowEnd + 3 * lineStart <= 496
+                ? w + lineStart >= 110
+                : 18 * w + 6 * arrowEnd - 11 * lineStart >= 2756;
         }
 
         var arrow = m.Column - lineStart;
@@ -3120,6 +3141,43 @@ public sealed class Fitter {
 
         var oneLine = facts.LiftGroup < 0 || !resolved[facts.LiftGroup] || enteredOn[facts.LiftGroup] == m.Line;
         return 2 * facts.ArmQueryBody > arrow + (oneLine ? 90 : 88);
+    }
+
+    /// <summary>
+    ///     Whether an object creation after an arm's arrow keeps <c>new</c> on the arrow's line, breaking after it, rather
+    ///     than moving below whole (#576 round 13, SK-DIV-0399). See <see cref="GroupFacts.ArmNewBody" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on four structure grids (n1–n4: 14 196 arms, the arrow ending 100
+    ///     to 116, lines starting 12 to 28, bodies of 80 to 146, five creation shapes). It is not a point Skala lacked but an
+    ///     arrow the oracle leaves flat: <c>=&gt; new</c> / <c>Holder(…)</c>, the type arguments then unlifted. Only once
+    ///     <c>new Holder(</c> no longer fits beside the arrow (where it fits, the arguments chop there, as before) and
+    ///     <c>=&gt; new</c> does. With <c>a</c> the arrow's end, <c>s</c> its line's start and <c>w</c> the body:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             while <c>4·a + 3·s ≤ 504</c>, it breaks after <c>new</c> from <c>20·w − 5·a + 16·s ≥ 1522</c>, the
+    ///             body fitting below in both layouts;
+    ///         </item>
+    ///         <item>and wherever <c>18·w + 6·a − 11·s ≥ 2732</c>, where the arguments chop in both.</item>
+    ///     </list>
+    ///     ⚠ Neither the type's name, its type arguments, the arguments' count nor the head before the arrow moves either
+    ///     edge: five creation shapes flip at the same body width to the column. ⚠ And the choice is not a cost of the final
+    ///     lines: where the arguments chop the two layouts differ only in their first two lines, yet the choice moves with
+    ///     the body's width (the second bar).
+    /// </remarks>
+    bool? ArmNewStays(in GroupFacts facts, in Measures m, int lineStart) {
+        var arrow = m.Column;
+        if (arrow + 1 + facts.ArmNewHead <= width || Fits(arrow, 1 + facts.ArmNewBody + facts.ArmBodyTrail)) {
+            return null;
+        }
+
+        if (arrow + 4 > width) {
+            return false;
+        }
+
+        var w = facts.ArmNewBody;
+        return 4 * arrow + 3 * lineStart <= 504 && 20 * w - 5 * arrow + 16 * lineStart >= 1522
+            || 18 * w + 6 * arrow - 11 * lineStart >= 2732;
     }
 
     /// <summary>Whether an arm's planned <c>when</c> gap broke: −2 is one the author broke. See GroupFacts.ArmQueryWhenGap.</summary>

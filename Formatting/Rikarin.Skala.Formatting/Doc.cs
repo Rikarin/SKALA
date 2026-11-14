@@ -1186,6 +1186,15 @@ public sealed class Document {
 ///     <c>from</c> clause, rather than moving the body below, exactly when <c>2·body &gt; arrow + 88</c>, the arrow
 ///     measured from the start of its own line — and only when <see cref="ArmQueryHead" /> fits beside it.
 /// </param>
+/// <param name="ArmNewBody">
+///     ⚠ On a switch arm's body group, when the body is an object creation with an argument list and no initializer: its
+///     formatted width (#576 round 13, SK-DIV-0399). Where <see cref="ArmNewHead" /> does not fit beside the arrow, the
+///     oracle keeps the arrow flat and breaks after <c>new</c> (<c>=&gt; new</c> / <c>Holder(…)</c>) by a measured rule
+///     on the body's width, the arrow's end and its line's start; see <c>Fitter.ArmNewStays</c>.
+/// </param>
+/// <param name="ArmNewHead">
+///     With <see cref="ArmNewBody" />: the width of <c>new Holder(</c>, through the argument list's <c>(</c>.
+/// </param>
 /// <param name="ArmQueryHead">
 ///     With <see cref="ArmQueryBody" />: the width of <c>(from item</c>, the least of the query the arrow's line
 ///     must hold for the body to stay there.
@@ -2423,7 +2432,9 @@ public readonly record struct GroupFacts(
     int WhenOuterLead = 0,
     ParenMemberValue CastMember = default,
     ParenMemberValue ShortParenMember = default,
-    bool WhenArrowKeptAfter = false);
+    bool WhenArrowKeptAfter = false,
+    int ArmNewBody = 0,
+    int ArmNewHead = 0);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator

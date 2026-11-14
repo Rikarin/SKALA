@@ -9973,6 +9973,12 @@ public sealed class BreakPlan {
                 ArmQueryBody: kept ? 0 : ArmQueryBodyWidth(arm.Expression),
                 ArmQueryHead: kept ? 0 : ArmQueryHeadWidth(arm.Expression),
                 ArmQueryWhenGap: kept || ArmQueryBodyWidth(arm.Expression) == 0 ? -1 : PlannedWhenGapOf(arm),
+                ArmNewBody: kept || keptAfter || ArmNewCreation(arm.Expression) is not { } created
+                    ? 0
+                    : FormattedWidth(created),
+                ArmNewHead: kept || keptAfter || ArmNewCreation(arm.Expression) is not { } headed
+                    ? 0
+                    : FormattedWidth(headed.NewKeyword, headed.ArgumentList!.OpenParenToken),
 
                 // ⚠ Not under a body the arrow group holds the level for, which a kept break after the arrow
                 // does not lift either (keptAfter).
@@ -10011,7 +10017,39 @@ public sealed class BreakPlan {
                 ownLevel: true
             );
         }
+
+        // ⚠ And an object creation's own `new` is a point (#576 round 13): the oracle keeps the arrow flat and writes
+        // `=> new` / `Holder(…)` by Fitter.ArmNewStays. Taken only when the arrow stayed and `new Holder(` does not fit
+        // beside it; under a broken arrow `new Holder(` stays together, as before.
+        if (!kept
+            && !keptAfter
+            && ArmNewCreation(arm.Expression) is { } creation
+            && arrowGroups.TryGetValue(Key(arm), out var arrowGroup)) {
+            var newGap = NewGroup();
+            Point(FirstToken(creation.Type), newGap);
+            Describe(
+                creation,
+                newGap,
+                GroupMode.Preserve,
+                new(
+                    options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(creation.Type)),
+                    BreaksIfTooLong: true,
+                    BreaksOnlyIfHeadOverflows: true,
+                    Owner: arrowGroup,
+                    FlatIfOwnerBroke: true
+                ),
+                true,
+                ownLevel: true
+            );
+        }
     }
+
+    /// <summary>
+    ///     An arm's body that is an object creation with an argument list and no initializer, or null (#576 round 13).
+    ///     See <see cref="GroupFacts.ArmNewBody" />.
+    /// </summary>
+    static ObjectCreationExpressionSyntax? ArmNewCreation(ExpressionSyntax body) =>
+        body is ObjectCreationExpressionSyntax { ArgumentList: not null, Initializer: null } creation ? creation : null;
 
     /// <summary>
     ///     The head an arm one column past the margin needs before its arrow breaks rather than a point of its body
