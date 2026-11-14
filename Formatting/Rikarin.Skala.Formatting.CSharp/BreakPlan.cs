@@ -10820,6 +10820,10 @@ public sealed class BreakPlan {
                         && node.Parent is SwitchExpressionArmSyntax keptArm
                         && (BreaksBefore(keptArm.EqualsGreaterThanToken)
                             || BreaksBefore(FirstToken(keptArm.Expression))),
+                        WhenArrowKeptAfter: options.KeepsUserBreaksBetweenItems
+                        && node.Parent is SwitchExpressionArmSyntax afterArm
+                        && !BreaksBefore(afterArm.EqualsGreaterThanToken)
+                        && BreaksBefore(FirstToken(afterArm.Expression)),
                         LiftGroup: whenLifts.TryGetValue(Key(node), out var whenLift) ? whenLift : -1
                     ),
                     true,

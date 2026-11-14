@@ -2699,8 +2699,12 @@ public sealed class Fitter {
 
         // ⚠ Under an arrow the author broke, the tail rule: `when Materialise<List<bool>,` / `…>>()` / `=> body`
         // stays beside the `when` where the condition does not fit below (measured on 108 arms of the #576 grid).
+        // ⚠ Round 12: refuted for a generic call condition under a break after the `=>`, which fills beside the `when` far
+        // short of the line below; see KeptArrowWhenBreaks. A break before the `=>` keeps the tail rule, unmeasured.
         if (facts.WhenArrowKept) {
-            return TailFits(m, tail);
+            return facts.WhenArrowKeptAfter && facts.WhenLead > 0 && tail < Unbounded
+                ? KeptArrowWhenBreaks(facts, m, tail, lineStart)
+                : TailFits(m, tail);
         }
 
         if (facts.WhenBody <= 0) {
@@ -2823,6 +2827,51 @@ public sealed class Fitter {
 
         var below = m.ContinuationColumn + tail + facts.WhenBody;
         return 25 * below + 6 * m.Column <= 3191;
+    }
+
+    /// <summary>
+    ///     Whether an arm's <c>when</c> breaks before a generic call condition when the author broke the arm after its
+    ///     arrow (#576 round 12, SK-DIV-0399). The condition does not fit beside the <c>when</c> here.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on two structure grids (k1: indents 12 and 20, heads 6 to 23, leads
+    ///     5 to 34, the condition ending 119 to 136 beside the <c>when</c>, three bodies; k2: indent 12, heads 6 to 28, leads
+    ///     4 to 38, ends 121 to 142; 12 726 arms). ⚠ The old rule, "the condition moves below exactly when it fits there", is
+    ///     refuted: the oracle fills beside the <c>when</c> at conditions far narrower than the line below. The body plays
+    ///     no part (it is on its own line) and neither does the indent once the condition is read where it ends below:
+    ///     <list type="bullet">
+    ///         <item>
+    ///             Behind a head under twelve columns the <c>when</c> breaks only where the condition runs one or two
+    ///             columns past the margin beside it — and never behind <c>X when</c> with a lead of 14 or more.
+    ///         </item>
+    ///         <item>
+    ///             From twelve, it breaks while <c>12·below + 4·min(lead, 26) − head ≤ 1405</c>, <c>below</c> being where the
+    ///             condition ends on the line below; or, for a lead short against the head (<c>3·lead − head ≤ 23</c>), while
+    ///             <c>12·below − 8·lead − head ≤ 1381</c> — such a condition moves below until the fill beside the <c>when</c>
+    ///             would have to take its inner <c>&lt;</c>.
+    ///         </item>
+    ///     </list>
+    ///     Both bars were searched over integer coefficients under the constraint that no arm the old rule had right goes
+    ///     wrong. The unconstrained best (<c>… ≤ 1401</c>, <c>8·below − 6·lead − head ≤ 911</c>) misses 36 of k2 against
+    ///     these bars' 74, all one column off, but four of its misses were arms the old rule had right. On the twelve fresh
+    ///     probes these bars miss 3 of 1 821 kept-arrow arms — each one the old rule missed too, two behind a nested first
+    ///     argument (<c>Func&lt;int, bool&gt;,</c>), which the grids did not hold.
+    /// </remarks>
+    bool KeptArrowWhenBreaks(in GroupFacts facts, in Measures m, int tail, int lineStart) {
+        var head = m.Column - lineStart;
+        var lead = facts.WhenLead;
+        var beside = Fits(m.Column, m.FlatWidth - 2);
+        if (head < 12) {
+            return beside && !(head <= 6 && lead >= 14);
+        }
+
+        if (beside) {
+            return true;
+        }
+
+        var below = m.ContinuationColumn + tail;
+        return 12 * below + 4 * Math.Min(lead, 26) - head <= 1405
+            || 3 * lead - head <= 23 && 12 * below - 8 * lead - head <= 1381;
     }
 
     /// <summary>
