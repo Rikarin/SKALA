@@ -1212,6 +1212,18 @@ public sealed class Document {
 ///     none. Under a broken <c>when</c>, a short arrow line that leaves two columns or fewer beside <c>(from item</c>
 ///     moves the body below whatever its width (#576 round 9, <c>Fitter.ArmQueryStays</c>).
 /// </param>
+/// <param name="CalleeOnReceiver">
+///     ⚠ With <see cref="CalleeWidth" />: the callee is a method on a named receiver, <c>r.M(a, b…)</c>, measured as
+///     <c>r.M</c> (#446, SK-DIV-0211 rounds 8 and 9). Its <c>=</c> is read by the list limit
+///     (<c>Fitter.ReceiverListLimit</c>) and, behind a typed local, the gate on the <c>(</c>'s column
+///     (<c>Fitter.TypedGateBreaks</c>), not by the plain-name floor.
+/// </param>
+/// <param name="OneOverParen">
+///     ⚠ With <see cref="OneOverValue" /> before a call on a named receiver with two or more arguments: the width from the
+///     name through the call's <c>(</c>. One column past the margin the type/name gap breaks only while
+///     <c>paren − 0.6·indent &gt; 80.2</c>, the <c>(</c> 1-based; short of it the arguments chop beside the <c>=</c>
+///     (#446, SK-DIV-0211 round 8).
+/// </param>
 /// <param name="CalleeArgumentHead">
 ///     ⚠ With <see cref="CalleeArgument" />: the statement's head through the <c>=</c>, read from the syntax
 ///     (SK-DIV-0505). The fitter's own head starts at the group's marker, which for a deconstruction is the tuple's
@@ -2409,6 +2421,8 @@ public readonly record struct GroupFacts(
     int TypeTestKeyword = 0,
     int TypeTestType = 0,
     int TypeTestHead = 0,
+    int YieldTestReceiver = 0,
+    int YieldTestType = 0,
     bool TypeTestAfterKeyword = false,
     int PatternDotName = 0,
     int PatternDotQualifier = 0,
@@ -2447,6 +2461,8 @@ public readonly record struct GroupFacts(
     int HeldValueTarget = 0,
     int HeldValueTargetTail = 0,
     bool HeldValueTargetKept = false,
+    bool CalleeOnReceiver = false,
+    int OneOverParen = 0,
     int WholeList = -1,
     int BareParenOperand = 0,
     int BareParenCast = 0,
