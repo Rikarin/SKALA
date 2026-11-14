@@ -626,16 +626,18 @@ public sealed class LayoutWriter {
             var path = ancestors.ToArray();
             var around = lifted >= 0 ? InnermostBrokenConstruct(path) : -1;
 
-            // ⚠ Never an arm pattern's own list by an arrow's width lift opened for the `when` clause (fuzz
+            // ⚠ Never an arm's positional clause by an arrow's width lift opened for the `when` clause (fuzz
             // 2309143029249313673): under the kept arrow that break reads back as, the arm's group pays the level and
-            // the list spends none of its own, so `(Guid First, StringBuilder Second` / `) typed71 when (…)` / `=> …`
+            // the clause spends none of its own, so `(Guid First, StringBuilder Second` / `) typed71 when (…)` / `=> …`
             // puts the `)` one level past the arm. Lifted, pass one put it two levels past and pass two one; the oracle
-            // writes one under either break. A lift opened for braces or brackets lifts them (GroupFacts
-            // .LeavesPatternListsUnlifted).
+            // writes one under either break. ⚠ The clause only (fuzz 11669359355389207626): a parenthesised pattern's
+            // `not (0` / `or 1 or 2` / `) when …` is lifted by a kept break after the arrow, its `)` one level past the
+            // arm as the oracle writes it, so it is lifted by the width's break too. GroupFacts
+            // .LeavesPositionalClausesUnlifted.
             if (around >= 0
-                && (flags & IndentFlags.ArmPattern) != 0
+                && (flags & IndentFlags.PositionalClause) != 0
                 && document.FactsOf(document.Nodes[path[around].Node].Arg1) is {
-                    LiftsIfArrowBreaks: true, LeavesPatternListsUnlifted: true
+                    LiftsIfArrowBreaks: true, LeavesPositionalClausesUnlifted: true
                 }) {
                 lifted = -1;
             }

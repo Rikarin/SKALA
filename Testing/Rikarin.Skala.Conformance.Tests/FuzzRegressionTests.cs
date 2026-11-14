@@ -511,6 +511,27 @@ public sealed class FuzzRegressionTests {
     // it at 120 and kept the `=`, chopping the arguments; pass two, the chopped arguments turning the callee away, fell
     // to the ordering rule and broke the `=`. The width now runs through the comment.
     [InlineData(9715006458001699096UL, "constructs/breaks/equals-before-a-single-argument-call.cs")]
+    // The same regression of 989235c1b on the same construct, a second seed (widen-gap, region, split-line): fails on
+    // d3ba1cec, clean with the fix below.
+    [InlineData(16114352536749987440UL, "constructs/breaks/arm-pattern-chain-under-a-lift.cs")]
+    // A regression of 989235c1b (the 2309143029249313673 fix above), bisected: `not (0` / `or 1 or 2` / `) when /* f */
+    // Emit(…) =>` / the body. That fix left every list in an arm's pattern unlifted under the arrow's width lift for
+    // the `when` clause; pass one put this parenthesis's `)` on the arm's column and pass two, the break after the arrow
+    // kept, lifted it a level, the oracle's line. The width lift now leaves only a positional clause unlifted.
+    [InlineData(11669359355389207626UL, "constructs/breaks/arm-pattern-chain-under-a-lift.cs")]
+    // Found 2026-11-14 (fails on a2a6de72 too): `IEnumerable< /** d */ JToken> pricyProducts = o. /** d */
+    // SelectTokens("…");` at 125 columns. The planner gave the gap after a block comment the two tokens' rule, no space
+    // after a dot, where the builder keeps the author's: the held value measured a column short, fitted, and pass one
+    // kept the `=` and chopped; pass two, the comment turning the chop away from the held table, broke the `=`.
+    [InlineData(
+        17342664064147206020UL,
+        "real/newtonsoft/Newtonsoft.Json.Tests/Documentation/Samples/JsonPath/QueryJsonSelectTokenJsonPath.cs"
+    )]
+    // Found 2026-11-14 (fails on a2a6de72 too): `static readonly Func_w…<int, string> F = value_w… =>` at 124 over an
+    // operand chain, identifiers widened. The arrow won over the chain the author wrote flat and the field's `=` stayed,
+    // the chain chopping below; pass two, the chain broken, no longer let the arrow win and broke the `=`. A
+    // parenthesis-less lambda whose `=>` lands past the margin now breaks its `=` whatever owns it, as the oracle does.
+    [InlineData(1396520641513665324UL, "constructs/wrapping/lambda-arrow-over-a-chain.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

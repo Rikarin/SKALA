@@ -436,7 +436,8 @@ public sealed class DocumentBuilder {
                         | IndentFlags.Additive
                         | IndentFlags.NestedSoleLambda
                         | IndentFlags.CountsWithItsLine
-                        | IndentFlags.ArmPattern))),
+                        | IndentFlags.ArmPattern
+                        | IndentFlags.PositionalClause))),
             columns
         );
 
