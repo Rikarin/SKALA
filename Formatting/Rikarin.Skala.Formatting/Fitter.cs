@@ -978,12 +978,12 @@ public sealed class Fitter {
                         // ⚠ With arguments, the receiver's last line keeps the call while its `(` fits there: the
                         // arguments chop, `+ b…).M(` / `x` / `);` (#598, round 8).
                         // ⚠ Except on a line one column over, where the dot breaks, as below a broken `=` (#598,
-                        // SK-DIV-0831).
+                        // SK-DIV-0831), and ⚠ whatever the arguments' width: `.Replace(oldValue, newValue)` moves too,
+                        // 161 of 161 one-over rows of h1, chopping from two over (#598, round 14).
                         return facts.ParenReceiverTail > 0
                             && (facts.ParenReceiverHeld && facts.HeldCallHead > 0
                                 ? !Fits(lineStart + indentWidth, facts.ParenReceiverTail + facts.HeldCallHead)
-                                || facts.ParenReceiverArguments <= 10
-                                && !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing)
+                                || !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing)
                                 && Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail - 1, m.Trailing)
                                 : !Fits(lineStart + indentWidth, facts.ParenReceiverTail + tail, m.Trailing))
                                 ? ResolvedMode.Broken
@@ -3727,24 +3727,33 @@ public sealed class Fitter {
     ///     A doubled parenthesis reads <c>p</c> two columns tighter. Its gate is 3 rather than 0, and its bounds are
     ///     14 749 and 14 767. Where the inner or the outer <c>)</c> lands on column 121, the <c>ParenCloseEnd</c> rules
     ///     answer first, as before.
+    ///     <para>
+    ///         ⚠ Round 14 (2026-11-14): the gate, the band between the bounds and the doubled offsets are one form, the one
+    ///         a member's <c>=</c> answers by past the margin (<see cref="PastTheMarginEqualsBreaks" />) with no member:
+    ///         <c>128·p + 49·min(a, 24) + 34·cast − 16·w</c> is <c>57·p + 22·min(a, 24) + 15·cast − 7·w</c> rounded to
+    ///         eighths. Exact on every one of the 51 562 rows past the margin behind a wide head over every #598 grid but
+    ///         one (a name of one column behind a type of 23), where the band left rows to the collection rule.
+    ///     </para>
     /// </remarks>
-    static bool? BareParenEqualsBreaks(in GroupFacts facts, in Measures m) {
+    bool? BareParenEqualsBreaks(in GroupFacts facts, in Measures m) {
         if (facts.BareParenWidth <= 0) {
             return null;
         }
 
         var name = facts.BareParenName;
-        var first = Math.Min(facts.BareParenOperand, 24);
-        var cast = facts.BareParenCast;
         var weight = Math.Min(name + 3, 69 - 2 * name);
-        if (3 * first + 2 * cast - weight < (facts.BareParenDoubled ? 3 : 0)) {
-            return true;
-        }
-
-        var parenthesis = m.ContinuationColumn + facts.BareParenWidth - cast - (facts.BareParenDoubled ? 2 : 0);
-        var v = 128 * parenthesis + 49 * first + 34 * cast - 16 * weight;
-        var (breaks, keeps) = facts.BareParenDoubled ? (14749, 14767) : (14695, 14724);
-        return v <= breaks ? true : v >= keeps ? false : null;
+        var value = new ParenMemberValue(
+            name,
+            facts.BareParenOperand,
+            facts.BareParenCast,
+            facts.BareParenWidth - 1,
+            facts.BareParenWidth,
+            0,
+            -1,
+            0,
+            facts.BareParenDoubled
+        );
+        return PastTheMarginEqualsBreaks(value, m.ContinuationColumn, weight, 0);
     }
 
     /// <summary>
@@ -3821,16 +3830,31 @@ public sealed class Fitter {
                 return !property && over >= 2 && receiverBeside + value.Head <= width + 1;
             }
 
+            // ⚠ Round 14: the value's end below in 57ths, as past the margin, with the receiver for the first operand
+            // (#598, SK-DIV-1030). See BesideEqualsKeeps.
             if (property) {
-                return value.Cast == 0 && value.Name <= 7 ? false : score <= 816 ? true : score >= 821 ? false : null;
+                return value.Cast == 0 && value.Name <= 7
+                    ? false
+                    : !BesideEqualsKeeps(value, continuation, weight, 190);
             }
 
+            // ⚠ One column over, a call with arguments does not always break it, nor does the head alone decide: it
+            // breaks while 3·head + 2·cast + 5·arguments > 53, the head through its space (#598, round 14: 8 963 of 8 974
+            // rows of h2 and the earlier grids behind names of five columns or more, where round 6's rule missed 132).
             if (over == 1) {
-                return value.Arguments > 0 || head + value.Cast > 18;
+                return 3 * head + 2 * value.Cast + 5 * value.Arguments > 53;
             }
 
             if (receiverBeside + value.Head <= width + 1) {
                 return true;
+            }
+
+            if (value.Arguments > 10) {
+                return true;
+            }
+
+            if (value.Cast > 0 || value.Name >= 4) {
+                return !BesideEqualsKeeps(value, continuation, weight, -95 * value.Arguments);
             }
 
             var call = score - 13 * value.Arguments;
@@ -3844,17 +3868,74 @@ public sealed class Fitter {
             return true;
         }
 
-        var fragment = 3 * Math.Min(value.Operand, 24) + 2 * value.Cast - weight - 5 * value.Member;
-        if (fragment < 0 || fragment == 1 && value.Arguments > 0) {
+        return PastTheMarginEqualsBreaks(value, continuation, weight, receiverBeside);
+    }
+
+    /// <summary>
+    ///     Whether the <c>=</c> before <c>(a + b…).M(x)</c> breaks behind a head of twelve columns or more once the receiver's
+    ///     <c>)</c> lands past the margin beside it (#598, round 14).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on 281 384 statements (grid h1, every wide head, cast, member and
+    ///     form the #598 generators write, the receiver's <c>)</c> below scanned one column at a time over fourteen columns,
+    ///     with every earlier grid), exact on every one: the <c>=</c> stays while
+    ///     <c>57·p + 15·cast + 21·min(a, 24) + a − 7·w − 38·member − 23·[doubled] ≥ 6 500</c>, with <c>p</c> the column a
+    ///     single parenthesis's <c>)</c> would end on below the <c>=</c> without its cast, held at 114, <c>a</c> the first
+    ///     operand, <c>w = min(n + 3, 69 − 2n)</c> SK-DIV-0770's weight of the name and <c>member</c> its whole width.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             ⚠ Round 10's fragment gate (<c>3·min(a, 24) + 2·cast − w − 5·member &lt; 0</c>) and its band are this
+    ///             one form: the gate is the form at <c>p = 114</c>. Its weights are 57ths of a column, so every integer
+    ///             fit in eighths missed a few rows on each side of the line (SK-DIV-0874, SK-DIV-0924, SK-DIV-0992).
+    ///         </item>
+    ///         <item>
+    ///             ⚠ The first operand past 24 still counts, one 22nd of what a column below 24 does: round 13's
+    ///             "30 keeps where 24 breaks".
+    ///         </item>
+    ///         <item>A doubled parenthesis whose inner <c>)</c> lands one column past the margin always breaks it.</item>
+    ///     </list>
+    /// </remarks>
+    /// <summary>
+    ///     Whether the <c>=</c> before <c>(a + b…).M(x)</c> stays behind a head of twelve columns or more while the receiver
+    ///     fits beside it and the line overflows (#598, round 14, SK-DIV-1030).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> on grid h2 (107 191 statements: every wide head, cast, member and
+    ///     form the #598 generators write, every line from one over to the receiver's <c>)</c> one past the margin) with every
+    ///     earlier grid. Past the margin's own rules (one column over, a call's <c>(</c> on the margin or one past it) the
+    ///     <c>=</c> stays while <c>57·e − 42·cast − 7·w + r + k ≥ 6 106</c>, <c>e</c> the value's end below the <c>=</c>,
+    ///     <c>r</c> the receiver without its cast and <c>w</c> SK-DIV-0770's weight of the name: <c>k = 190</c> for a
+    ///     property and <c>−95</c> a column of arguments for a call. It is the past-the-margin form with the receiver for
+    ///     the first operand, and the first operand does not count. Exact on every row of a property and of a call behind a
+    ///     cast or a name of four columns or more.
+    ///     <list type="bullet">
+    ///         <item>⚠ Round 10's 27 between a property and a call with no arguments is these 190 in 57ths.</item>
+    ///         <item>
+    ///             An uncast call behind a name of three columns or less does not follow it (the type-and-name break is
+    ///             near) and keeps round 10's score; arguments wider than ten columns always break the <c>=</c>.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
+    bool BesideEqualsKeeps(in ParenMemberValue value, int continuation, int weight, int member) =>
+        // Measured at a margin of 120 only, so read from the margin: 6 106 is −734 from it.
+        57 * (continuation + value.Width - width) - 42 * value.Cast - 7 * weight + value.Receiver - value.Cast + member
+        >= -734;
+
+    bool PastTheMarginEqualsBreaks(in ParenMemberValue value, int continuation, int weight, int receiverBeside) {
+        if (value.Doubled && receiverBeside == width + 2) {
             return true;
         }
 
-        if (fragment == 0) {
-            return null;
-        }
-
-        var keeps = 8 * (continuation + value.Receiver - value.Cast) + fragment - (value.Doubled ? 16 : 0);
-        return keeps <= 907 ? true : keeps >= 916 ? false : null;
+        // Measured at a margin of 120 only, so read from the margin: p − 120 is held at −6, and 6 500 is −340 from it.
+        var below = Math.Min(continuation + value.Receiver - value.Cast - (value.Doubled ? 2 : 0) - width, -6);
+        return 57 * below
+            + 15 * value.Cast
+            + 21 * Math.Min(value.Operand, 24)
+            + value.Operand
+            - 7 * weight
+            - 38 * value.Member
+            - (value.Doubled ? 23 : 0)
+            < -340;
     }
 
     /// <summary>
@@ -3995,10 +4076,22 @@ public sealed class Fitter {
         // ⚠ Under a broken `=` the cast opens its line, and it breaks only where the operator's `)` lands one column
         // past the margin, by the same score with no head and the member counted at five: `string value =` /
         // `(IReadOnlyList<int>)` / `(a + b…).Count;`, both on the `=`'s continuation column.
+        // ⚠ Round 14 (#598, SK-DIV-1031): that score was a safe bound too. The line is
+        // 49·cast − 22·min(a, 24) + 37·member ≥ 1 004, a doubled parenthesis 136 more where its inner `)` lands one past
+        // the margin and 149 where its outer one does, and only where the value fits on its own line once the cast
+        // breaks: exact on 6 699 rows over every #598 grid and round 14's fresh probes.
         if (m.Column <= lineStart) {
-            var below = 8 * value.Cast - 3 * Math.Min(value.Operand, 24) + 5 * value.Member;
-            return receiver - (value.Doubled ? 1 : 0) == width + 1 && below >= (value.Doubled ? 159 : 167)
-                || value.Doubled && receiver == width + 1 && below >= 151;
+            var innerBelow = receiver - (value.Doubled ? 1 : 0) == width + 1;
+            if (!innerBelow && !(value.Doubled && receiver == width + 1)
+                || m.Column + value.Width - value.Cast - (value.Doubled && innerBelow ? 1 : 0) > width) {
+                return false;
+            }
+
+            return 49 * value.Cast
+                - 22 * Math.Min(value.Operand, 24)
+                + 37 * value.Member
+                + (value.Doubled ? innerBelow ? 136 : 149 : 0)
+                >= 1004;
         }
 
         // ⚠ On the statement's line, only behind a head that keeps its `=`: a `return` (Name 0) or an assignment of
@@ -4007,14 +4100,22 @@ public sealed class Fitter {
             return false;
         }
 
-        var score = 8 * head + 8 * value.Cast - 3 * Math.Min(value.Operand, 24) + 4 * value.Member;
-        if (receiver - (value.Doubled ? 1 : 0) == width + 1) {
-            return score >= (value.Doubled ? 151 : 159);
-        }
-
-        // ⚠ And a doubled parenthesis's outer `)` one column past the margin, its inner one on it.
-        if (value.Doubled && receiver == width + 1) {
-            return score >= 143;
+        // ⚠ Round 14: the bound was safe, not the line, and the line is in 57ths of a column, as the wide heads' `=` is
+        // (#598, SK-DIV-1031): 57·head + 64·cast − 22·min(a, 24) − max(0, a − 24) + 38·member ≥ 1 267, a doubled
+        // parenthesis 80 more where its inner `)` lands one past the margin and 140 where its outer one does; and only
+        // while the value, once the cast breaks, overflows its line by thirteen columns or fewer (its inner `)`).
+        // Exact on 10 319 rows of every #598 grid, where the old bound missed 301.
+        var inner = receiver - (value.Doubled ? 1 : 0) == width + 1;
+        if (inner || value.Doubled && receiver == width + 1) {
+            var first = Math.Min(value.Operand, 24);
+            var lines = 57 * head
+                + 64 * value.Cast
+                - 22 * first
+                - (value.Operand - first)
+                + 38 * value.Member
+                + (value.Doubled ? inner ? 80 : 140 : 0);
+            var overflow = m.ContinuationColumn + value.Width - value.Cast - width - (value.Doubled && inner ? 1 : 0);
+            return lines >= 1267 && overflow <= 13;
         }
 
         if (receiver > width || value.Arguments < 0) {
@@ -4045,13 +4146,41 @@ public sealed class Fitter {
     ///     column at which an <c>=</c> breaks before it, <see cref="GroupFacts.ParenCloseEnd" />), and then while
     ///     <c>3·s − a ≥ 64</c>, with <c>s</c> the width from the line's start through the cast's <c>)</c> and
     ///     <c>a</c> the operator's first operand: a wide cast behind a short first operand. 4 of the 450 miss.
+    ///     <para>
+    ///         ⚠ Round 14 (2026-11-14), over every #598 grid (SK-DIV-1032): below a broken <c>=</c>, where the cast opens
+    ///         the line, and for a doubled parenthesis, the line is <c>57·s − 22·min(a, 24) − max(0, a − 24) ≥ 1 185</c>,
+    ///         the 57ths every other #598 line is in (<c>List&lt;int&gt; s =</c> / <c>(IDictionary&lt;int, string&gt;)</c>
+    ///         keeps at 14 columns of operand, where <c>3·s − a</c> said 64). A doubled parenthesis reads 57 more where its
+    ///         inner <c>)</c> lands one column past the margin and 137 where its outer one does. Beside the head a single
+    ///         parenthesis keeps <c>3·s − a ≥ 64</c>: the 57ths form is not monotone there. Compound assignments answer
+    ///         as <c>=</c> does, where Skala had no point at all.
+    ///     </para>
     /// </remarks>
-    bool BreaksAfterTheCast(in GroupFacts facts, in Measures m, int lineStart) =>
-        m.FlatWidth < Unbounded
-        && m.PointWidth < Unbounded
-        && m.Column + m.FlatWidth == width + 1
-        && Fits(m.ContinuationColumn, m.FlatWidth - m.PointWidth, m.Trailing)
-        && 3 * (m.Column + m.PointWidth - lineStart) - facts.CastParenFirst >= 64;
+    bool BreaksAfterTheCast(in GroupFacts facts, in Measures m, int lineStart) {
+        if (m.FlatWidth >= Unbounded || m.PointWidth >= Unbounded) {
+            return false;
+        }
+
+        var outer = m.Column + m.FlatWidth == width + 1;
+        if (!outer && !(facts.CastParenDoubled && m.Column + m.FlatWidth == width + 2)
+            || !Fits(m.ContinuationColumn, m.FlatWidth - m.PointWidth, m.Trailing)) {
+            return false;
+        }
+
+        // ⚠ Beside the head, a single parenthesis keeps round 2's line: the 57ths form is not monotone there (it keeps
+        // `x = (Txxxxxxxxxxxxxxxxxxx)` / `(a + …)` at 1 174, which WhenGapAndCastParenIssue609Tests pins as a break, and
+        // breaks at 1 181, which q1 keeps).
+        if (!facts.CastParenDoubled && m.Column > lineStart) {
+            return 3 * (m.Column + m.PointWidth - lineStart) - facts.CastParenFirst >= 64;
+        }
+
+        var first = Math.Min(facts.CastParenFirst, 24);
+        return 57 * (m.Column + m.PointWidth - lineStart)
+            - 22 * first
+            - (facts.CastParenFirst - first)
+            + (facts.CastParenDoubled ? outer ? 137 : 57 : 0)
+            >= 1185;
+    }
 
     /// <summary>
     ///     Whether an arm's <c>when</c> breaks before a condition whose only break points are type argument lists

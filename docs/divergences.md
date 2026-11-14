@@ -17437,6 +17437,8 @@ remaining member classes.
   the bounds. Pinned by `BareParenNameIssue598Tests`. With the form switched off, 5 of 5 fail. With `n` held at 9, 2
   of 5 fail. ⚠ **Open:** the band, the doubled outer-cast break (SK-DIV-0608), and the member classes above. The member
   classes behind wide heads are **fixed** in SK-DIV-0830: the lead held, with the member counted at five columns.
+  - Round 14 (2026-11-14): the band is **fixed** in SK-DIV-1030 (the form is 57ths of a column; b1 to b6 → 0), and the
+    outer-cast break over a parenthesised operator in SK-DIV-1032.
 
 ## SK-DIV-0830 — a parenthesised operator with a member behind a wide head: one score, with the name, on both sides of the receiver
 
@@ -17543,6 +17545,8 @@ The three fresh probes were built after the last change. Their 12 000 statements
 - options: none.
 - status: **fixed** behind heads of twelve columns or more outside the bands, single and doubled, cast or not. Pinned
   by `ParenMemberNameIssue598Tests`. With this form and SK-DIV-0831's two rules switched off, 9 of 9 fail.
+  - Round 14 (2026-11-14): the bands are **fixed** in SK-DIV-1030: one form in 57ths of a column on both sides of the
+    receiver, of which this score is the rounding to eighths.
 
 ## SK-DIV-0831 — two arguments one column over: the dot breaks rather than the arguments chop
 
@@ -17626,6 +17630,8 @@ oracle puts it.
 - status: **fixed** at the places above, pinned by `CastBreakAndAnchorIssue598Tests`.
   - Round 13 (2026-11-14): the call's `(` place was a safe bound, not the line; refitted exactly in SK-DIV-0991. The
     operator's `)` place is still the safe bound (SK-DIV-0992).
+  - Round 14 (2026-11-14): both places at the operator's `)`, beside the head and below a broken `=`, are exact lines in
+    SK-DIV-1031.
 
 ## SK-DIV-0872 — a doubled parenthesis with a call behind a head of seven to eleven columns
 
@@ -17722,6 +17728,7 @@ Round 10's fresh probes (seeds 830101 to 830103): 180 → 60. Every grid, `afaed
 - status: ⚠ **open**: the bands, the one-argument boundary behind short heads, and the bare value's band.
   - Round 12 (2026-11-14): the one-argument boundary behind short heads is **fixed** in SK-DIV-0921 and SK-DIV-0922 (it
     reads the head, the indent, the argument and the `(`, never the cast); the bands are still open (SK-DIV-0924).
+  - Round 14 (2026-11-14): the bands are **fixed** in SK-DIV-1030.
 
 ## SK-DIV-0920 — short assignments answer as `x =` does, and a compound operator of six or more as a plain `=`
 
@@ -17829,6 +17836,7 @@ newly wrong; c1 206 → 116, c2 7 158 → 1 531, c5 465 → 6; d1 to d4 945 → 
 - status: ⚠ **open**.
   - Round 13 (2026-11-14): six-column assignments are **fixed** (SK-DIV-0990), the cast break at the call's `(`
     (SK-DIV-0991); the bands, the bare value and the cast break at the operator's `)` stay open (SK-DIV-0992).
+  - Round 14 (2026-11-14): all three are **fixed** (SK-DIV-1030 to SK-DIV-1032); see SK-DIV-1034.
 
 ## SK-DIV-0990 — a six-column head keeps its `=` as `x =` does, unless the cast is wide
 
@@ -17916,3 +17924,125 @@ with e1 and e2, 561 572 statements: 9 920 → 2 600, none newly wrong and none t
 
 - options: none.
 - status: ⚠ **open**: the bands, the bare value and the cast break at the operator's `)`.
+  - Round 14 (2026-11-14): **fixed** in SK-DIV-1030 to SK-DIV-1032. ⚠ Refuted: that no integer form reaches the bands.
+    One does, in 57ths of a column; the three non-linearities were its rounding to eighths.
+
+## SK-DIV-1030 — the wide head's `=` is one form in 57ths of a column, past the margin and beside
+
+#598, round 14 (2026-11-14). SK-DIV-0874, SK-DIV-0924 and SK-DIV-0992 left the bands of round 10's score (SK-DIV-0830) open:
+30 statements on round 13's fresh probes. Round 13 found that one free value per first operand, cast, head and member
+separated them, but no integer form in eighths of a column did. Two grids were written for this round over every level the
+#598 generators write (sixteen wide heads, six casts, twenty members, single and doubled, random indents and operators):
+- **h1**, 159 008 statements: three random first operands per cell, the receiver's `)` below scanned one column at a time
+  over fourteen columns around round 10's bound;
+- **h2**, 107 191 statements: two random first operands per cell, every line from one column over to the receiver's `)` one
+  past the margin.
+
+- ⚠ **The weights are 57ths of a column, not eighths.** A real-valued fit was exact; its ratios to the line's column were
+  2/3, 14/19, 22/57, 7/57 and 1/57. Past the margin the `=` stays while
+  `57·p + 15·cast + 22·min(a, 24) + max(0, a − 24) − 7·w − 38·member − 23·[doubled] ≥ 6 500`, with `p` the column a single
+  parenthesis's `)` would end on below the `=` without its cast, held at 114 (the margin less six), and `w` SK-DIV-0770's
+  weight. Exact on all 281 384 past-the-margin statements of h1 and every earlier grid
+  (`Fitter.PastTheMarginEqualsBreaks`).
+  - ⚠ Round 10's fragment gate is not a second rule: it is the same form at `p = 114`.
+  - ⚠ Round 13's three "non-linearities" are what eighths make of 57ths: the first operand past 24 counts a 22nd of a column
+    below 24, the 17-column name sits on a rounding edge, and so does the gate at `φ = 0`.
+  - A doubled parenthesis whose inner `)` lands one column past the margin always breaks the `=` (542 of 542).
+  - Indent and operator play no part (free per-level values within 0.02 of a column).
+- **A bare value is the same form with no member.** SK-DIV-0770's `128·p + 49·min(a, 24) + 34·cast − 16·w` is it rounded to
+  eighths. `Fitter.BareParenEqualsBreaks` now reads it, without its band: b1 to b6 go from 219 apart to 0.
+- **Beside the receiver** (round 10's call and property scores) the `=` stays while
+  `57·e − 42·cast − 7·w + r + k ≥ 6 106`, `e` the value's end below the `=` and `r` the receiver without its cast:
+  `k = 190` for a property and `−95` a column of arguments for a call (`Fitter.BesideEqualsKeeps`). Exact on every property
+  and every call behind a cast or a name of four columns or more; ⚠ round 10's 27 between a property and a call is these 190.
+  - Arguments wider than ten columns (`.Replace(oldValue, newValue)`) always break it.
+  - ⚠ One column over the `=` breaks while `3·head + 2·cast + 5·arguments > 53`, the head through its space: round 6's
+    "a call with arguments always breaks it" was wrong for one short argument behind a head of 15 or less. 8 963 of 8 974
+    rows behind names of five or more; it missed 132 where this misses 11, all already wrong.
+
+Not wired, kept as they were: an uncast call behind a name of three columns or less beside the receiver (the type-and-name
+break is near: SK-DIV-0873), and a cast value behind a name of four or less and a head of 21 or more.
+
+- options: none.
+- status: **fixed**, pinned by `FiftySeventhsIssue598Tests`. With `PastTheMarginEqualsBreaks` set back to round 10's score,
+  its tests fail; SK-DIV-1034 has the sabotage counts.
+
+## SK-DIV-1031 — the cast break before a parenthesised operator with a member: the lines, not the bounds
+
+#598, round 14. SK-DIV-0871's two places at the operator's `)` were safe bounds (SK-DIV-0924: 20 wrong of 5 077 at best,
+"the member's weight bending").
+- **Behind a head that keeps its `=`** the cast breaks while
+  `57·head + 64·cast − 22·min(a, 24) − max(0, a − 24) + 38·member ≥ 1 267`, 80 more where a doubled parenthesis's inner `)`
+  lands one past the margin and 140 where its outer one does, and only while the value, once the cast breaks, overflows its
+  line by thirteen columns or fewer. ⚠ That last clause is the bend: `.ToUpperInvariant()` is the member wide enough to push
+  the line below past it. Exact on 10 319 rows over c1, c2, c3 and the random grids; the old bounds missed 301.
+- **Below a broken `=`** (the cast opens the line) it breaks while `49·cast − 22·min(a, 24) + 37·member ≥ 1 004`, 136 more
+  for a doubled inner `)` and 149 for an outer one, and only where the value then fits its line: exact on 6 699 rows.
+
+- options: none.
+- status: **fixed**, pinned by `FiftySeventhsIssue598Tests`.
+
+## SK-DIV-1032 — the cast break before a bare parenthesised operator: compound assignments and doubled parentheses
+
+#598, round 14. Of the bare value's six fresh-probe rows, four were the break after the cast (SK-DIV-0608's open outer-cast
+break, here over a parenthesised operator): `y += (IDictionary<int, string>)` / `(a * b…);`, `return (IReadOnlyList<int>)` /
+`((a + b…));`. Skala had no point there: `BreakPlan.PlanCastOperand` took only a plain `=`, a local and a `return`, and only
+a single parenthesis. It now takes a compound assignment's whole value and a doubled parenthesis
+(`GroupFacts.CastParenDoubled`).
+- Below a broken `=` and for a doubled parenthesis the line is `57·s − 22·min(a, 24) − max(0, a − 24) ≥ 1 185`, 57 more for a
+  doubled inner `)` one past the margin and 137 for an outer one (`List<int> s =` / `(IDictionary<int, string>)` keeps at 14
+  columns of operand, where `3·s − a` said 64).
+- ⚠ Beside the head a single parenthesis keeps round 2's `3·s − a ≥ 64`: the 57ths form is not monotone there
+  (`WhenGapAndCastParenIssue609Tests` breaks at 1 174, q1 keeps at 1 181). One measured row each way stays wrong there, as on
+  the start.
+- SK-DIV-0608's cast over a parenthesised cast of an atom is not this shape and is not changed.
+
+- options: none.
+- status: **fixed** over a parenthesised operator, pinned by `FiftySeventhsIssue598Tests`.
+
+## SK-DIV-1033 — wide arguments one column over on the operator's last line break the dot
+
+#598, round 14. SK-DIV-0831 held the dot break one column over on a receiver's last line to arguments of ten columns or less.
+On h1, below a broken `=`, `+ b…)` / `.Replace(oldValue, newValue);` one column over breaks the dot in 161 of 161 rows and
+chops from two columns over, so the condition is gone. SK-DIV-0831's exception below a broken `=` with the receiver on its
+own line (18 of 28 chop) is a different place and stays.
+
+- options: none.
+- status: **fixed**, pinned by `FiftySeventhsIssue598Tests`.
+
+## SK-DIV-1034 — round 14: the residue on fresh probes, with the evidence
+
+#598, round 14. Fresh probes built after the last change, 12 000 statements: seeds 598811 (round 12's head generator with the
+mixed and both focused ones), 598812 (with the argument and doubled ones) and 598813 (round 10's heads with the wide-head,
+bare and no-argument ones, and round 12's heads). Round 13 (`6ae7fa830`) → round 14, none newly wrong and none taking two
+passes:
+
+| Class | `6ae7fa830` | Round 14 |
+|---|---:|---:|
+| wide head: the bands | 34 | 0 |
+| a bare value | 4 | 1 |
+| short head: the cast break | 3 | 0 |
+| wide head: the cast break | 1 | 1 |
+| six-column assignments | 1 | 1 |
+| **total** | **43** | **3** |
+
+Round 13's own fresh probes (seeds 598701 to 598703): 38 → 0. A second set built mid-round (seeds 598801 to 598803, 34 → 0)
+was then read for SK-DIV-1031's line below a broken `=`, so it is not counted as fresh. Every earlier grid (561 572
+statements): 2 600 → 940; h1 4 662 → 0, h2 926 → 398; none newly wrong and none taking two passes. b1 to b6 and m1, m2 are
+now 0.
+
+The three left, each wrong on round 13 too, each a shape the generators write rarely and no grid measured:
+- `xxxx = (List<int>)(a… ?? b…);` one column over: a bare value behind a six-column head. SK-DIV-0990's one-over line, read
+  with no member, keeps it (as the oracle does), and agrees with the two other such rows in every grid, but three rows are
+  not a measurement, so it is not wired.
+- `Dictionary<string, int> d = (a… || b…);`: an uncast bare value behind a one-column name and a 23-column type, which
+  SK-DIV-1030's form breaks and the oracle keeps from about 26 columns of operand (two rows in every grid).
+- `List<int> s =` / `(IDictionary<int, string>)` / `((a + b…)).M(aaaa, bbbb);`: a cast break below a broken `=` where the
+  receiver fits its line and only the member overflows, a place SK-DIV-0871 never measured (Skala breaks the dot).
+
+Sabotage: with round 13's `Fitter.cs` 8 of `FiftySeventhsIssue598Tests`' 9 tests fail; with round 13's `BreakPlan.cs` the
+ninth (the compound and doubled cast break) fails.
+
+- options: none.
+- status: ⚠ **open** only for the three shapes above; the bands, the bare value's band and the cast breaks SK-DIV-0992 listed
+  are **fixed**.

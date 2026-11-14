@@ -2209,7 +2209,10 @@ public sealed class Document {
 /// <param name="CastParenFirst">
 ///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator, the whole value of a <c>return</c> or a
 ///     plain <c>=</c> (#598): the width of the operator's first operand, or zero. See
-///     <c>Fitter.BreaksAfterTheCast</c>.
+///     <c>Fitter.BreaksAfterTheCast</c>. ⚠ Round 14: a compound assignment's too, and a doubled parenthesis's.
+/// </param>
+/// <param name="CastParenDoubled">
+///     ⚠ With <see cref="CastParenFirst" />: the parenthesis is doubled, <c>(T)((a + b…))</c> (#598, round 14).
 /// </param>
 /// <param name="WhenTable">
 ///     ⚠ The gap after an arm's <c>when</c> before a condition whose only break points are type argument lists
@@ -2539,7 +2542,8 @@ public readonly record struct GroupFacts(
     bool WhenFirstPlain = false,
     int LoneCallLambda = 0,
     int LoneCallHead = 0,
-    int[]? SoleChainSegments = null);
+    int[]? SoleChainSegments = null,
+    bool CastParenDoubled = false);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator
