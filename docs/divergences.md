@@ -12454,6 +12454,66 @@ Pinned by `WhenKeptArrowIssue576Tests`, 9 cells: with the rule off (round 4's ta
 keep. Grid scripts: worktree `artifacts/scratch-i576d/` (`gend.py` — k1, k2, a1, a2 — `kpred.py`, a replica of the rule, `fitk.py`,
 `fitk2.py`, the constrained search, `cls.py`, `arrn.py`, `oi.py`), uncommitted.
 
+⚠ **#576 round 13 (2026-11-14).** The instrument first: round 12's CLI rebuilt at `79bc0120d` reproduces its 288 diverging rows on
+the twelve fresh probes to the row (f576k 25, f576j 15, coordQ 28), classed as round 12 classed them. This round built structure
+grids for the arrow class — holding the condition flat on the arm's line and moving only the arrow's end `a` (100 to 118), its line's
+start `s` (12 to 28) and the body's width `w` — and found it is not fitted widths but two regimes with clean edges. Two rules are wired.
+
+**1. An object creation keeps `new` on the arrow's line.** Measured on n1–n4 (14 196 arms: `new Holder(1, "n…")` and four other
+shapes). Where `new Holder(` fits beside the arrow the arguments chop there, as before. Past that, and while `=> new` fits:
+- while `4·a + 3·s ≤ 504` the oracle writes `=> new` / `Holder(…)` from `20·w − 5·a + 16·s ≥ 1522`, the arrow staying flat and the
+  type arguments unlifted (round 12's "an arrow the oracle leaves flat");
+- and anywhere it does so from `18·w + 6·a − 11·s ≥ 2732`, the arguments then chopping under `Holder(` in both layouts.
+
+⚠ Round 12's "non-monotone in the body's overflow" is these two regimes: at indent 20 and an arrow ending at 115 the first bar's region
+has closed (`4·115 + 3·20 = 520`), bodies of 116 and 121 are under the second bar and 129 and 130 over it. ⚠ And it is not a cost of
+the final lines: under the second bar the two layouts differ only in their first two lines (`=>` / `new Holder(` against `=> new` /
+`Holder(`), yet the choice moves with the width of the chopped arguments below. ⚠ Neither the type's name (`H`, `Holder`,
+`HolderOfThings123`, `Holder<int>`), the number of arguments, the pattern before the `when` nor the condition's lead moves either edge:
+n4's five shapes flip at the same body width to the column. Skala had no point after `new`; the arm plans one (`BreakPlan`, after the
+body's dot), taken only when the arrow stayed (`FlatIfOwnerBroke`) and `new Holder(` overflows (`BreaksOnlyIfHeadOverflows`), and the
+arrow group answers both ways once `new Holder(` does not fit beside it — its own head now reads only to that point
+(`Fitter.ArmNewStays`, `GroupFacts.ArmNewBody`, `ArmNewHead`).
+
+**2. A parenthesised query keeps `(from` where `(from item` no longer fits.** Round 9's keep rule required `(from item` beside the
+arrow. Measured on p1, p2 (4 608 arms, the same axes): past it, while `(from` fits, the oracle still keeps the body — `=> (from` /
+`item in items`, the from clause's own fill — by the creation's two regimes on the query's constants: while `4·a + 3·s ≤ 496` from
+`w + s ≥ 110`, else from `18·w + 6·a − 11·s ≥ 2756`, the creation's second bar with the arrow four columns further on. 27 rows of the
+twelve probes were this layout; round 12 classed 17 of them as "where the type arguments break", because the arrow's line differs
+there too. (`Fitter.ArmQueryStays`.)
+
+Diverging rows (round 12 = the base commit `79bc0120d`; none non-idempotent anywhere, none newly diverging against round 12 on any row):
+
+| Grid | Rows | Round 12 | Now |
+|---|---|---|---|
+| n1 / n2 / n3 / n4 (creation structure, fit) | 1 749 / 7 128 / 1 560 / 3 660 | 739 / — / — / — | 0 / 0 / 0 / 0 |
+| p1 / p2 (query structure, fit) | 1 872 / 2 736 | 336 / — | 119 / 236 |
+| b576 / d576 | 1 216 / 2 300 | 52 / 57 | 10 / 34 |
+| s576, w576, e1–e5, q1, q2, k1, k2, a1, a2 | — | unchanged | unchanged |
+| the twelve fresh probes (f576a–k, coordQ) | 11 900 | 288 | 215 |
+| **f576l (fresh, seed 5760825, built after rule 1)** | 1 000 | **20** | **17** |
+
+n2 to n4 were written after rule 1's bars were read off n1 and confirm them with no miss; n4 is the shape check. On the twelve probes,
+round 12 → now: the arrow class 55 → 9; where the type arguments break 41 → 24; inside bodies 68 → 58; atom bodies' `when` 56, the `when`
+before calls, queries and chains 58, the kept-arrow rows 7 + 3, all unchanged.
+
+⚠ Still open, measured, not wired:
+- **`=> (` / `from …`** (the 9 arrow rows left, and p1/p2's 309 `P` cells): where only `(` fits the oracle keeps it and breaks after it,
+  from `18·w + 6·a − 11·s ≥ 2766` (p2's every edge, s 12 to 24) and, in the first regime, for bodies a column or two short of `(from`'s
+  bar. Skala has no point after a parenthesised body's `(`; adding one also changes what the arrow group's head reads.
+- **Round 9's keep rule is a column off at indents of 16 and more** (p2: 38 cells): the oracle's bar falls three columns of body per four
+  of indent, round 9's `2·body > arrow + 90` one per two, and it steps irregularly with the arrow's end.
+- **Atom bodies' `when`, from a head of 12.** a3 and a4 (6 916 arms, lead in steps of one, bodies of 2 to 8 with the comma, X 128 and
+  136) show round 12's long-lead regime exactly: the fill beside the `when` needs both `13·lead − 4·head − 23·b ≥ 127` (a floor, one
+  column off at b 6) and `7·head + 38·b − lead ≤ 290` (the steep edge round 12 saw, seven columns of lead per column of head and 38 per
+  column of body); indents 12 and 20 agree to the arm. A replica of that model over the twelve probes fixes 54 of their `when` rows but
+  makes 44 newly wrong, nearly all conditions ending past 140 that the oracle fills at the inner `<` — a third regime the grids, ending at
+  142, never reach. Not wired.
+
+Pinned by `ArmNewIssue576Tests`, 19 cells: with rule 1's answer forced back to the broken arrow 7 fail, with rule 2's branch off 6.
+Grid scripts: worktree `artifacts/scratch-i576e/` (`gene.py` — n1–n4, p1, p2, a3, a4 — `n1tab.py`, `n4tab.py`, `ptab.py`, `a4tab.py`,
+`a4fit.py`, `atommodel.py`, `qparen.py`), uncommitted.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as
