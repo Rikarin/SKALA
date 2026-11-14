@@ -5274,6 +5274,18 @@ public sealed partial class CSharpDocumentBuilder {
             }
         }
 
+        // ⚠ The fill before a property pattern's `is` or `not` keeps its line through the `{` whenever that fits (#620
+        // round five). See LineFlags.HeadStaysWhenItFits.
+        if (rule == GapRule.FillPoint
+            && (nextToken.IsKind(SyntaxKind.IsKeyword)
+                && nextToken.Parent is IsPatternExpressionSyntax { Pattern: var tested }
+                && BreakPlan.IsABracedPattern(tested)
+                || nextToken.IsKind(SyntaxKind.NotKeyword)
+                && nextToken.Parent is UnaryPatternSyntax { Parent: IsPatternExpressionSyntax } negated
+                && BreakPlan.IsABracedPattern(negated))) {
+            flags |= LineFlags.HeadStaysWhenItFits;
+        }
+
         // ⚠ A dot after a one-column name stays flat while the name starts its line (#620, SK-DIV-0810).
         if (rule == GapRule.FillPoint
             && nextToken.IsKind(SyntaxKind.DotToken)
