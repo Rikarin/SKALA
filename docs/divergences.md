@@ -12379,6 +12379,81 @@ Pinned by `WhenConditionEndIssue576Tests`, 16 cells: rule 1 back to the line-bel
 a raise to 42, 2; rule 4 back to round 10's clause, 2; rule 5 off, 3. Grid scripts: worktree `artifacts/scratch-i576c/` (`genc.py` — e4,
 e5, `fresh3` with chain bodies — `ds.py`, `ruled.py`, `searchR.py`, `search6b.py`, `run2.sh`), uncommitted.
 
+⚠ **#576 round 12 (2026-11-14).** The instrument first: round 11's grids, re-run from its scripts in a new harness, reproduce its
+numbers exactly (f576j: master 124 → round 11 23; b576 52, d576 57, s576 44, w576 37, e1–e5 28/41/83/24/26). Classified on the eleven
+fresh probes (10 900 arms), round 11's residue was 357 rows: 98 the `when` gap under an arrow the author broke, 53 atom bodies' `when`,
+53 the arrow class, 36 where the type arguments break, 51 the `when` before calls, queries and chains, 63 inside bodies, 3 other
+kept-arrow rows. One rule is wired.
+
+**1. ⚠ Under an arrow the author broke after its `=>`, "the condition moves below exactly when it fits there" is refuted.** That was
+round 4's rule for `WhenArrowKept`, untouched since. The oracle fills beside the `when` at conditions far narrower than the line below:
+`string s when M<HashSet<long>,` / `IReadOnlyList<T…>>() =>` with the condition ending at 117 below. Measured on two structure grids
+with the body on a line of its own: k1 (3 024 arms: indents 12 and 20, heads 6 to 23, leads 5 to 34, the condition ending 119 to 136
+beside the `when`, three bodies) and k2 (9 702: indent 12, heads 6 to 28, leads 4 to 38, ends 121 to 142). The body plays no part,
+and the indent none once the condition is read where it ends on the line below (`below`); k1's indent-20 rows sit exactly eight
+columns of condition under indent 12's.
+- Behind a head under twelve columns the `when` breaks only where the condition runs one or two columns past the margin beside it —
+  and behind `X when` not even then once the lead is 14 or more.
+- From twelve the oracle breaks the `when` while `12·below + 4·min(lead, 26) − head ≤ 1405`, and, for a lead short against the head
+  (`3·lead − head ≤ 23`), while `12·below − 8·lead − head ≤ 1381`. The second is the condition moving below until the fill beside the
+  `when` would have to take its inner `<`; under it the condition fills on its own line, which is why it breaks the `when` at
+  conditions that no longer fit below (`Xyyyyyyy when` / `M<Faaaaa, IReadOnlyList<` / `T…>>() =>`).
+
+Both bars were searched over integer coefficients under the constraint that no arm round 11 had right goes wrong. The unconstrained
+best (`… ≤ 1401` with `min(lead, 25)`, and `8·below − 6·lead − head ≤ 911`) misses 36 of k2 against these 74, every miss one column
+off, but four of its misses were arms round 11 had right (heads 18 to 24, I 12); on the fresh probes it missed none of 1 821
+kept-arrow arms and these bars miss 3, each one round 11 missed too — two behind a nested first argument (`Func<int, bool>,`, which no
+grid held) that the oracle fills a column earlier. (`Fitter.KeptArrowWhenBreaks`, `GroupFacts.WhenArrowKeptAfter`; a break the author
+kept before the `=>` keeps the old rule, unmeasured.)
+
+Diverging rows (master = round 9's CLI, as rounds 10 and 11 measured; round 11 = the base commit `0dd76c312`; none non-idempotent
+anywhere, none newly diverging against master or round 11 on any row):
+
+| Grid | Rows | Master | Round 11 | Now |
+|---|---|---|---|---|
+| k1 (kept arrow, fit) | 3 024 | — | 762 | 10 |
+| k2 (kept arrow, fit) | 9 702 | — | 2 169 | 139 |
+| f576a–d (rounds 8–9 probes) | 3 900 | 447 | 123 | 90 |
+| f576e–h (rounds 9–10 probes) | 4 000 | 506 | 136 | 101 |
+| f576i / f576j / coordQ | 1 000 each | 130 / 124 / 120 | 40 / 23 / 35 | 29 / 15 / 28 |
+| **f576k (fresh, seed 5760824, built after the rule)** | 1 000 | **134** | **32** | **25** |
+| a1 / a2 (atom bodies, measured here, not fitted) | 5 610 / 3 168 | — | 647 / 673 | 647 / 673 |
+| b576, d576, s576, w576, e1–e5, q1, q2 | — | — | unchanged | unchanged |
+
+On the twelve fresh probes together the kept-arrow `when` class goes 108 → 3; what is left (288 rows) is the arrow class 55, atom
+bodies' `when` 56, where the type arguments break 41, the `when` before calls, queries and chains 58, inside bodies 68, other kept-arrow
+rows 7. k2's 139 are 74 `when` decisions one column off (the constrained bars' price; the Python replica `kpred.py` predicts exactly
+these 74) and 65 places where the type arguments break (below); k1's 10 are all the latter.
+
+⚠ Measured, not wired:
+- **Atom bodies** (a1, a2: 8 778 arms, the five atoms of the fresh probes, heads 7 to 23, leads 5 to 44, ends 121 to 142). The shape is
+  the kept arrow's: behind a head under twelve the `when` breaks only one or two columns past; from twelve, before a body of five or
+  more with its comma, it breaks at every width measured, except behind a long lead, where it breaks only while the condition ends by
+  113 below (at indent 12, a condition of 97). ⚠ So round 7's band floor `max(12, 45 − 6·b)` is not a head limit: it is where that
+  long-lead regime starts, seen at round 7's lead of 23 — before `"ss",` the `when` breaks from head 12 at leads of 20 or less (191 of
+  a1's 647 misses). The long-lead boundary grows faster than linearly in the head (`"ss",`: lead 21–24 at heads 12–15, 25–28 at 18,
+  37–40 at 20, past 44 at 23; `Value,`: 21–24 at 12, 29–32 at 13, 41–44 at 15, past 44 from 18; `Short.Value12,` and `Abcdefghijklm,`
+  none to 30), and the fresh probes' atom rows split further at round 7's condition limit, past the grids' range. Before `1,` the
+  `when` is a third regime: below a lead of 17 to 20 (21 to 24 behind head 23) it breaks until the fill would take its inner `<`
+  (before `M<Fa,` at every width to 142), above it while the condition ends by 113 below at a lead of 20, 112 at 24 and 111 from 28.
+- **The arrow class** (`=> new` / `Holder(`, 44 rows on the fresh probes; `=> (` / `from …`, 9). ⚠ Not a break point Skala lacks but
+  an arrow that does not break: the oracle leaves `… () => new` on the arm's line, breaks inside the body after `new`, and — the arrow
+  being flat — does not lift the type arguments (their tail one level past the arm, not two). It happens only where the body's line
+  does not dedent from the arrow's, never when the arrow's line is a lifted continuation, and behind arms at indent 24 not once in
+  eleven probes. Between `=> new` and `=>` / `new Holder(` the choice moves with the body's own overflow and not monotonically (indent
+  20, arrow ending 115: bodies of 116 and 121 break the arrow, 129 and 130 keep `new`). The `=> (` rows are exactly round 9's kept
+  queries where `(from item` does not fit beside the arrow and `(` does.
+- **Where the type arguments break.** Behind a head under twelve, under a kept arrow and before atoms alike, the outer comma takes the
+  break while the condition ends at most three columns past the margin beside the `when`, or while the line it leaves below through
+  `()` is 114 or less — 113 behind a lead of eight or less. ⚠ Wiring the 113 alone made 6 rows of k1 newly wrong (the three-column
+  half is needed, and the type argument group cannot see where the condition ends beside the `when`), so neither half is wired. Under a
+  broken `when` the condition's own fill alternates between the outer comma and the inner `<` with each column of condition width
+  (k2, head 16, lead 13: outer, inner, outer, inner, inner at conditions 105 to 109) — not modelled.
+
+Pinned by `WhenKeptArrowIssue576Tests`, 9 cells: with the rule off (round 4's tail rule back) 7 fail; the other 2 are W rows both rules
+keep. Grid scripts: worktree `artifacts/scratch-i576d/` (`gend.py` — k1, k2, a1, a2 — `kpred.py`, a replica of the rule, `fitk.py`,
+`fitk2.py`, the constrained search, `cls.py`, `arrn.py`, `oi.py`), uncommitted.
+
 ## SK-DIV-0373 — a deconstructing `var (a, b)` the author broke inside, under `is`
 
 ⚠ **#567: not group L's regression, and not `PlanKeptIs`.** `o is var (a,` / `b)` was formatted as

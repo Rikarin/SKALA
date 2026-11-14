@@ -1928,6 +1928,11 @@ public sealed class Document {
 ///     114 columns or less (115 behind a lead of 17 or more) and the lead plus four times that width is 487 or less
 ///     (#576 round 10).
 /// </param>
+/// <param name="WhenArrowKeptAfter">
+///     ⚠ With <see cref="WhenArrowKept" />: the author's break is after the arrow, the body on a line of its own and the
+///     <c>=&gt;</c> on the condition's. There the <c>when</c> is decided by the condition's flat widths, not by whether it
+///     fits below (#576 round 12, <c>Fitter.KeptArrowWhenBreaks</c>).
+/// </param>
 /// <param name="HeldCallRest">
 ///     ⚠ Under <c>wrap_if_long</c> (#552): the flat width of the chain after the held call, through its
 ///     <c>;</c>, or zero. Past the measured table's limit the held call still breaks before itself when
@@ -2411,7 +2416,8 @@ public readonly record struct GroupFacts(
     int WhenLastPoint = 0,
     int WhenOuterLead = 0,
     ParenMemberValue CastMember = default,
-    ParenMemberValue ShortParenMember = default);
+    ParenMemberValue ShortParenMember = default,
+    bool WhenArrowKeptAfter = false);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator
