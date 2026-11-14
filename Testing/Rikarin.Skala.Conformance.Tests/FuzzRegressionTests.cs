@@ -329,6 +329,12 @@ public sealed class FuzzRegressionTests {
     // as unbounded before reaching the point — for the raw string behind it — so pass one kept the `=` and broke before
     // the `"""`; pass two, that break required, ended the tail there, found it fitting below and broke the `=`.
     [InlineData(15648357818547915787UL)]
+    // Reported 2026-11-14 as failing on a2a6de72, and it does: `set {` / `var v5 = (Guid)($"at {items[0]}" + … || (…));`
+    // came back `set { var v5 =` / `(Guid)(…); }` on pass one and opened the block on pass two. Clean on master since
+    // 9f524d8ba (the 1052827977788418967 fix above), bisected: the planner spaced the interpolated string's text and
+    // brackets, so the `=`'s ParenCloseEnd rule (#598) read the cast's `)` on column 121 where the writer puts it on
+    // 116 and broke, while the block, measured as written, stayed on one line at 119. Pinned so it does not return.
+    [InlineData(14580176773931760767UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
