@@ -15611,7 +15611,155 @@ line keeps where the oracle breaks it.
 under a type test (testmulti, 3 to 7 a probe) — with braces the oracle breaks the arrow and keeps the call whole or breaks
 inside the braces, where Skala keeps the arrow and chops; a lone call of two or more whose `=` the oracle breaks or whose
 line is over by its `;` (multi, 1 to 5); chains behind a long receiver whose dot the oracle breaks with the arrow kept
-(zerolinks, 1 to 4); and single members of the other classes. — one argument behind a head wider than fourteen: one boundary for every owner
+(zerolinks, 1 to 4); and single members of the other classes.
+
+**#620 round six (2026-11-14): O's two are fixed, and so is most of the residue above** — SK-DIV-0980 to SK-DIV-0985.
+Whole member text against `Testing ask`, against master `a2a6de725`, after the last change, none unstable on a second
+pass:
+
+| probe (2 700 members unless noted) | master | round five | now | newly wrong |
+|---|---:|---:|---:|---:|
+| I / J / O / P | 2 105 / 2 118 / 2 101 / 2 082 | 2 685 / 2 680 / 2 684 / 2 685 | 2 692 / 2 692 / 2 697 / 2 694 | 0 |
+| A (1 800) / B / C / D (3 000) / E / F / G / H | 1 400 / 2 075 / 2 124 / 2 360 / 2 112 / 2 090 / 2 099 / 2 075 | 1 785 / 2 682 / 2 684 / 2 985 / 2 685 / 2 683 / 2 682 / 2 680 | 1 794 / 2 694 / 2 693 / 2 995 / 2 695 / 2 693 / 2 693 / 2 688 | 0 |
+| K / L / M / N | 2 125 / 2 116 / 2 072 / 2 115 | 2 687 / 2 688 / 2 684 / 2 684 | 2 695 / 2 699 / 2 694 / 2 695 | 0 |
+| **Q / R (seeds 39177, 50288, written after the last change)** | 2 130 / 2 103 | — | **2 693 / 2 691** | **0** |
+| the sixteen probes A–P together (42 600) | 33 169 | 42 343 | 42 503 (160 gained, none lost) | 0 |
+| r1–r4, r45–r48, r50 and every grid of rounds two to five (g4, gm1, gm2, gp1, q1–q4, b1–b3, i1–i3, l1–l7, g30–g42, c1, k1, w1–w8) | — | — | unchanged or better | 0 |
+| this round's grids gfr1–gfr3, gsl, gb35, gb36, gm119, gm119b, gzl (37 356 cells) | 26 362 | — | 36 766 | 0 |
+
+Per class on I, J, O and P (300 each; round five → now): testmulti 293 / 294 / 297 / 294 → 298 / 297 / 300 / 296; multi
+299 / 295 / 295 / 297 → 299 / 300 / 298 / 300; zerolinks 299 / 296 / 298 / 299 → 300 / 299 / 300 / 300; props 299 / 300 /
+298 / 300 → 299 / 300 / 299 / 300. On Q and R the wrong members are 7 and 9 of 2 700: testmulti 3 and 4, multi 2 and 2,
+onelinks 1 and 2, props 1, multilinks 1.
+
+## SK-DIV-0980 — a sole call's arrow far to the right: the measured lines up to column 74, with a far-right term
+
+#620 round six (2026-11-14). Round two left a keep of SK-DIV-0760's lines to the older rules wherever the arrow ended at
+column 60 or later over a call that fits on the line below (`SoleCallKeepDefers`), after r4's members behind
+`var someLongerLocalName = await this.someService.Something…(` came out newly wrong. ⚠ **Refuted: "the oracle's line
+bends with the arguments' width" past 60.** Every deferred member of r4 to r48 ends at column 75 or later; at 60 to 74
+the probes' 165 deferred members (`var symbols = context.Compilation.Use(` behind every indent) are 159 the oracle
+keeps — the lines' own answer — and 6 it breaks. The older rules broke 75 of the 159. The deferral now starts at 75.
+
+The six are not noise. Measured one column of arguments at a time (gfr1, 4 224 cells, and gfr2, 1 156, behind
+`Use(`, `var r = recv.Use(` and `var symbols = context.Compilation.Use(`; gfr3, 4 229 more at the boundary), the
+thousandth line holds exactly until the line through the call's `(` ends past 84, `a + h > 84`, and past that the oracle
+breaks up to eight columns of arguments later than it: one more term, `880·(a + h − 84) − 30` thousandths of a column of
+links, read for arrows ending at 48 to 74 behind heads of 50 columns or fewer. 276 of 5 316 cells apart without it, 5
+with it; of 245 exact thresholds all but three agree, those three by 0.03 of a column. ⚠ And round two's constant is
+1856, not 1864: on every two-argument cell the line decides across the probes and grids, 1848 to 1860 leave three apart
+where 1864 left nine. Within six hundredths of a column of the line, at 60 to 74, the older rules still decide
+(`SoleCallOnTheFarRightEdge`): the cells there were their answer before, and the linear term misses some.
+
+⚠ The same class held #618's path: a type test written on one line over a call of two arguments or more is
+`LambdaBodyKind.InlineTestOfACall`, and #618's `BreaksTheTestArrow` decided it whenever SK-DIV-0760's line deferred —
+behind `var symbols = …` that was 32 members of the probes where the oracle keeps the arrow and chops.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
+- status: **fixed** to column 74 (pinned by `AnArrowEndingFarRight_IsTheMeasuredLinesWithTheFarRightTerm`); from 75
+  the older rules decide, as measured on r4–r48.
+
+## SK-DIV-0981 — the lead-35 bands are a tie-break, and the short-lead region with links weighs the lambda more
+
+#620 round six (2026-11-14). Round five wired the short-lead region's edge (`16·lead + λ = 569`, a lead of 35 behind a
+9-column lambda) as two bands of the arrow's column, kept at 31–34 and 50–54, "measured, not a line". ⚠ **They are a
+tie-break, and not the edge's alone.** On the gb35 and gb36 grids (7 672 cells: five tests and two links behind lambdas
+of 8, 9 and 11, leads of 34 to 36, arrows ending 20 to 58 one column at a time), every cell where the thousandth line
+lands ten thousandths of a column past its boundary — and only those: `is IMethodSymbol { IsStatic: true }` and
+`is INamedTypeSymbol { }` behind `(x, y) => Head(` at lead 35 — keeps its arrow at 30–34 and 50–54 and breaks it at
+22–28, 36–48 and 56–58: the same columns as the edge. Every other test and link at the same lead follows the line. So
+one function, `TieKeepsTheArrow` — the arrow's column modulo 20 is 10 to 14 — answers both ties; below 30 the edge's
+cells are kept by either line and at 70–74 by neither, so the period of twenty is the simplest reading the measurements
+allow, not one they force. It is O's `(x, y) => this.LookupTheDeclaration(a, b) is IMethodSymbol { IsStatic: true }` at
+column 30, which round four's line broke by ten thousandths.
+
+⚠ With links the region was `λ + h + 3·L ≤ 36` (round five). At the edge the lambda weighs a tenth more than the head:
+`static x => Head(a, b).Name` (λ 11, h 10, a sum of 36) is outside — the thousandth line breaks it far to the right,
+from column 55 — where `(a, b) => Heads(a, b).Name` (λ 9, h 12) is inside. `11·λ + 10·h + 30·L ≤ 370` separates every
+row of the gsl grid (674 cells: seven lambdas, sums of 35 to 37, `.Name` and ` is null`, three statements).
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
+- status: **fixed** (pinned by `TheLinesOwnBoundary_BreaksTheTieByTheArrowsColumn` and
+  `AShortLeadWithLinks_WeighsTheLambdaATenthMore`; round five's band cell still passes).
+
+## SK-DIV-0982 — a sole lambda's lone call over only by its `;`: the call chops or the `)` moves down
+
+#620 round six (2026-11-14). `Use(x => Head(a, b, c));` whose line through the outer `)` ends exactly at the margin, the
+`;` one past it. Skala moved the outer `)` down (`… Head(a, b, c)` / `);`) every time; the oracle does that only behind a
+long lead, and otherwise keeps the arrow, chops the call and moves the `)` down after it. Measured with `Testing ask` one
+column at a time (gm119b, 1 716 cells: lambdas of 4 to 16 columns, heads of 14 to 34, the lambda starting 4 to 30
+columns past the line's start; gm119, 14 832 cells at four indents, two and three arguments, bodies ending at 118, 119
+and 120 with no link, `.Name` and ` is null`), the oracle chops while
+
+`λ + h ≤ 28` or `5·s + 3·(λ + h) ≤ 150`,
+
+`s` where the lambda starts past the line's start. The indent, the argument count and the arguments' width play no
+part: 1 710 of the 1 716 and all 1 648 such cells of gm119 agree; the six apart chop at a lead of 29 behind a lambda
+starting 28 columns in or more. One column further over — the `)` itself past the margin — it always moves the `)`
+down, as Skala did. The rule is the inner list's (`LoneCallChops`), read from flat widths so that pass two asks what pass
+one did. ⚠ Not with a link or a test after the call: ` is null` moves the `)` down at every lead, `.Name` by a rule not
+measured far enough to wire (gm119, 304 cells).
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
+- status: **fixed** for a lone call (pinned by `ALoneCallOverOnlyItsSemicolon_ChopsOrMovesTheParenthesisDown`);
+  **open** with links after it.
+
+## SK-DIV-0983 — a chain behind a long receiver whose first call does not fit beside the arrow: a chain of properties
+
+#620 round six (2026-11-14). Round five broke the arrow behind receivers of eleven columns or fewer (793 of 793 cells)
+and left longer ones to the older rules, "the oracle keeps it at times, as for a chain of properties". ⚠ **It decides
+it exactly as a chain of properties**, segment for segment — SK-DIV-0762's line on how much of the chain the fill keeps
+beside the arrow, and where the body fits below SK-DIV-0881's — whatever the segments hold (`longName.recv.Read()`,
+`longName.Open(a, b).Where(…)`, `longName.Analyze(x).Count`): 200 of 200 probe members (one in the line below's gap),
+where the older rules broke 27 arrows the oracle keeps and kept 6 it breaks; on the gzl grid (2 853 cells, receivers of
+13 to 110 columns, six first calls, nine links, eight statements) 2 309 → 2 648 agreeing, none newly wrong. As for
+property chains, an arrow ending less than twelve columns past the line's start stays over a chain that fits nowhere,
+and a receiver whose first name does not fit beside the arrow breaks it. ⚠ Including a first call SK-DIV-0760 reads
+(`aVeryLongName.Open(a, b).Count`): that line was measured behind receivers of eleven columns or fewer, and its
+arguments' term reads two columns of `a, b` as a reason to break.
+
+⚠ **Open, measured:** the dots the oracle breaks under the kept arrow. It keeps a property with the call it feeds on the
+receiver's side too — `longName` / `.Helpers.Read()` / `.Count` — where Skala breaks before `.Helpers` and again before
+`.Read()` (most of gzl's remaining 205, and three probe members).
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
+- status: **fixed** for the arrow (pinned by `AChainBehindALongReceiver_IsDecidedAsAChainOfProperties`); **open** for the
+  dots above.
+
+## SK-DIV-0984 — a type test over a call of two arguments or more that fits beside the arrow: the arrow breaks
+
+#620 round six (2026-11-14). `TryFind(x => Analyze(a, b, c) is IMethodSymbol { IsStatic: true });` whose call fits beside
+the arrow through its `)` while the test does not. #618's line for a test written on one line
+(`LambdaBodyKind.InlineTestOfACall`) decided it and kept 17 arrows of the probes. ⚠ The oracle breaks the arrow in every
+such member whose arrow ends twelve columns or more past the line's start — 585 of 585, with the `=` before it broken
+instead in 21 more, which is decided first. No line was needed.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
+- status: **fixed** (pinned by `ATypeTestOverACallThatFitsBesideTheArrow_BreaksIt`).
+
+## SK-DIV-0985 — SK-DIV-0762's property-chain line, refitted
+
+#620 round six (2026-11-14). `100·s − 175·p − 12·f ≥ 776` kept five arrows of the probes the oracle breaks, among them
+O's 160-column `symbol.Novembe.Mikejulietos…` behind `this.Apply(symbol =>` at column 36 (a fill of 73 columns), which
+round four's tree wrote newly wrong against master. On 4 954 members of the sixteen probes and the g42 grid, where the
+chain fits nowhere, `102·s − 180·p − 13·f ≥ 716` separates every one; so do `97·s − 170·p − 12·f ≥ 714` and
+`99·s − 176·p − 13·f ≥ 659`, with no more margin: the integer widths leave one or two units either side.
+
+- options: `skala_place_single_method_argument_lambda_on_same_line`.
+- status: **fixed** (pinned by `APropertyChainThatFitsNowhere_ByTheRefittedLine`).
+
+**Still open after round six, about one member in 300 on the fresh probes (Q 7, R 9):**
+
+- a call of two arguments or more under a type test with braces, under a broken arrow: the oracle keeps the call whole
+  and breaks before `is` behind a wide head (`cb − 0.52·h + 0.18·i + 0.44·L ≤ 116` on 183 probe members, four apart),
+  where Skala chops — no type-test group is planned for it (SK-DIV-0763);
+- a lone call of two arguments or more behind a `var` local whose `=` the oracle breaks (SK-DIV-0880's open half);
+- a one-argument call behind an arrow ending less than twelve columns in (`Use(x => Helpers.Read(…).Name)`) whose
+  first dot the oracle breaks — `Helpers` / `.Read(` — when SK-DIV-0760's line would break the arrow there, though not
+  always (20 of 49 such members);
+- the dots of SK-DIV-0983 and a handful of single members.
+
+## SK-DIV-0505 — one argument behind a head wider than fourteen: one boundary for every owner
 
 This closes the open halves of SK-DIV-0501 (group A, typed locals) and SK-DIV-0530 (group D, `var` locals). Both had
 measured the same thing separately, and neither rule was wired. Group A's fit was

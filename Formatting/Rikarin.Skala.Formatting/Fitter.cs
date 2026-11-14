@@ -412,6 +412,13 @@ public sealed class Fitter {
                     return tested;
                 }
 
+                // ⚠ A sole lambda's lone call whose line runs over only by the `;` after the outer `)` chops by where
+                // the lambda starts and its lead (#620 round six, SK-DIV-0982), read from the flat widths so that pass
+                // two, finding the chop, asks what pass one did. See LoneCallChops.
+                if (facts.LoneCallLambda > 0 && LoneCallChops(facts, m, lineStart)) {
+                    return ResolvedMode.Broken;
+                }
+
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
                 }
@@ -1171,13 +1178,30 @@ public sealed class Fitter {
                         return ResolvedMode.Flat;
                     }
 
-                    if (BreaksTheSoleCallArrow(facts, m, lineStart)) {
-                        return ResolvedMode.Broken;
-                    }
+                    var breaks = BreaksTheSoleCallArrow(facts, m, lineStart);
+                    if (!SoleCallOnTheFarRightEdge(facts, m, lineStart)) {
+                        if (breaks) {
+                            return ResolvedMode.Broken;
+                        }
 
-                    if (!SoleCallKeepDefers(facts, m)) {
-                        return ResolvedMode.Flat;
+                        if (!SoleCallKeepDefers(facts, m)) {
+                            return ResolvedMode.Flat;
+                        }
                     }
+                }
+
+                // ⚠ A type test written on one line over a call of two arguments or more that fits beside the arrow
+                // through its `)` while the test does not (#620 round six, SK-DIV-0984): the arrow breaks wherever it ends
+                // twelve columns or more past the line's start — 585 of 585 probe members, where #618's line for the test
+                // (`LambdaBodyKind.InlineTestOfACall`) kept 17. An `=` the oracle breaks instead is decided before this.
+                if (facts.SoleCallHead > 0
+                    && !facts.SoleCallSingle
+                    && !facts.SoleCallKept
+                    && facts.LambdaBodyKind == LambdaBodyKind.InlineTestOfACall
+                    && m.Column - lineStart >= 12
+                    && m.Column + 1 + facts.SoleCallHead + facts.SoleCallArguments + 1 <= width
+                    && m.Column + 1 + facts.SoleCallHead + facts.SoleCallArguments + 1 + facts.SoleCallLinks > width) {
+                    return ResolvedMode.Broken;
                 }
 
                 // ⚠ A sole lambda over a one-argument call with links after it (#620): the arrow breaks whenever the
@@ -1410,6 +1434,34 @@ public sealed class Fitter {
 
                 return Worth(facts, m, afterPointRunsToTheEnd, tail, pointSpace);
         }
+    }
+
+    /// <summary>
+    ///     Whether a sole lambda's lone call of two arguments or more chops its arguments although they fit, where the line
+    ///     through the outer call's <c>)</c> fits and its <c>;</c> is one column past the margin: false where the oracle
+    ///     moves the outer <c>)</c> down instead, as Skala always did (#620 round six, SK-DIV-0982). See
+    ///     <see cref="GroupFacts.LoneCallLambda" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> one column at a time (gm119b, 1 716 cells: lambdas of 4 to 16 columns,
+    ///     heads of 14 to 34, the lambda starting 4 to 30 columns past the line's start; gm119, 14 832 cells at four
+    ///     indents, two and three arguments, bodies ending at 118 to 120): the oracle chops the call while
+    ///     <c>λ + h ≤ 28</c> or <c>5·s + 3·(λ + h) ≤ 150</c>, <c>s</c> where the lambda starts past the line's start, and
+    ///     moves the outer <c>)</c> down past that. The indent, the argument count and the arguments' width play no part;
+    ///     1 710 of the 1 716 and all 1 648 such cells of gm119 agree (the six apart chop at a lead of 29 behind a lambda
+    ///     starting 28 columns in or more). Skala moved the <c>)</c> down every time. ⚠ Not with a link or a test after
+    ///     the call: ` is null` moves the <c>)</c> down at every lead, <c>.Name</c> by another rule, and neither was
+    ///     measured far enough to wire.
+    /// </remarks>
+    bool LoneCallChops(in GroupFacts facts, in Measures m, int lineStart) {
+        // The list's `(` is at m.Column; the outer `)` and the `;` follow its own `)` directly.
+        if (width != 120 || m.FlatWidth >= Unbounded || m.Column + m.FlatWidth + 2 != width + 1) {
+            return false;
+        }
+
+        var lead = facts.LoneCallLambda + facts.LoneCallHead;
+        var start = m.Column + 1 - facts.LoneCallHead - 1 - facts.LoneCallLambda - lineStart;
+        return start + facts.LoneCallLambda >= 12 && (lead <= 28 || 5 * start + 3 * lead <= 150);
     }
 
     /// <summary>
@@ -2197,9 +2249,35 @@ public sealed class Fitter {
         // starting 12 to 63 columns in, every one broken. Behind a receiver of twenty columns or more the oracle keeps
         // it at times, as it does a chain of properties, and the older rules decide.
         if (m.Column + 1 + head > width) {
-            return facts.SoleCallHead == 0 && facts.SoleChainReceiver <= 11 && m.Column - lineStart >= 12
-                ? ResolvedMode.Broken
-                : null;
+            if (facts.SoleChainReceiver <= 11) {
+                return facts.SoleCallHead == 0 && m.Column - lineStart >= 12 ? ResolvedMode.Broken : null;
+            }
+
+            // ⚠ Round six (SK-DIV-0983): behind a receiver of twelve columns or more the oracle decides it exactly as
+            // it decides a chain of properties — SK-DIV-0762's line on how much of the chain the fill keeps beside the
+            // arrow, and where the body fits below, SK-DIV-0881's line below — whatever the segments hold: 200 of 200
+            // probe members (one in the band's gap), where the older rules broke 27 arrows the oracle keeps and kept 6
+            // it breaks.
+            if (facts.SoleChainSegments is not { Length: > 1 } segments) {
+                return null;
+            }
+
+            // As for a chain of properties, an arrow ending less than twelve columns past the line's start stays over a
+            // chain that fits nowhere, and the older rules decide over one that fits below. ⚠ And a receiver whose
+            // first name does not fit beside the arrow breaks it (the gzl grid; the oracle writes it whole below).
+            var lambda = facts.SoleCallLambda;
+            var nowhere = lineStart + indentWidth + segments.Sum() + segments.Length - 1 > width;
+            if (m.Column - lineStart < 12) {
+                return nowhere ? ResolvedMode.Flat : null;
+            }
+
+            if (m.Column + 1 + segments[0] > width) {
+                return ResolvedMode.Broken;
+            }
+
+            return nowhere
+                ? BreaksThePropertyChainArrow(segments, lambda, m) ? ResolvedMode.Broken : ResolvedMode.Flat
+                : SolePropertyChainBelowMode(segments, lambda, m, lineStart);
         }
 
         // ⚠ Round three kept the line below to a first call of up to 45 columns followed by a call of two arguments or
@@ -2308,12 +2386,83 @@ public sealed class Fitter {
     ///     sixty columns or more in over a call that fits on the line below, where the oracle's line bends with the
     ///     arguments' width; and a one-argument call that fits nowhere within five columns of the far-right line,
     ///     where a receiver chain in front of the lambda (<c>await this.service.Get(x =&gt; …)</c>) moves it.
+    ///     ⚠ Round six (SK-DIV-0980): only from an arrow ending at 75. Every deferred member of the r4 grids (behind
+    ///     <c>var someLongerLocalName = await this.someService.Something…(</c>) ends there or further right; at 60 to 74
+    ///     the probes' 165 deferred members are 159 the oracle keeps — the measured lines' answer — and six it breaks,
+    ///     which SoleCallsSlack's far-right term now breaks too.
     /// </remarks>
     bool SoleCallKeepDefers(in GroupFacts facts, in Measures m) {
+        if (m.Column < width - 45) {
+            return false;
+        }
+
         var below = m.ContinuationColumn + facts.SoleCallHead + facts.SoleCallArguments + 1 <= width;
+
         return below
             ? m.Column >= width - 60
             : facts.SoleCallSingle && FarRight(facts, m) >= -100;
+    }
+
+    /// <summary>
+    ///     Whether a sole call of two arguments or more whose arrow ends at 60 to 74, over a call that fits on the line
+    ///     below, sits within six hundredths of a column of the thousandth line, where the older rules still decide
+    ///     (#620 round six, SK-DIV-0980).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The far-right term is linear to a few hundredths of a column, not exactly: of 245 thresholds measured one
+    ///     column at a time three miss by up to 0.03, and the cells on them were the older rules' answer before.
+    /// </remarks>
+    bool SoleCallOnTheFarRightEdge(in GroupFacts facts, in Measures m, int lineStart) {
+        if (facts.SoleCallSingle
+            || m.Column < width - 60
+            || m.Column >= width - 45
+            || m.Column - lineStart < 12
+            || m.Column + 1 + facts.SoleCallHead > width
+            || m.ContinuationColumn + facts.SoleCallHead + facts.SoleCallArguments + 1 > width
+            || ShortLeadKeepsTheArrow(facts, m, facts.SoleCallLambda + facts.SoleCallHead)) {
+            return false;
+        }
+
+        var slack = SoleCallsSlack(facts, m);
+        return slack > -60 && slack < 60;
+    }
+
+    /// <summary>
+    ///     Round two's thousandth line for a sole call of two arguments or more, as how far past its boundary the
+    ///     links are (non-negative: the arrow breaks), in thousandths of a column (#620, SK-DIV-0760, SK-DIV-0980,
+    ///     SK-DIV-0981).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ At a thousandth of a column (round two): the lambda weighs a little less than the head, as for one argument
+    ///     — 34 059 cells and probe members, every one of them a call of two arguments or more.
+    ///     ⚠ Round five: the arguments' line stops counting at column 114, as the one-argument line's does —
+    ///     <c>_ =&gt; Head(a, b, c).Select(z =&gt; z.Value).ToArray().Value</c> breaks its arrow wherever the arguments
+    ///     end, where the unbounded line kept it past 114 (a fresh probe's member, then 1 060 cells with links of 6 to 44
+    ///     columns, every one agreeing once it stops). ⚠ Not at 113: a 36-column <c>is IMethodSymbol { … }</c> behind
+    ///     <c>x =&gt; Find(</c> keeps its arrow with the arguments ending at 114 (probe G), where 37 columns of links
+    ///     break it.
+    ///     ⚠ Round six: an arrow far to the right adds 0.88 of a column of links per column its line through the call's
+    ///     <c>(</c> ends past 84 (<c>a + h</c>), up to an arrow ending at 74. Measured one column of arguments at a time
+    ///     on 1 156 cells behind <c>Use(</c>, <c>var r = recv.Use(</c> and <c>var symbols = context.Compilation.Use(</c>
+    ///     and 4 229 more at the boundary: the line alone missed by up to eight columns of arguments once <c>a + h</c>
+    ///     passed 84; all but three of the 245 exact thresholds agree with it, those three by 0.03 of a column.
+    ///     ⚠ And the constant is 1856, not round two's 1864: on every two-argument cell the line decides across the
+    ///     probes and grids, 1848 to 1860 leave three apart where 1864 left nine.
+    /// </remarks>
+    int SoleCallsSlack(in GroupFacts facts, in Measures m) {
+        var end = m.ContinuationColumn + indentWidth + facts.SoleCallArguments;
+        // ⚠ Only where it was measured: arrows ending at 48 to 74 behind heads of 50 columns or fewer (the probes reach
+        // 46, `recv.CreateTheDiagnosticFor<INamedTypeSymbol>(`). A long receiver in the head (`aVeryLongName.Open(a, b)`,
+        // eighty columns behind an arrow at 32) is SK-DIV-0983's and never reaches this line.
+        var farRight = m.Column is >= 48 and < 75 && facts.SoleCallHead <= 50
+            ? Math.Max(0, 880 * (m.Column + facts.SoleCallHead - (width - 36)) - 30)
+            : 0;
+        return 1000 * facts.SoleCallLinks
+            + farRight
+            - 603 * facts.SoleCallHead
+            - 576 * (facts.SoleCallLambda - 3)
+            - 1500 * (Math.Min(end, width - 6) - (width - 27))
+            - 1856;
     }
 
     /// <summary>
@@ -2343,7 +2492,10 @@ public sealed class Fitter {
     bool BreaksThePropertyChainArrow(int[] chain, int lambda, in Measures m) {
         var start = m.Column - lambda;
         var parameters = lambda - 3;
-        return 100 * start - 175 * parameters - 12 * PropertyChainKept(chain, m) >= 776;
+        // ⚠ Round six (SK-DIV-0985): `102·s − 180·p − 13·f ≥ 716`, the same line refitted on 4 954 members of sixteen
+        // probes and the g42 grid, where `100·s − 175·p − 12·f ≥ 776` kept five arrows the oracle breaks — among them
+        // probe O's 160-column `symbol.Novembe.Mikejulietos…` behind `this.Apply(` at column 36, a fill of 73 columns.
+        return 102 * start - 180 * parameters - 13 * PropertyChainKept(chain, m) >= 716;
     }
 
     /// <summary>
@@ -2412,12 +2564,30 @@ public sealed class Fitter {
     ///     it, and the bands are read as measured. With links a link weighs three columns of the lead, not round two's
     ///     2.67.
     /// </remarks>
+    /// <summary>
+    ///     How the oracle breaks a tie on a sole call's two-argument lines — the short-lead region's edge
+    ///     (<c>16·lead + λ = 569</c>) and the thousandth line within fifteen thousandths of a column: it keeps the arrow
+    ///     where the arrow ends at a column whose last digit, counted in twenties, is 10 to 14 (#620 round six,
+    ///     SK-DIV-0981).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Round five read the edge as two bands, arrows ending at 31–34 and 50–54, "measured, not a line". They are
+    ///     one tie-break, and not the edge's alone: on the gb35 and gb36 grids (7 672 cells, five tests, lambdas of 8 to
+    ///     11, arrows ending 20 to 58) every cell the thousandth line puts ten thousandths of a column past its boundary
+    ///     — and only those — keeps its arrow at 30–34 and 50–54 and breaks it at 22–28, 36–48 and 56–58, the same columns
+    ///     as the edge. Below 30 the edge's cells are kept by either line, and at 70–74 by neither (the region's own
+    ///     line breaks there), so the twenty-column period is the simplest reading the measurements allow, not one
+    ///     they force. Measured at a margin of 120 only.
+    /// </remarks>
+    bool TieKeepsTheArrow(in Measures m) => width == 120 && m.Column % 20 is >= 10 and <= 14;
+
     bool ShortLeadKeepsTheArrow(in GroupFacts facts, in Measures m, int lead) {
         var links = facts.SoleCallLinks;
         var edge = 16 * lead + facts.SoleCallLambda;
         if (links == 0 && width == 120 && edge == 569) {
-            // ⚠ A lead of 35 behind a 9-column lambda: two bands of the arrow's column, measured, not a line.
-            return m.Column <= 34 || m.Column is >= 50 and <= 54;
+            // ⚠ A lead of 35 behind a 9-column lambda is the region's own edge, and on it the oracle breaks its tie by
+            // the arrow's column (round six, SK-DIV-0981): see TieKeepsTheArrow.
+            return TieKeepsTheArrow(m);
         }
 
         if (links == 0 && width == 120 && edge <= 568) {
@@ -2426,7 +2596,12 @@ public sealed class Fitter {
 
         // ⚠ With links, a link column weighs three of the lead, not 2.67: `recv.Use(a, b) is null` behind `x =>` (lead
         // 13, links 8) breaks its arrow wherever it ends, and `Helpers.LookupTh(a, b).Name` (lead 21, links 5) keeps it.
-        var inside = links == 0 ? 6 * lead <= 207 : lead + 3 * links <= 36;
+        // ⚠ Round six: and the lambda weighs a tenth more than the head, `11·λ + 10·h + 30·L ≤ 370` — at the edge, 36,
+        // `static x => Head(a, b).Name` (λ 11, h 10) is outside where `(a, b) => Heads(a, b).Name` (λ 9, h 12) is in:
+        // the gsl grid (674 cells, seven lambdas, lead + 3·L of 35 to 37, three statements), every row agreeing.
+        var inside = links == 0
+            ? 6 * lead <= 207
+            : 11 * facts.SoleCallLambda + 10 * facts.SoleCallHead + 30 * links <= 370;
         return inside
             && (m.Column + 2 * facts.SoleCallHead + facts.SoleCallLambda + 3 * links < width
                 || 4 * lead + 5 * links < 70);
@@ -2464,11 +2639,11 @@ public sealed class Fitter {
             // the unbounded line kept it past 114 (a fresh probe's member, then 1 060 cells with links of 6 to 44
             // columns, every one agreeing once it stops). ⚠ Not at 113: a 36-column `is IMethodSymbol { … }` behind
             // `x => Find(` keeps its arrow with the arguments ending at 114 (probe G), where 37 columns of links break it.
-            return 1000 * facts.SoleCallLinks
-                >= 603 * facts.SoleCallHead
-                + 576 * (facts.SoleCallLambda - 3)
-                + 1500 * (Math.Min(end, width - 6) - (width - 27))
-                + 1864;
+            // ⚠ Round six: on the line's own boundary — within fifteen thousandths of a column — the oracle breaks the tie
+            // as it does on the short-lead region's edge (TieKeepsTheArrow): `(x, y) => this.LookupTheDeclaration(a, b)
+            // is IMethodSymbol { IsStatic: true }` (slack 10) keeps its arrow ending at 30 and breaks it at 40.
+            var slack = SoleCallsSlack(facts, m);
+            return slack >= 0 && !(slack < 15 && TieKeepsTheArrow(m));
         }
 
         // ⚠ One argument: the arguments' line counts only while it ends six columns or more short of the margin; past
