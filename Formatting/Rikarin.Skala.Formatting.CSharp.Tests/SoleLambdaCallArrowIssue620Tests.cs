@@ -423,4 +423,504 @@ public sealed class SoleLambdaCallArrowIssue620Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     A whole argument <c>name!</c> whose line runs past the margin breaks before its <c>!</c>, on the argument's
+    ///     own column, even where the name alone overflows (SK-DIV-0810).
+    /// </summary>
+    [Fact]
+    public void AWholeArgumentsBangPastTheMargin_BreaksBeforeIt() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M38() {
+                    if (c0) { if (c1) { Use(x => Head(julietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindi!)); } }
+                }
+                object M367() {
+                    if (c0) { if (c1) { var v = Head(foxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbolJulietalphaBravo!); } }
+                }
+                object M1370() {
+                    if (c0) { if (c1) { Use(x => Head(foxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbolJuliet!, other)); } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M38() {
+                    if (c0) {
+                        if (c1) {
+                            Use(x => Head(
+                                    julietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindi
+                                    !
+                                )
+                            );
+                        }
+                    }
+                }
+
+                object M367() {
+                    if (c0) {
+                        if (c1) {
+                            var v = Head(
+                                foxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbolJulietalphaBravo
+                                !
+                            );
+                        }
+                    }
+                }
+
+                object M1370() {
+                    if (c0) {
+                        if (c1) {
+                            Use(x => Head(
+                                    foxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbolJuliet
+                                    !,
+                                    other
+                                )
+                            );
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     <c>x.Name</c> past the margin on a line of its own keeps its dot: the oracle never breaks after a one-column
+    ///     name that starts its line (SK-DIV-0810).
+    /// </summary>
+    [Fact]
+    public void AOneColumnReceiverStartingItsLine_KeepsItsDot() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M388() {
+                    var v = Head(x.Foxtrotgolfnamehotelindiasymboljulietalphabravocharliedeltaechovaluefoxtrotgolfnamehotelindiasymboljulietalphabravo);
+                }
+                object M402() {
+                    if (c0) { if (c1) { var v = Head(x.Bravocharliedeltaechovaluefoxtrotgolfnamehotelindiasymboljulietalphabravocharliedeltaechovaluefoxtrot); } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M388() {
+                    var v = Head(
+                        x.Foxtrotgolfnamehotelindiasymboljulietalphabravocharliedeltaechovaluefoxtrotgolfnamehotelindiasymboljulietalphabravo
+                    );
+                }
+
+                object M402() {
+                    if (c0) {
+                        if (c1) {
+                            var v = Head(
+                                x.Bravocharliedeltaechovaluefoxtrotgolfnamehotelindiasymboljulietalphabravocharliedeltaechovaluefoxtrot
+                            );
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A one-argument call under a type test written on one line keeps its arguments whole and breaks after the
+    ///     keyword, or before it where the keyword does not fit, by <c>100·g + 40·h + 116·s − 67·t ≤ 9633</c>; at 121 columns
+    ///     with its <c>;</c> the list chops (SK-DIV-0811).
+    /// </summary>
+    [Fact]
+    public void ATestOverAOneArgumentCall_TakesTheBreakByTheMeasuredLine() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M322() {
+                    ok = Heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee(julietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymb) as Node;
+                }
+                object M1146() {
+                    if (c0) { if (c1) { ok = Heeeeeeeeeeeeeeeeeeeeee(foxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxt) as Node; } }
+                }
+                object M4880() {
+                    if (c0) { if (c1) { ok = Heeeeeeeeeeeeeeeeeeeeeeeeeeee(deltaechoValueFoxtrotgolfNameHotelindiaSymbolJulietalp) is SyntaxNode; } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M322() {
+                    ok = Heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee(julietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymb) as
+                        Node;
+                }
+
+                object M1146() {
+                    if (c0) {
+                        if (c1) {
+                            ok = Heeeeeeeeeeeeeeeeeeeeee(foxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxt)
+                                as Node;
+                        }
+                    }
+                }
+
+                object M4880() {
+                    if (c0) {
+                        if (c1) {
+                            ok = Heeeeeeeeeeeeeeeeeeeeeeeeeeee(
+                                deltaechoValueFoxtrotgolfNameHotelindiaSymbolJulietalp
+                            ) is SyntaxNode;
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     The test's own gaps are one fill: <c>… is SyntaxNode</c> / <c>node</c> and <c>… is not</c> /
+    ///     <c>SyntaxNode</c>, the rightmost that fits (SK-DIV-0811).
+    /// </summary>
+    [Fact]
+    public void ATestsOwnGaps_AreOneFill() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M1681() {
+                    return this.Heeeeeeeeee(indiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbol) is SyntaxNode node;
+                }
+                object M3295() {
+                    if (c0) { if (c1) { _ = recv.Heeeeeeeeeeeeeeeeeeeeeeee(hotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtro) is not SyntaxNode; } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M1681() {
+                    return this.Heeeeeeeeee(indiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbol) is
+                        SyntaxNode node;
+                }
+
+                object M3295() {
+                    if (c0) {
+                        if (c1) {
+                            _ = recv.Heeeeeeeeeeeeeeeeeeeeeeee(hotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtro) is not
+                                SyntaxNode;
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     Under a broken arrow the same line decides with its own constant, and the test's break sits one level past the
+    ///     body's line (SK-DIV-0811).
+    /// </summary>
+    [Fact]
+    public void ATestUnderABrokenArrow_TakesTheBreakOneLevelIn() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M2372() {
+                    Use(static (a, b) => recv.Heeeeeeeeeeeeeeeeeeeeeeee(echoValueFoxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFox) is SyntaxNode);
+                }
+                object M2713() {
+                    var r = recv.Use(static x => Open(foxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbolJulietalphaBravoch) as Node);
+                }
+                object M2919() {
+                    if (c0) { if (c1) { var r = recv.Use(static x => this.cache.Open(indiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaS) is SyntaxNode); } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M2372() {
+                    Use(static (a, b) =>
+                        recv.Heeeeeeeeeeeeeeeeeeeeeeee(
+                            echoValueFoxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFox
+                        ) is SyntaxNode
+                    );
+                }
+
+                object M2713() {
+                    var r = recv.Use(static x => Open(
+                            foxtrotgolfNameHotelindiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaSymbolJulietalphaBravoch
+                        ) as Node
+                    );
+                }
+
+                object M2919() {
+                    if (c0) {
+                        if (c1) {
+                            var r = recv.Use(static x =>
+                                this.cache.Open(indiaSymbolJulietalphaBravocharlieDeltaechoValueFoxtrotgolfNameHotelindiaS) is
+                                    SyntaxNode
+                            );
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A chain body whose first call fits beside the arrow and which fits nowhere whole: the arrow stays while
+    ///     <c>200·h ≥ 72·s − 127·p + 4067</c> and <c>200·s − 352·p − 25·h ≤ 1441</c>, and breaks otherwise (SK-DIV-0812).
+    /// </summary>
+    [Fact]
+    public void AChainWhoseFirstCallFitsBesideTheArrow_KeepsItByTwoLines() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M1321() {
+                    Ussssssssssssssssss((Node node) => this.Foooooooooooooooo(item).Analyze(indiaSymbolJulietalphaBravocharlieDelta, bravocharlieDeltaechoValueFoxtrotgolfNa));
+                }
+                object M1325() {
+                    Ussssssssssssssssss((Node node) => this.Fooooooooooooooooooo(item).Analyze(foxtrotgolfNameHotelindiaSymbolJuliet, indiaSymbolJulietalphaBravocharlieDelt));
+                }
+                object M2469() {
+                    if (c0) { if (c1) { U(static (Node node) => Foooooo().Analyze(hotelindiaSymbolJulietalphaBravocharlieDeltaecho, alphaBravocharlieDeltaechoValueFoxtrotgolfNameHot)); } }
+                }
+                object M3777() {
+                    if (c0) { if (c1) { Ussssssssssssss(static x => this.Foooooooooo(item).Analyze(echoValueFoxtrotgolfNameHotelindiaSymbolJu, hotelindiaSymbolJulietalphaBravocharlieDel)); } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M1321() {
+                    Ussssssssssssssssss((Node node) => this.Foooooooooooooooo(item)
+                        .Analyze(indiaSymbolJulietalphaBravocharlieDelta, bravocharlieDeltaechoValueFoxtrotgolfNa)
+                    );
+                }
+
+                object M1325() {
+                    Ussssssssssssssssss((Node node) => this.Fooooooooooooooooooo(item)
+                        .Analyze(foxtrotgolfNameHotelindiaSymbolJuliet, indiaSymbolJulietalphaBravocharlieDelt)
+                    );
+                }
+
+                object M2469() {
+                    if (c0) {
+                        if (c1) {
+                            U(static (Node node) =>
+                                Foooooo()
+                                    .Analyze(
+                                        hotelindiaSymbolJulietalphaBravocharlieDeltaecho,
+                                        alphaBravocharlieDeltaechoValueFoxtrotgolfNameHot
+                                    )
+                            );
+                        }
+                    }
+                }
+
+                object M3777() {
+                    if (c0) {
+                        if (c1) {
+                            Ussssssssssssss(static x =>
+                                this.Foooooooooo(item)
+                                    .Analyze(echoValueFoxtrotgolfNameHotelindiaSymbolJu, hotelindiaSymbolJulietalphaBravocharlieDel)
+                            );
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     On the line below the same two lines keep the arrow only once that line would end at column 112 or later, and
+    ///     never before 108 (SK-DIV-0812).
+    /// </summary>
+    [Fact]
+    public void AChainThatFitsBelow_KeepsItsArrowOnlyNearTheMargin() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M15887() {
+                    if (c0) { if (c1) { Ussssss(static (Node node) => model.Normalize(item).Merge(deltaechoValueFox, echoValueFoxtrotg, foxtrotgolfNameHo).Single()); } }
+                }
+                object M10444() {
+                    if (c0) { Ussssssssss((x, y) => recv.LookupTheDeclaration().Merge(julietalphaBravocharlieDeltaechoV, alphaBravocharlieDeltaechoValueFo)); }
+                }
+            }
+            """,
+            """
+            class C {
+                object M15887() {
+                    if (c0) {
+                        if (c1) {
+                            Ussssss(static (Node node) => model.Normalize(item)
+                                .Merge(deltaechoValueFox, echoValueFoxtrotg, foxtrotgolfNameHo)
+                                .Single()
+                            );
+                        }
+                    }
+                }
+
+                object M10444() {
+                    if (c0) {
+                        Ussssssssss((x, y) =>
+                            recv.LookupTheDeclaration().Merge(julietalphaBravocharlieDeltaechoV, alphaBravocharlieDeltaechoValueFo)
+                        );
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A <c>var</c> local's <c>=</c> before a sole lambda call breaks where the value fits below by one line in the
+    ///     callee, the name, the indent and the parameters, the body playing no part — on a line two columns over too
+    ///     (SK-DIV-0880).
+    /// </summary>
+    [Fact]
+    public void AWideCalleesEquals_BreaksWhereTheValueFitsBelow() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M574() {
+                    var symbols = context.Compilation.Use(node => Helpers.Normalize(novemberBravoBravokiloDeltagolfNameL!).ToString());
+                }
+                object M3620() {
+                    if (c0) { if (c1) { if (c2) { var symbols = context.Compilation.Use(symbol => Analyze(golfNameki, bravoPapaalp) is not SyntaxNode); } } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M574() {
+                    var symbols =
+                        context.Compilation.Use(node => Helpers.Normalize(novemberBravoBravokiloDeltagolfNameL!).ToString());
+                }
+
+                object M3620() {
+                    if (c0) {
+                        if (c1) {
+                            if (c2) {
+                                var symbols =
+                                    context.Compilation.Use(symbol => Analyze(golfNameki, bravoPapaalp) is not SyntaxNode);
+                            }
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     On the line below a chain's arrow stays behind a long receiver and before a property as before a call of two
+    ///     arguments, and short of column 112 by one more line in the parameters, the first call and the start
+    ///     (SK-DIV-0881).
+    /// </summary>
+    [Fact]
+    public void AChainThatFitsBelow_KeepsItsArrowByTheBandsLine() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M453() {
+                    Uss(static (x, y) => alphaBravocharlieDeltaechoValueFoxtrotg.Head(item).With(julietalphaBravocha, alphaBravocharlieDe));
+                }
+                object M220() {
+                    Uss((Node node) => alphaBravocharlieDe.Head(item).With(indiaSymbolJulietalphaBravoc, julietalphaBravocharlieDeltae));
+                }
+                object M6291() {
+                    if (c0) { if (c1) { Ussssssssss(static (Node node) => alphaBravocharlieDe.Head(item).With(charlieDeltaechoValueFoxtr, deltaechoValueFoxtrotgolfNa)); } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M453() {
+                    Uss(static (x, y) => alphaBravocharlieDeltaechoValueFoxtrotg.Head(item)
+                        .With(julietalphaBravocha, alphaBravocharlieDe)
+                    );
+                }
+
+                object M220() {
+                    Uss((Node node) =>
+                        alphaBravocharlieDe.Head(item).With(indiaSymbolJulietalphaBravoc, julietalphaBravocharlieDeltae)
+                    );
+                }
+
+                object M6291() {
+                    if (c0) {
+                        if (c1) {
+                            Ussssssssss(static (Node node) => alphaBravocharlieDe.Head(item)
+                                .With(charlieDeltaechoValueFoxtr, deltaechoValueFoxtrotgolfNa)
+                            );
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A chain of properties that fits below keeps its arrow by the same lines, the fill's width for the first call's
+    ///     (SK-DIV-0881).
+    /// </summary>
+    [Fact]
+    public void APropertyChainThatFitsBelow_KeepsItsArrowByTheChainsLines() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M655() {
+                    Uss(static (Node node) => x.Hoteli.Indias.Juliet.Alphab.Bravoc.Charli.Deltae.Echova.Foxtro.Golfna.Hoteli.Indias.Juliet.Ho);
+                }
+                object M1169() {
+                    Ussssss((x, y) => node.Alphab.Bravoc.Charli.Deltae.Echova.Foxtro.Golfna.Hoteli.Indias.Juliet.Alphab.Bravoc.Charli.Al);
+                }
+                object M3420() {
+                    Ussssssssss(static (x, y) => this.model.Foxtrotgo.Golfnameh.Hotelindi.Indiasymb.Julietalp.Alphabrav.Bravochar.Charliede.Deltaecho.Fo);
+                }
+            }
+            """,
+            """
+            class C {
+                object M655() {
+                    Uss(static (Node node) => x.Hoteli.Indias.Juliet.Alphab.Bravoc.Charli.Deltae.Echova.Foxtro.Golfna.Hoteli.Indias
+                        .Juliet.Ho
+                    );
+                }
+
+                object M1169() {
+                    Ussssss((x, y) =>
+                        node.Alphab.Bravoc.Charli.Deltae.Echova.Foxtro.Golfna.Hoteli.Indias.Juliet.Alphab.Bravoc.Charli.Al
+                    );
+                }
+
+                object M3420() {
+                    Ussssssssss(static (x, y) => this.model.Foxtrotgo.Golfnameh.Hotelindi.Indiasymb.Julietalp.Alphabrav.Bravochar
+                        .Charliede.Deltaecho.Fo
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A type test the author broke before its keyword is #618's, not SK-DIV-0811's one-line rule (coordinator's #618
+    ///     probe, seed 990618).
+    /// </summary>
+    [Fact]
+    public void ATestBrokenBeforeItsKeyword_IsNotTheOneLineRules() =>
+        Oracle.Agrees(
+            """
+            class C {
+                async void M59() {
+                    if (c0) { await q.Select(item => ctx.Resolve(MikeNodekiloHotelLimagolfNameFoxtrotNovemberalphaDeltaBravoHote)
+            is SyntaxNode); }
+                }
+            }
+            """,
+            """
+            class C {
+                async void M59() {
+                    if (c0) {
+                        await q.Select(item => ctx.Resolve(MikeNodekiloHotelLimagolfNameFoxtrotNovemberalphaDeltaBravoHote)
+                            is SyntaxNode
+                        );
+                    }
+                }
+            }
+            """
+        );
 }

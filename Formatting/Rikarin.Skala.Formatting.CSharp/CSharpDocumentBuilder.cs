@@ -5246,6 +5246,15 @@ public sealed partial class CSharpDocumentBuilder {
             }
         }
 
+        // ⚠ A dot after a one-column name stays flat while the name starts its line (#620, SK-DIV-0810).
+        if (rule == GapRule.FillPoint
+            && nextToken.IsKind(SyntaxKind.DotToken)
+            && nextToken.Parent is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax receiver }
+            && receiver.Identifier.ValueText.Length == 1
+            && receiver.Identifier.Text.Length == 1) {
+            flags |= LineFlags.OneColumnReceiver;
+        }
+
         if (rule == GapRule.FillPoint && CallLinkAt(nextToken) is { } link) {
             flags |= LineFlags.ChainCallLink;
             if (link.ArgumentList.Arguments.Count <= 1) {

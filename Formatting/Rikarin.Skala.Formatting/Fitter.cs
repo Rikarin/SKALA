@@ -389,8 +389,29 @@ public sealed class Fitter {
                     return member ? ResolvedMode.Broken : ResolvedMode.Flat;
                 }
 
+                // ⚠ And a chain body whose first call fits beside the arrow and which fits nowhere whole (#620,
+                // SK-DIV-0812): by the measured lines, read from flat widths so that pass two asks what pass one did; a
+                // break the author wrote after the arrow is kept.
+                if (facts.SoleChainHead > 0 && SoleChainMode(facts, m, lineStart) is { } chainMode) {
+                    return facts.SourceBroken ? ResolvedMode.Broken : chainMode;
+                }
+
+                // ⚠ A one-argument call under a type test written on one line keeps its arguments whole where the
+                // measured line gives the break to the test (#620, SK-DIV-0811). See GroupFacts.TestedCallHead.
+                if (facts.TestedCallHead > 0
+                    && !facts.SourceBroken
+                    && TestedCallMode(facts, m, lineStart) is { } tested) {
+                    return tested;
+                }
+
                 if (facts.SourceBroken) {
                     return KeepOrJoin(facts, m, tail);
+                }
+
+                // ⚠ A `var` local's `=` before a sole lambda call whose value fits below, by the measured line (#620,
+                // SK-DIV-0880); elsewhere the older rules decide. See GroupFacts.SoleLambdaEqualsCallee.
+                if (facts.SoleLambdaEqualsCallee > 0 && SoleLambdaEqualsBreaks(facts, m, lineStart)) {
+                    return ResolvedMode.Broken;
                 }
 
                 // ⚠ See GroupFacts.FlatIfHeadOverflows: the head's own point takes the break. ⚠ Read from the
@@ -1004,6 +1025,19 @@ public sealed class Fitter {
                         && BreaksThePropertyChainArrow(chain, facts.SoleCallLambda, m)
                             ? ResolvedMode.Broken
                             : ResolvedMode.Flat;
+                }
+
+                // ⚠ And where it fits below (#620 round four, SK-DIV-0881): the same line breaks it; past it, as a chain of
+                // calls, the arrow stays where the line below would end at 112 or later, and by BelowBandMode short of
+                // that. Measured on 32 184 cells (seven parameter lists, four segment widths, three roots, lambdas 4 to
+                // 40 columns past the line's start); the segments and the root play no part beyond the fill's width.
+                // A chain broken inside — pass one's own kept arrow over a filled chain — keeps it; one the line would
+                // break is left to the older rules, as SoleChainMode leaves it.
+                if (facts.SolePropertyChain is { } fitting
+                    && m.Column - lineStart >= 12
+                    && SolePropertyChainBelowMode(fitting, facts.SoleCallLambda, m, lineStart) is { } propertyBelow
+                    && !(facts.SolePropertyChainKept && propertyBelow == ResolvedMode.Broken)) {
+                    return propertyBelow;
                 }
 
                 // ⚠ A sole lambda over a call that does not fit beside its arrow (#620, SK-DIV-0760): by the measured
@@ -1832,6 +1866,136 @@ public sealed class Fitter {
     }
 
     /// <summary>
+    ///     Whether a one-argument call under a type test written on one line keeps its arguments whole and leaves the
+    ///     break to the test (#620, SK-DIV-0811): <c>100·g + 40·h + 116·s − 67·t ≤ 9633</c> at a margin of 120, with
+    ///     <c>g</c> the argument's width, <c>h</c> the line from its start <c>s</c> through the call's <c>(</c>, and
+    ///     <c>t</c> what follows the call's <c>)</c> on its line.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c>, one column at a time: 4 612 cells of four tests, heads of 3
+    ///     to 46 columns behind <c>ok =</c>, <c>return</c> and <c>_ =</c>, indents 8 to 20 and lines of 122 to 151 —
+    ///     every one agreeing, the nearest a hundredth of a column from the line — and a sole lambda's body under a
+    ///     broken arrow on the same line. Only while the line overflows without its <c>;</c> (at 121 columns with it
+    ///     the oracle chops) and the call through its <c>)</c> fits. ⚠ Not a call whose name is one character, which
+    ///     the oracle reads otherwise.
+    /// </remarks>
+    /// <summary>
+    ///     A sole lambda's arrow over a chain that starts with a call fitting beside it, where the body fits neither
+    ///     beside the arrow nor on the line below (#620, SK-DIV-0812); null elsewhere, where the older rules decide.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> one column at a time — the lambda's start <c>s</c>, its
+    ///     parameters <c>p</c> (modifiers and parentheses counted) and the first call's width <c>h</c> — on 18 741 cells
+    ///     past the line below, under two statements and two indents, first calls bare, behind receivers, with and
+    ///     without an argument, later calls with links after them or none: every one agrees. The arrow stays where it
+    ///     ends within twelve columns of the line's start, or while both <c>200·h ≥ 72·s − 127·p + 4067</c> and
+    ///     <c>200·s − 352·p − 25·h ≤ 1441</c> hold; it breaks otherwise. The later calls, the links and the body's
+    ///     width play no part. ⚠ The second line is SK-DIV-0762's property-chain line, <c>f</c> the first call.
+    /// </remarks>
+    ResolvedMode? SoleChainMode(in GroupFacts facts, in Measures m, int lineStart) =>
+        // ⚠ A chain the author broke is left to the older rules where the lines would break the arrow: Skala's own
+        // `DotNetRun(settings => settings` / `.SetProjectFile(cli)` / … keeps its arrow in the oracle, where the lines,
+        // measured on chains written on one line, break it (Lint, build/Build.cs). Pass one's own kept arrow over a
+        // chopped chain is the lines' answer on pass two too.
+        SoleChainModeOf(facts, m, lineStart) is { } mode && !(facts.SoleChainKept && mode == ResolvedMode.Broken)
+            ? mode
+            : null;
+
+    ResolvedMode? SoleChainModeOf(in GroupFacts facts, in Measures m, int lineStart) {
+        var body = facts.SoleChainBody;
+        var head = facts.SoleChainHead;
+        var below = lineStart + indentWidth + body;
+        if (width != 120 || m.Column + 1 + body <= width || m.Column + 1 + head > width) {
+            return null;
+        }
+
+        // ⚠ Round three kept the line below to a first call of up to 45 columns followed by a call of two arguments or
+        // more, reporting 11 newly wrong behind eighty-column receivers or before a property without it. Refuted
+        // 2026-11-14 (#620 round four, SK-DIV-0881): the same grid of 7 085 cells, unrestricted, has none newly wrong
+        // (5 459 → 6 887 agreeing), nor has any probe; the link after the first call plays no part.
+        if (m.Column - lineStart < 12) {
+            return ResolvedMode.Flat;
+        }
+
+        var start = m.Column - facts.SoleCallLambda;
+        var parameters = facts.SoleCallLambda - 3;
+        var keeps = 200 * head >= 72 * start - 127 * parameters + 4067
+            && 200 * start - 352 * parameters - 25 * head <= 1441;
+
+        // ⚠ Where the body fits on the line below, the two lines keep it once that line would end at column 112 or
+        // later. Below that, behind a first call of 25 columns or more, by one more line (#620 round four,
+        // SK-DIV-0881): `100·B + 25·p + 2·h − 13·s` against 11 142, B the line below's end — measured one column at
+        // a time on 7 064 cells and checked on round three's 25 589, read only where it stands 0.2 of a column clear of
+        // the line (every cell there agrees); within that, and behind a shorter first call, the older rules decide.
+        // ⚠ Refuted: "before 108 never" — a 75-column first call behind `static (Node node)` keeps its arrow at 107.
+        if (below <= width && keeps) {
+            if (below >= width - 8) {
+                return ResolvedMode.Flat;
+            }
+
+            if (head >= 25) {
+                return BelowBandMode(below, parameters, head, start);
+            }
+
+            return below <= width - 13 ? ResolvedMode.Broken : null;
+        }
+
+        return keeps ? ResolvedMode.Flat : ResolvedMode.Broken;
+    }
+
+    /// <summary>
+    ///     Whether a <c>var</c> local's <c>=</c> before a sole lambda call breaks (#620, SK-DIV-0880):
+    ///     <c>200·E − 119·c + 4·n + 28·i + 4·p ≤ 21095</c> at a margin of 120, with <c>E</c> where the value would end on
+    ///     the line below, its <c>;</c> included, <c>c</c> the callee, <c>n</c> the name, <c>i</c> the line's start and
+    ///     <c>p</c> the lambda's parameters; ≤ 20438 where the line runs one or two columns past the margin.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> one column at a time: names of 2 to 25, callees of 3 to 36 plain
+    ///     and dotted, indents 8 to 20, three parameter lists and three bodies (17 708 cells), and every class and
+    ///     parameter list of #620's probes behind <c>var symbols = context.Compilation.Use(</c> (9 749 more). The body,
+    ///     its kind and its width play no part; a head under twelve columns through the <c>=</c> never breaks it, and
+    ///     past the line the arrow breaks, as before. Where the line is one or two columns over, the other answer is the
+    ///     arrow kept and the outer <c>)</c> moved down, and the line sits 3¼ columns tighter.
+    /// </remarks>
+    bool SoleLambdaEqualsBreaks(in GroupFacts facts, in Measures m, int lineStart) {
+        if (width != 120 || m.PointWidth >= Unbounded) {
+            return false;
+        }
+
+        var value = facts.SoleLambdaEqualsValue;
+        var line = m.Column + m.PointWidth + 1 + value;
+        var below = m.ContinuationColumn + value;
+        if (line <= width || below > width + 1) {
+            return false;
+        }
+
+        var score = 200 * below
+            - 119 * facts.SoleLambdaEqualsCallee
+            + 4 * facts.SoleLambdaEqualsName
+            + 28 * lineStart
+            + 4 * facts.SoleLambdaEqualsParameters;
+        return score <= (line <= width + 2 ? 20438 : 21095);
+    }
+
+    ResolvedMode? TestedCallMode(in GroupFacts facts, in Measures m, int lineStart) {
+        var tail = facts.TestedCallTail;
+        if (m.FlatWidth >= Unbounded || m.Column + m.FlatWidth > width || m.Column + m.FlatWidth + tail <= width) {
+            return null;
+        }
+
+        // The test's points are fill points now, which end the list's own measure: past the margin the list chops
+        // wherever the line does not give the break to the test, as it did while they were last-resort points.
+        var head = m.Column + 1 - lineStart;
+        return width == 120
+            && m.Column + m.FlatWidth + tail - facts.TestedCallTerminator > width
+            && (!facts.TestedCallSoleBody || head == facts.TestedCallHead)
+            && 100 * (m.FlatWidth - 2) + 40 * head + 116 * lineStart - 67 * tail
+            <= (facts.TestedCallTerminator > 0 ? 9633 : 9572)
+                ? ResolvedMode.Flat
+                : ResolvedMode.Broken;
+    }
+
+    /// <summary>
     ///     How far a one-argument sole call's arrow is past the column from which it breaks whatever the arguments,
     ///     in twentieths of a column: <c>20·a + 23·L + 6·h − 13·λ − 1680</c> at a margin of 120 (#620, SK-DIV-0760).
     /// </summary>
@@ -1884,6 +2048,32 @@ public sealed class Fitter {
     ///     width below, agreed in 1 334 and 584. ⚠ Not where the chain fits below, which #557's line still decides.
     /// </remarks>
     bool BreaksThePropertyChainArrow(int[] chain, int lambda, in Measures m) {
+        var start = m.Column - lambda;
+        var parameters = lambda - 3;
+        return 100 * start - 175 * parameters - 12 * PropertyChainKept(chain, m) >= 776;
+    }
+
+    /// <summary>
+    ///     A sole lambda's arrow over a chain of properties that fits on the line below (#620 round four, SK-DIV-0881);
+    ///     null where the older rules decide.
+    /// </summary>
+    ResolvedMode? SolePropertyChainBelowMode(int[] chain, int lambda, in Measures m, int lineStart) {
+        var below = lineStart + indentWidth + chain.Sum() + chain.Length - 1;
+        if (width != 120 || below > width) {
+            return null;
+        }
+
+        if (BreaksThePropertyChainArrow(chain, lambda, m)) {
+            return ResolvedMode.Broken;
+        }
+
+        return below >= width - 8
+            ? ResolvedMode.Flat
+            : BelowBandMode(below, lambda - 3, PropertyChainKept(chain, m), m.Column - lambda);
+    }
+
+    /// <summary>How much of a property chain the fill would keep beside a sole lambda's arrow ending at m.Column.</summary>
+    int PropertyChainKept(int[] chain, in Measures m) {
         var column = m.Column + 1 + chain[0];
         var kept = chain[0];
         for (var k = 1; k < chain.Length && column + 1 + chain[k] <= width; k++) {
@@ -1891,9 +2081,24 @@ public sealed class Fitter {
             kept += 1 + chain[k];
         }
 
-        var start = m.Column - lambda;
-        var parameters = lambda - 3;
-        return 100 * start - 175 * parameters - 12 * kept >= 776;
+        return kept;
+    }
+
+    /// <summary>
+    ///     A sole lambda's arrow over a chain that fits on the line below, where the measured lines keep it, the line
+    ///     below ending at <paramref name="below" /> short of column 112 (#620 round four, SK-DIV-0881): kept once
+    ///     <c>100·B + 25·p + 2·h − 13·s ≥ 11 162</c>, broken at 11 122 or less, null between — <c>h</c> the first call
+    ///     through its <c>)</c>, or how much of a chain of properties the fill keeps beside the arrow.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-14 with <c>Testing ask</c> one column at a time: 7 064 cells of chains (first calls of 22
+    ///     to 99 columns, three kinds of link, seven parameter lists, lambdas starting 4 to 32 columns past the line's
+    ///     start), round three's 25 589 and 32 184 of property chains — every cell 0.2 of a column clear of the line
+    ///     agrees; the line's own best fit misses one cell in a hundred, which the gap leaves to the older rules.
+    /// </remarks>
+    static ResolvedMode? BelowBandMode(int below, int parameters, int head, int start) {
+        var band = 100 * below + 25 * parameters + 2 * head - 13 * start;
+        return band >= 11162 ? ResolvedMode.Flat : band <= 11122 ? ResolvedMode.Broken : null;
     }
 
     bool BreaksTheSoleCallArrow(in GroupFacts facts, in Measures m, int lineStart) {

@@ -2649,6 +2649,12 @@ public sealed class LayoutWriter {
             return false;
         }
 
+        // ⚠ A dot after a one-column name that is all its line holds stays (#620, SK-DIV-0810). See
+        // LineFlags.OneColumnReceiver.
+        if ((flags & LineFlags.OneColumnReceiver) != 0 && !atLineStart && this.column == CurrentLineIndent() + 1) {
+            return true;
+        }
+
         var width = pendingSpace ? PendingWidth : (flags & LineFlags.FlatSpace) != 0 ? 1 : 0;
         var column = atLineStart
             ? pendingCloserLevel ?? Effective()
