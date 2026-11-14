@@ -1099,6 +1099,26 @@ public sealed class BreakPlan {
                 PlanArmArrow(arm);
                 return;
 
+            // ⚠ `yield return r.P as|is T;` one column over: the oracle breaks after `yield return` itself (#446,
+            // SK-DIV-0210 round 11). See Fitter.YieldReturnBreaks.
+            case YieldStatementSyntax {
+                RawKind: (int)SyntaxKind.YieldReturnStatement,
+                Expression: BinaryExpressionSyntax { Left: var operand } binary
+            } yieldReturn when TypeTestTail(operand) > 0 && !BreaksBefore(FirstToken(binary)):
+                var yieldGroup = NewGroup();
+                Point(FirstToken(binary), yieldGroup);
+                Describe(
+                    yieldReturn,
+                    yieldGroup,
+                    GroupMode.Preserve,
+                    new(
+                        YieldTestReceiver: FormattedWidth(((MemberAccessExpressionSyntax)operand).Expression),
+                        YieldTestType: FormattedWidth(binary.Right)
+                    ),
+                    true
+                );
+                return;
+
             case WhenClauseSyntax whenClause:
                 PlanWhenClause(whenClause);
                 return;
@@ -3048,7 +3068,7 @@ public sealed class BreakPlan {
         // would break, not where the arrow or the parameter list takes the line (#558, #572).
         var value = node.Variables[0].Initializer?.Value;
         var oneOver = node is { Parent: LocalDeclarationStatementSyntax, Variables.Count: 1 }
-            && value is IdentifierNameSyntax or AnonymousFunctionExpressionSyntax
+            && (value is IdentifierNameSyntax or AnonymousFunctionExpressionSyntax || IsAReceiverCall(value))
             && (value is not AnonymousFunctionExpressionSyntax || ArrowYieldWidthOf(value) > 0)
             && BreaksItsNameOneOver(FormattedWidth(node.Type), name.Span.Length)
             || node is { Parent: LocalDeclarationStatementSyntax, Variables.Count: 1 }
@@ -3184,13 +3204,43 @@ public sealed class BreakPlan {
                     BreaksIfTooLong: true,
                     PrefersOuterBreak: true,
                     SkipsOuterTail: true,
-                    OneOverValue: oneOver
+                    OneOverValue: oneOver,
+                    OneOverParen: oneOver > 0
+                    && value is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 } held
+                        ? name.Span.Length + 3 + CalleeOf(held) + 1
+                        : 0
                 ),
                 true,
                 true
             )
         );
     }
+
+    /// <summary>
+    ///     A call on a named receiver, <c>r.M(…)</c>, written on one line: a local's value whose type/name gap one column
+    ///     past the margin breaks as a bare name's does (#446, SK-DIV-0211 round 8).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> on five random probes (24 000 cells): every typed local of one
+    ///     such argument whose line ends at 121 broke between its type and its name exactly where
+    ///     <see cref="BreaksItsNameOneOver" /> says, 429 of 431 cells, the argument plain or itself a call. With two or
+    ///     more arguments it does so only while the call's <c>(</c> lands far enough right (GroupFacts.OneOverParen):
+    ///     230 of 231 cells; short of that the arguments chop beside the <c>=</c>.
+    /// </remarks>
+    static bool IsAReceiverCall(ExpressionSyntax? value) =>
+        value is InvocationExpressionSyntax {
+            Expression: MemberAccessExpressionSyntax {
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+                Expression: IdentifierNameSyntax,
+                Name: IdentifierNameSyntax
+            },
+            ArgumentList.Arguments.Count: >= 1
+        } call
+        && !call.DescendantTrivia()
+            .Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+            );
 
     /// <summary>
     ///     For a field's one declarator without a value, of at most eight letters, whose type is generic with two or
@@ -3835,7 +3885,12 @@ public sealed class BreakPlan {
             // fleet.World.Create(AiPerception.Sensing(…), …);` keep the `=` and chop where the table would
             // break it (Vixen). A typed local's `EnumInfo e = Values.Get(new StructMultiKey<…>(…));` does
             // follow it (Newtonsoft).
+            // ⚠ Refuted for one argument (#446, SK-DIV-0211 round 8): on 888 cells swept a column at a time the oracle
+            // lays out `r.M(x.Y(z))` exactly as `r.M(a)` of the same width, and `var bottom = …` chops because its
+            // argument is 74 columns wide (Fitter.HeldArgumentLimit), not because it is a creation. 227 cells of
+            // #446's round 7 probe were this exclusion. Two or more arguments stay excluded: not measured.
             || kind != 1
+            && call.ArgumentList.Arguments.Count > 1
             && call.ArgumentList.DescendantNodes()
                 .Any(static node => node is InvocationExpressionSyntax or BaseObjectCreationExpressionSyntax)
             || IsChainRoot(value)
@@ -6932,6 +6987,8 @@ public sealed class BreakPlan {
         }
 
         var callee = owner == EqualsOwner.None ? 0 : CalleeWidthOf(value);
+        var receiverCallee = callee == 0 ? ReceiverCalleeOf(node, owner, value) : 0;
+        callee = callee > 0 ? callee : receiverCallee;
 
         // ⚠ A conditional value measures its whole condition (#553, GroupFacts.ValueHeadWidth), with the
         // collection's twelve-column head floor: `var v =` keeps the `=` and chops the chain, `var vvvvvvvvvv
@@ -7086,6 +7143,7 @@ public sealed class BreakPlan {
                     Owner: head,
                     MinimumHead: yieldsToTheBracket || callee > 0 || parenthesised ? MinimumEqualsHead : 0,
                     CalleeWidth: callee,
+                    CalleeOnReceiver: receiverCallee > 0,
                     YieldsThroughArrow: ArrowYieldWidthOf(value),
                     LambdaLocal: ArrowYieldWidthOf(value) > 0 ? LambdaLocalOf(node) : LambdaLocal.None,
 
@@ -8948,6 +9006,39 @@ public sealed class BreakPlan {
 
         return CalleeOf(value);
     }
+
+    /// <summary>
+    ///     For a method on a named receiver with two or more arguments, <c>r.M(a, b…)</c>, as the whole value of a local
+    ///     or of an assignment to a name or <c>this.</c> name: the width of <c>r.M</c>, which the call's floor reads as its
+    ///     callee; zero otherwise. See <see cref="GroupFacts.CalleeOnReceiver" /> (#446, SK-DIV-0211 round 8).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ The measured shapes only: a receiver that is itself a path or a call, a generic method, a field's
+    ///     <c>=</c> and a target that is a chain (whose last line #624 measures) were not swept.
+    /// </remarks>
+    int ReceiverCalleeOf(SyntaxNode node, EqualsOwner owner, ExpressionSyntax value) =>
+        value is InvocationExpressionSyntax {
+            Expression: MemberAccessExpressionSyntax {
+                RawKind: (int)SyntaxKind.SimpleMemberAccessExpression,
+                Expression: IdentifierNameSyntax,
+                Name: IdentifierNameSyntax
+            },
+            ArgumentList.Arguments.Count: >= 2
+        }
+        && (owner is EqualsOwner.VarLocal or EqualsOwner.TypedLocal
+            || owner == EqualsOwner.Assignment
+            && node is AssignmentExpressionSyntax {
+                Left: IdentifierNameSyntax
+                or MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax, Name: IdentifierNameSyntax }
+            })
+        && !value.DescendantTrivia()
+            .Any(static trivia => trivia.IsKind(SyntaxKind.EndOfLineTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineCommentTrivia)
+                || trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+            )
+        && !CommentAfterTheParen(value)
+            ? CalleeOf(value)
+            : 0;
 
     int CalleeWidthOf(ExpressionSyntax value) =>
         value is InvocationExpressionSyntax {

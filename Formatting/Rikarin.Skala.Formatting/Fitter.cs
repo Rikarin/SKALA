@@ -317,6 +317,14 @@ public sealed class Fitter {
                 return modes[owner] == ResolvedMode.Broken ? ResolvedMode.Broken : ResolvedMode.Flat;
 
             default:
+                // ⚠ After `yield return` before a returned type test (#446, SK-DIV-0210 round 11). See
+                // YieldReturnBreaks.
+                if (facts.YieldTestType > 0) {
+                    return m.FlatWidth < Unbounded && YieldReturnBreaks(m.Column + m.FlatWidth, facts)
+                        ? ResolvedMode.Broken
+                        : ResolvedMode.Flat;
+                }
+
                 // ⚠ A chain's links break together even though each keeps its own group. The owner
                 // holds no break points and answers only "does the whole chain fit on one line";
                 // when it says no, every link breaks, which is what chop_if_long means for a
@@ -724,6 +732,8 @@ public sealed class Fitter {
                     if (m.FlatWidth < Unbounded
                         && m.Trailing < Unbounded
                         && m.Column + m.FlatWidth + m.Trailing == width + 1
+                        && (facts.OneOverParen == 0
+                            || m.Column + facts.OneOverParen + 1 - 0.6 * lineStart > 80.2)
                         && (facts.OneOverEquals == -1
                             || facts.OneOverEquals >= 0 && LambdaGivesWayOneOver(facts, m)
                         )) {
@@ -944,9 +954,9 @@ public sealed class Fitter {
                     if (facts.HeldCall >= 3) {
                         return Fits(m.Column, receiver)
                             && (paren > width
-                                || facts.HeldCall == 3
+                                || facts.HeldCall >= 3
                                 && m.Column + m.FlatWidth + m.Trailing == width + 1
-                                && OneOverMovesTheDot(paren, m.Column)
+                                && OneOverMovesTheDot(paren, m.Column, facts.HeldCall == 4)
                                 || facts.HeldCall == 4
                                 && facts.ParenReceiverHeld
                                 // ⚠ Wider arguments move it too once the receiver is 71 columns or more (#598, round
@@ -1184,6 +1194,34 @@ public sealed class Fitter {
 
                 // ⚠ Pass two of a held typed local whose `=` stayed and whose arguments chopped: the first pass's
                 // question again, on the flat widths. See GroupFacts.HeldChoppedWidth.
+                // ⚠ Behind a head of twelve or more on a named method, a chop pass one kept by the limit or the
+                // one-argument gate stays (#446, SK-DIV-0211 round 11): round 4's rule broke the `=` the gate had kept.
+                // ⚠ Only that direction. The oracle keeps an author's chop the flat line would have moved below
+                // (`PatternSyntax pattern = SyntaxFactory.ConstantPattern(` / … / `);` in Skala's own source), so a
+                // chop inside the limit is left to the rule below as before.
+                if (facts is { HeldChoppedWidth: > 0, HeldValueName: > 0, HeldValueTypedHead: >= 12 }
+                    && m.PointWidth < Unbounded
+                    && m.Column + m.PointWidth + 1 + facts.HeldChoppedHead <= width) {
+                    var callee = facts.HeldChoppedHead - 1;
+                    var margin = ReceiverListMargin(
+                        facts.HeldChoppedWidth - facts.HeldChoppedHead - 2,
+                        callee,
+                        m.ContinuationColumn - indentWidth,
+                        Math.Max(0, facts.HeldValueTypedHead - facts.HeldValueName - 2),
+                        facts.HeldValueName,
+                        true
+                    );
+                    if (!InsideTheListBand(margin)
+                        && (margin < 0
+                            || !OneArgumentGateBreaks(
+                                m.Column + m.PointWidth + 1 + facts.HeldChoppedHead,
+                                callee,
+                                facts.HeldValueName
+                            ))) {
+                        return ResolvedMode.Flat;
+                    }
+                }
+
                 if (facts.HeldChoppedWidth > 0
                     && m.PointWidth < Unbounded
                     && Fits(m.Column, m.PointWidth + 1 + facts.HeldChoppedHead)
@@ -1760,6 +1798,234 @@ public sealed class Fitter {
         );
     }
 
+    /// <summary>
+    ///     Whether an <c>=</c> before a method on a named receiver with two or more arguments, <c>r.M(a, b…)</c>, breaks
+    ///     (#446, SK-DIV-0211 rounds 8 and 9): while the list is at most <see cref="ReceiverListLimit" />, and for a typed
+    ///     local only outside its gate (<see cref="TypedGateBreaks" />). See <see cref="GroupFacts.CalleeOnReceiver" />.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Round 8's first cut read the plain-name floor (<see cref="EqualsFloor.Of" />) here, which fitted a typed local
+    ///     at about 93 % by any linear form. The floor is a function of the <c>(</c>'s column; the oracle's boundary is
+    ///     the type's and the name's separately, and the plain-name tables never varied them apart.
+    /// </remarks>
+    ResolvedMode? ReceiverCallBreaks(in GroupFacts facts, in Measures m, int lineStart, int paren, int arguments) {
+        var name = facts.EqualsName;
+        var type = Math.Max(0, HeadWidth(facts, m, lineStart) - name - 2);
+
+        // ⚠ A typed local keeps the `=` and chops inside a region of the `(`'s column (#589's gate, remeasured on
+        // receivers). See TypedGateBreaks.
+        // ⚠ Except within a hair of a line that decides it, where the rule before it does (#446, round 12). See
+        // TypedGateNear.
+        if (facts.CalleeOwner == EqualsOwner.TypedLocal) {
+            if (TypedGateNear(paren, facts.CalleeWidth, name)) {
+                return null;
+            }
+
+            if (!TypedGateBreaks(paren, facts.CalleeWidth, name)) {
+                return ResolvedMode.Flat;
+            }
+        }
+
+        var margin = ReceiverListMargin(
+            arguments - 2,
+            facts.CalleeWidth,
+            m.ContinuationColumn - indentWidth,
+            type,
+            name,
+            false
+        );
+        return InsideTheListBand(margin) ? null
+            : margin >= 0 ? ResolvedMode.Broken
+            : ResolvedMode.Flat;
+    }
+
+    /// <summary>
+    ///     Whether a typed local's <c>=</c> before <c>r.M(a, b…)</c> may break at all, by the call's <c>(</c> (1-based), the
+    ///     callee <c>r.M</c> and the name (#446, SK-DIV-0211 rounds 8 and 9).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Two regions, not a threshold: the <c>=</c> breaks while the <c>(</c> lands at or left of one boundary, or
+    ///     right of another; between them it keeps the <c>=</c> and chops. With a callee of 40 and a name of 8 the oracle
+    ///     breaks at a <c>(</c> of 72 to 83, chops at 84 and 85, and breaks from 86. Round 8 measured the gate a function of
+    ///     the <c>(</c>'s column, the name and the callee alone — the same at indents 8 to 24, at every list width inside
+    ///     the limit, and for a plain, generic, array and qualified type of the same width — and drew each boundary as one
+    ///     line. ⚠ Round 9 mapped the region a column of <c>(</c> at a time for callees of 8 to 56 and names of 1 to 30
+    ///     (9 418 cells): each boundary is two lines, its slope in the name changing where the region closes (the left
+    ///     boundary's from about 5 to 8 columns per column of name, the right's from about 1.7 to 2.5), so round 8's
+    ///     single lines put the region several columns wrong near its apex. 81 of 82 right and 20 of 20 left boundaries.
+    ///     ⚠ One argument showed no gate, but for one row (indent 16, a type of 40, a name of 4, a callee of 16), not
+    ///     modelled. ⚠ Round 11: that row is a gate of one argument's own (<see cref="OneArgumentGateBreaks" />), and
+    ///     these lines are integers now — an LP over 13 317 open and closed points of eleven grids, every one separated
+    ///     — where round 9's fitted lines misplaced three.
+    ///     ⚠ Round 12 (#446, SK-DIV-0211): round 11's first line, <c>4·p ≤ 21·callee + 32·name − 762</c>, was a quarter of
+    ///     a column off its own LP's line (<c>−190.02 + 5.25·callee + 8·name</c>) wherever the callee is one more than a
+    ///     multiple of four, which no grid measured (their callees step by four): a fresh <c>List&lt;…&gt; n… =</c> at a
+    ///     callee of 37 broke where it chopped. Round 11's evidence also kept only plain and <c>string</c> heads, so no
+    ///     <c>List&lt;…&gt;</c>, array or <c>Dictionary&lt;…&gt;</c> head of a random probe reached it. Over all of them and
+    ///     this round's six fresh probes (25 676 open and closed points) the left line is
+    ///     <c>7·p ≤ 38·callee + 58·name − 1398</c>, the right ones <c>75·p &gt; 12876 − 124·callee − 189·name</c> and
+    ///     <c>14·p &gt; 2155 − 23·callee − 24·name</c>, every point separated. ⚠ Round 11's first right line put a fresh
+    ///     cell (a callee of 22, a name of 16, the <c>(</c> at 95) exactly on itself; the LP's margin is 0.007 of a column.
+    /// </remarks>
+    static bool TypedGateBreaks(int paren, int callee, int name) => TypedGateOpen(TypedGateSlacks(paren, callee, name));
+
+    /// <summary>
+    ///     The typed gate's four lines as slacks in columns of <c>(</c>, each positive on its open side: the two left
+    ///     lines, then the two right ones. See <see cref="TypedGateBreaks" />.
+    /// </summary>
+    static (double, double, double, double) TypedGateSlacks(int paren, int callee, int name) =>
+        ((38 * callee + 58 * name - 1398 - 7 * paren) / 7.0 + 1 / 14.0,
+            (42 * callee + 43 * name - 1061 - 8 * paren) / 8.0 + 1 / 16.0,
+            (75 * paren - 12876 + 124 * callee + 189 * name) / 75.0 - 1 / 150.0,
+            (14 * paren - 2155 + 23 * callee + 24 * name) / 14.0 - 1 / 28.0);
+
+    static bool TypedGateOpen((double L1, double L2, double R1, double R2) s) =>
+        s.L1 > 0 && s.L2 > 0 || s.R1 > 0 && s.R2 > 0;
+
+    /// <summary>
+    ///     Whether a line that decides the typed gate lies within <see cref="TypedGateBand" /> of a column of the
+    ///     <c>(</c>: flipping that line alone flips the gate (#446, SK-DIV-0211 round 12).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Each fresh probe of round 12 found another gate point exactly on a line — a callee of 22 and a name of 16
+    ///     at a <c>(</c> of 95, a callee of 13 and a name of 26 at 88 — where the integer lines, exact on every point they
+    ///     were fitted to, were a hair off: the LP's margin over 25 676 points is 0.007 of a column. Inside the band the
+    ///     rule before it decides, as with the list limit's (<see cref="InsideTheListBand" />).
+    /// </remarks>
+    static bool TypedGateNear(int paren, int callee, int name) {
+        var s = TypedGateSlacks(paren, callee, name);
+        var open = TypedGateOpen(s);
+        return Math.Abs(s.Item1) < TypedGateBand && TypedGateOpen((-s.Item1, s.Item2, s.Item3, s.Item4)) != open
+            || Math.Abs(s.Item2) < TypedGateBand && TypedGateOpen((s.Item1, -s.Item2, s.Item3, s.Item4)) != open
+            || Math.Abs(s.Item3) < TypedGateBand && TypedGateOpen((s.Item1, s.Item2, -s.Item3, s.Item4)) != open
+            || Math.Abs(s.Item4) < TypedGateBand && TypedGateOpen((s.Item1, s.Item2, s.Item3, -s.Item4)) != open;
+    }
+
+    /// <summary>
+    ///     The typed gate's band, in columns of <c>(</c>: the smallest width that holds both points above (0.007 and 0.036
+    ///     of a column from their lines). It gives back 13 of 407 235 cells round 12's lines had right; 0.1 gives back 80.
+    /// </summary>
+    const double TypedGateBand = 0.04;
+
+    /// <summary>
+    ///     Whether <c>yield return r.P as|is T;</c> breaks after <c>yield return</c>, the whole test one level in, by the
+    ///     column its line would end at (<paramref name="end" />), the receiver and the type (#446, SK-DIV-0210 round 11):
+    ///     exactly one column over, while <c>3·receiver ≤ 13·type − 25</c> or the type is eight columns or more.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured with <c>Testing ask</c> on 4 512 cells (g40: <c>as</c> and <c>is</c>, types of 1 to 12, receivers of 1
+    ///     to 40, the line ending at 120, 121 and 122, indents 8 and 24): the oracle takes the break only on a line of
+    ///     121, the same at both indents and for both keywords — to a receiver of 4, 9, 13, 17 and 22 for types of 3 to 7,
+    ///     never for 1 and 2, every receiver measured from 8. Otherwise the dot or the keyword's band decides as before.
+    ///     Round 9 had read the same table on fr1 and found Skala had no point there.
+    /// </remarks>
+    bool YieldReturnBreaks(int end, in GroupFacts facts) =>
+        end == width + 1
+        && (facts.YieldTestType >= 8 || 3 * facts.YieldTestReceiver <= 13 * facts.YieldTestType - 25);
+
+    /// <summary>
+    ///     Whether a typed local's <c>=</c> before <c>r.M(a)</c>, one argument, may break, by the call's <c>(</c> (1-based),
+    ///     the callee <c>r.M</c> and the name (#446, SK-DIV-0211 round 11): <see cref="TypedGateBreaks" />'s shape, its left
+    ///     line 149½ columns of <c>(</c> further right and its right line 48 further left, so it closes only for a short
+    ///     callee and a short name.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Round 9 measured "no gate for one argument" but for one row of g20 (indent 16, a type of 40, a name of 4, a
+    ///     callee of 16: the oracle chops at every argument). That row is this gate. Mapped with <c>Testing ask</c> on
+    ///     g32 (12 450 cells: callees of 12 to 40, names of 1 to 30, the type moving the <c>(</c> from 56 to 112, indents 8
+    ///     and 16, two argument widths): the same at both indents and both widths, exact on every row. The second right
+    ///     line only closes the corner of a callee of 12 and a name of 1, the one row it was read from.
+    /// </remarks>
+    static bool OneArgumentGateBreaks(int paren, int callee, int name) =>
+        4 * paren <= 21 * callee + 32 * name - 164
+        || 52 * paren > 6470 - 86 * callee - 131 * name && paren > 185 - 5 * callee - 13 * name;
+
+    /// <summary>
+    ///     209 times the widest argument list (inside its parentheses) plus the indent that an <c>=</c> before a method on
+    ///     a receiver, <c>r.M(…)</c>, still breaks for (<see cref="ReceiverListMargin" />), by the callee <c>r.M</c>, the
+    ///     statement's indent, the head's type and name, and whether the call has one argument (#446, SK-DIV-0211 round
+    ///     9). <paramref name="type" /> is the head before the name, its space included: a typed local's type and one,
+    ///     <c>var</c>'s four, an assignment's none.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Round 9 (2026-11-13, <c>Testing ask</c>): four lines, the larger of two minimums. Along a row of the head the
+    ///     limit falls with the callee and then rises; along a row of the callee it is flat, then falls with the name,
+    ///     then rises with the type and the name. Round 8's two lines (the larger of two) had the short-head line flat in
+    ///     the head, which is wrong once the head passes the callee's turn, and were fitted with one type/name split: on
+    ///     the random probes 21 of the 24 cells that round newly lost sat within 1.2 columns of them.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             ⚠ The list's split between its arguments plays no part: with the list fixed and the first argument
+    ///             swept a column at a time (8 448 cells), every row is one answer. Nor do the method's share of the
+    ///             callee, two arguments against three, an argument that is a call, or a <c>this.</c>, <c>string</c> or
+    ///             typed head of the same widths (2 608 cells).
+    ///         </item>
+    ///         <item>
+    ///             ⚠ One argument is the same four lines 21 columns higher. Round 8's one-argument limit (two lines,
+    ///             <c>var</c> and assignment heads) and round 4's typed one (three lines in the line below) were each a
+    ///             piece of it. 1 013 of 1 027 grid boundaries, two arguments and one, typed and not, indents 8 to 24.
+    ///         </item>
+    ///     </list>
+    ///     Heads under twelve columns through the <c>=</c> are not this rule (<see cref="NarrowHeadBreaks" />).
+    ///     ⚠ Round 11 (2026-11-14): one integer rule at scale 209. With <c>s</c> the column the name's head starts on
+    ///     (indent plus type), the list breaks while <c>209·(list + indent)</c> is at most the larger of
+    ///     <c>min(15800 − 84·callee − 29·s − 3·name, 17515 − 84·callee − 29·s − 81·name)</c> and
+    ///     <c>min(7606 + 38·callee + 93·s + 42·name, 5917 + 38·callee + 93·s + 119·name)</c>, 4 399 higher for one
+    ///     argument. The indent and the type share one slope (the indent's is the type's less one), each pair shares
+    ///     everything but its name term, and both pairs turn at a name of 22 — the dot's V. Found by an LP over
+    ///     16 654 boundary keys of twenty grids, then the smallest integer scale inside it.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             ⚠ Refuted: the receiver apart from the method. At a fixed callee the method was swept 2 to 22 (g30, g31,
+    ///             115 rows): the limit never moved.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ Refuted: round 10's scale of 38. The callee's falling slope must lie within 0.4011 to 0.4039, which
+    ///             no multiple of 1/38 does.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ No planar form of this shape is exact on every key: the LP's best margin with all of them is −0.025
+    ///             of a column. Five keys stay a column off, each within 0.03 of the boundary.
+    ///         </item>
+    ///     </list>
+    /// </remarks>
+    static int ReceiverListLimit(int callee, int indent, int type, int name, bool single) {
+        var start = indent + type;
+        var falling = Math.Min(
+            15800 - 84 * callee - 29 * start - 3 * name,
+            17515 - 84 * callee - 29 * start - 81 * name
+        );
+        var rising = Math.Min(
+            7606 + 38 * callee + 93 * start + 42 * name,
+            5917 + 38 * callee + 93 * start + 119 * name
+        );
+        return Math.Max(falling, rising) + (single ? 4399 : 0);
+    }
+
+    /// <summary>
+    ///     A list's margin to <see cref="ReceiverListLimit" /> in its own units, 1/209 of a column: at or above zero the
+    ///     <c>=</c> breaks, below it the list chops beside the <c>=</c>.
+    /// </summary>
+    static int ReceiverListMargin(int list, int callee, int indent, int type, int name, bool single) =>
+        ReceiverListLimit(callee, indent, type, name, single) - 209 * (list + indent);
+
+    /// <summary>
+    ///     Whether a list lies inside the band round 11's planar limit cannot place, within <see cref="ReceiverListBand" />
+    ///     of it, where the rule before it decides (#446, SK-DIV-0211 round 12): the <c>=</c> falls through to the held
+    ///     call's and the ordering rule's answers, which is what master did with these values.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ A deliberate deferral, measured. No planar max-min form fits every boundary key (the LP's best margin is
+    ///     −0.025 of a column), and seven cells of round 11's probes sat a column off within 2/209 of it: three
+    ///     breaking at −1 and −2, four chopping exactly on it. A band of ±1 left one of them (fg1 C928, at −2); ±2 is the
+    ///     smallest that leaves none, and gives back 31 of the 319 359 cells round 11 had right (a band of ±6, the 0.03 of a
+    ///     column the residue first suggested, gives back 83).
+    /// </remarks>
+    static bool InsideTheListBand(int margin) => Math.Abs(margin) <= ReceiverListBand;
+
+    /// <summary>The band's half-width, in 1/209 of a column. See <see cref="InsideTheListBand" />.</summary>
+    const int ReceiverListBand = 2;
+
     /// <summary>The widest head #610 measured one argument behind; past it the floor is not used (#617).</summary>
     const int OneArgumentMeasuredHead = 14;
 
@@ -1780,6 +2046,16 @@ public sealed class Fitter {
             : HeadWidth(facts, m, lineStart);
 
     ResolvedMode? EqualsBeforeACall(in GroupFacts facts, in Measures m, int lineStart) {
+        // ⚠ A method on a named receiver is read by the floor only behind a head of twelve or more and with its `(`
+        // inside the margin beside the `=`: the measured shapes (#446, SK-DIV-0211 round 8). Otherwise its dot can take
+        // the break, and #528's held call decides as before (`var w = S…` / `.Select…(alpha, beta);`, held-single-call.cs).
+        if (facts.CalleeOnReceiver
+            && (m.PointWidth >= Unbounded
+                || !HeadIsWideEnough(facts, m, lineStart)
+                || m.Column + m.PointWidth + 1 + facts.CalleeWidth + 1 > width)) {
+            return null;
+        }
+
         if (m.PointWidth >= Unbounded) {
             return ResolvedMode.Flat;
         }
@@ -1863,6 +2139,7 @@ public sealed class Fitter {
         // ⚠ Not a field's name of 30 or more, whose own table has a floor at a `(` far left that the gate would refuse.
         if (facts.EqualsName > 0
             && (facts.CalleeOwner != EqualsOwner.Field || facts.EqualsName < 30)
+            && !facts.CalleeOnReceiver
             && !EqualsFloor.NameReachesTheCall(facts.EqualsName, facts.CalleeWidth, paren)) {
             // ⚠ The gate was measured on two arguments or more; one argument it turns away goes back to the ordering
             // rule, which `T… vwwwwwww = Compute(aaaaaaaaaaaa);` needs to break its `=` (EqualsByTheNameTests).
@@ -1886,8 +2163,12 @@ public sealed class Fitter {
                 : ResolvedMode.Flat;
         }
 
-        var indent = m.ContinuationColumn - indentWidth;
+        // ⚠ A method on a named receiver: its own reading of the floor (#446, SK-DIV-0211 round 8).
+        if (facts.CalleeOnReceiver) {
+            return ReceiverCallBreaks(facts, m, lineStart, paren, arguments);
+        }
 
+        var indent = m.ContinuationColumn - indentWidth;
         return arguments < EqualsFloor.Of(paren, indent, facts.CalleeWidth, facts.CalleeOwner)
             ? ResolvedMode.Broken
             : ResolvedMode.Flat;
@@ -3697,8 +3978,18 @@ public sealed class Fitter {
     ///     <c>(</c> lands short of about 92, which leaves the argument a line of 26 columns or more.
     ///     <c>10·paren − 3·column ≥ 871</c> is the bound under which no measured cell moves the dot: 1 362 of the 1 431
     ///     chopped cells lie under it, and the 69 above it stay as #528 had them.
+    ///     ⚠ Two or more arguments move it too, by a bound of their own, <c>5·paren − column ≥ 483</c> (#446, SK-DIV-0211
+    ///     round 9), where #528 chopped them at any <c>(</c>. On the eleven random probes' 1 734 such cells (heads of 1 to
+    ///     63) the oracle chops every one at 480 or under and moves the dot at all 19 from 485. The one-argument form with
+    ///     a bound of its own (943) separated those too, and a test cell refuted it (<c>var nmm =</c>, the <c>(</c> at 100).
+    ///     ⚠ Round 12 (#446, SK-DIV-0211): one argument's bound is <c>11·paren − 3·column ≥ 966</c>. Behind narrow heads
+    ///     (g41, g42 and g43: heads of four to nine, every callee from 61 to 111, indents 8 to 20; 2 518 cells one column
+    ///     over) it separates every cell, where 871 put nineteen a column wrong at a <c>(</c> of 94 to 96 — the two
+    ///     bounds cross at a value column of 25. ⚠ Round 8's lifted exclusion of a call argument had exposed it: master
+    ///     chopped <c>var ndgp = r(63).M(x.Y(z));</c> only because it held no call argument at all.
     /// </remarks>
-    static bool OneOverMovesTheDot(int paren, int column) => 10 * paren - 3 * column >= 871;
+    static bool OneOverMovesTheDot(int paren, int column, bool many = false) =>
+        many ? 5 * paren - column >= 483 : 11 * paren - 3 * column >= 966;
 
     /// <summary>
     ///     Whether a call of one or two short arguments on a parenthesised operator, its <c>(</c> fitting beside a head
@@ -4059,6 +4350,69 @@ public sealed class Fitter {
             case 1 when facts.HeldValueTypedHead > 0:
                 // ⚠ By the measured limit on the line below, which the callee's width moves (SK-DIV-0005, round 3);
                 // or, as before, when the head with the receiver beside it is wider than 87 columns.
+                // ⚠ One argument on a method without type arguments, behind a head of twelve or more: by the argument
+                // against the receiver call's limit, the type and the name apart, and not by the receiver's end, which
+                // the limit already reads through the callee (#446, SK-DIV-0211 round 9). See ReceiverListLimit.
+                // ⚠ Behind a head under twelve, one argument whose `(` fits beside it breaks as a `var`'s does: by the
+                // head's width, not its type and name (#446, SK-DIV-0211 round 9). See NarrowHeadBreaks.
+                // ⚠ And with its `(` two or more columns past the margin beside it, the receiver fitting there, the dot
+                // takes the line whatever the argument (#446, SK-DIV-0211 round 9). See NarrowHeadTakesTheDot.
+                // ⚠ Only up to a cap in the argument that falls with the head (#446, SK-DIV-0211 round 11); past it the
+                // `=` breaks. See NarrowHeadDotCap.
+                if (facts is { HeldValueManyArgs: false, HeldValueGeneric: false, HeldValueHead: > 0 }
+                    && facts.HeldValueTypedHead < 12
+                    && NarrowHeadTakesTheDot(parenBeside, valueColumn + facts.HeldValueReceiver)) {
+                    return !NarrowHeadDotCap(facts, valueColumn - (continuation - indentWidth) - 3, continuation);
+                }
+
+                // One column over beside it the lone argument's dot breaks instead, as behind a `var` (case 2).
+                if (facts is { HeldValueManyArgs: false, HeldValueGeneric: false, HeldValueHead: > 0 }
+                    && facts.HeldValueTypedHead < 12
+                    && parenBeside <= width) {
+                    return valueColumn + facts.HeldValueWidth != width + 1
+                        && NarrowHeadBreaks(
+                            HeldArgument(facts),
+                            continuation - indentWidth,
+                            facts.HeldValueReceiver + facts.HeldValueHead - 1,
+                            valueColumn - (continuation - indentWidth) - 1,
+                            facts.EqualsName
+                        );
+                }
+
+                if (HeldOnReceiverLimitApplies(facts)) {
+                    // ⚠ The `(` past the margin beside it breaks the `=` unless the dot takes the line, as behind a
+                    // `var` (#446, SK-DIV-0211 round 9). See HeldDotTakesTheLine.
+                    if (parenBeside > width) {
+                        return valueColumn + facts.HeldValueReceiver > width
+                            || parenBeside == width + 1
+                            || !HeldDotTakesTheLine(
+                                HeldArgument(facts),
+                                below - HeldArgument(facts),
+                                facts.HeldValueName,
+                                facts.HeldValueReceiver
+                            );
+                    }
+
+                    // ⚠ One argument has a gate too, a narrower one (#446, SK-DIV-0211 round 11). See
+                    // OneArgumentGateBreaks.
+                    var margin = ReceiverListMargin(
+                        HeldArgument(facts),
+                        facts.HeldValueReceiver + facts.HeldValueHead - 1,
+                        continuation - indentWidth,
+                        Math.Max(0, facts.HeldValueTypedHead - facts.HeldValueName - 2),
+                        facts.HeldValueName,
+                        true
+                    );
+                    if (!InsideTheListBand(margin)) {
+                        return margin >= 0
+                            && OneArgumentGateBreaks(
+                                parenBeside,
+                                facts.HeldValueReceiver + facts.HeldValueHead - 1,
+                                facts.HeldValueName
+                            );
+                    }
+                }
+
                 return EqualsFloor.HeldTypedLocalBreaks(
                         facts.HeldValueTypedHead,
                         below,
@@ -4176,10 +4530,70 @@ public sealed class Fitter {
                         >= 1028;
                 }
 
+                // ⚠ One argument whose `(` fits beside it: by the measured line (#446, SK-DIV-0211 round 8). See
+                // NarrowHeadBreaks.
+                if (!facts.HeldValueManyArgs && parenBeside <= width) {
+                    return NarrowHeadBreaks(
+                        HeldArgument(facts),
+                        continuation - indentWidth,
+                        facts.HeldValueReceiver + facts.HeldValueHead - 1,
+                        valueColumn - (continuation - indentWidth) - 1,
+                        facts.EqualsName
+                    );
+                }
+
+                // ⚠ One argument whose `(` lands two or more columns past the margin beside it keeps the `=` and breaks
+                // at its dot, whatever the argument (#446, SK-DIV-0211 round 9). See NarrowHeadTakesTheDot.
+                if (!facts.HeldValueManyArgs
+                    && facts.HeldValueHead > 0
+                    && !facts.HeldValueCast
+                    && !facts.HeldValueGeneric
+                    && NarrowHeadTakesTheDot(parenBeside, valueColumn + facts.HeldValueReceiver)) {
+                    return !NarrowHeadDotCap(facts, valueColumn - (continuation - indentWidth) - 3, continuation);
+                }
+
                 return facts.HeldValueManyArgs
                     ? parenBeside > width && parenBelow <= width - 3
                     : below <= width + 1 || parenBelow <= width - 3;
             default:
+                // ⚠ One argument wider than the measured limit keeps the `=` and chops beside it, whether the value would
+                // fit below or not (#446, SK-DIV-0211 rounds 8 and 9). See ReceiverListLimit.
+                if (!facts.HeldValueManyArgs
+                    && facts.HeldValueHead > 0
+                    && valueColumn + facts.HeldValueReceiver + facts.HeldValueHead <= width) {
+                    var head = valueColumn - (continuation - indentWidth) - 1;
+                    var name = facts.EqualsName > 0 ? facts.EqualsName : head - 2;
+                    var margin = ReceiverListMargin(
+                        HeldArgument(facts),
+                        facts.HeldValueReceiver + facts.HeldValueHead - 1,
+                        continuation - indentWidth,
+                        Math.Max(0, head - 2 - name),
+                        name,
+                        true
+                    );
+                    if (margin < 0 && !InsideTheListBand(margin)) {
+                        return false;
+                    }
+                }
+
+                // ⚠ One argument whose `(` lands past the margin beside the `=`, the receiver fitting there: the dot takes
+                // the line only for a short argument (#446, SK-DIV-0211 round 9). See HeldDotTakesTheLine.
+                if (!facts.HeldValueManyArgs
+                    && facts.HeldValueHead > 0
+                    && !facts.HeldValueGeneric
+                    && parenBeside > width
+                    && valueColumn + facts.HeldValueReceiver <= width) {
+                    var head = valueColumn - (continuation - indentWidth) - 1;
+                    var name = facts.EqualsName > 0 ? facts.EqualsName : head - 2;
+                    return parenBeside == width + 1
+                        || !HeldDotTakesTheLine(
+                            HeldArgument(facts),
+                            below - HeldArgument(facts),
+                            name,
+                            facts.HeldValueReceiver
+                        );
+                }
+
                 // ⚠ A value that fits below with three columns to spare moves down whole, as a typed local's
                 // does (Newtonsoft's `_genericTemporaryCollectionCreator =`, Serilog's `var methods =` at
                 // indent 8; h8's 119-column row and h10's keep the `=`).
@@ -4198,6 +4612,161 @@ public sealed class Fitter {
                     <= HeldCallLimit(parenBeside, facts.HeldValueManyArgs ? 2 : 1);
                 return !moves;
         }
+    }
+
+    /// <summary>
+    ///     The held call's argument list inside its parentheses: the value less its receiver, its dot through <c>(</c>,
+    ///     its <c>)</c> and its <c>;</c>.
+    /// </summary>
+    static int HeldArgument(in GroupFacts facts) =>
+        facts.HeldValueWidth - facts.HeldValueReceiver - facts.HeldValueHead - 2;
+
+    /// <summary>
+    ///     Whether a typed local's held call is read by <see cref="ReceiverListLimit" />: one argument, a method without
+    ///     type arguments (a known name), and a head of twelve or more through the <c>=</c> (#446, SK-DIV-0211 round 9).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Round 4's rule (<see cref="EqualsFloor.HeldTypedLocalBreaks" />, three lines in the line below) stays for a
+    ///     generic method and for two or more arguments, which round 9 did not measure behind a typed head. Measured
+    ///     2026-11-13 with <c>Testing ask</c> on one argument a column at a time behind typed, <c>var</c> and assignment
+    ///     heads of 5 to 41 columns, callees of 16 to 96 and indents 8 to 24 (16 443 cells): the limit is the two-argument
+    ///     list's, 21 columns higher. Round 8's one-argument line for <c>var</c> and assignments and round 4's typed rule
+    ///     were each one region of it.
+    /// </remarks>
+    /// <summary>
+    ///     Whether a held one-argument call whose <c>(</c> lands past the margin beside a kept <c>=</c> breaks at its dot
+    ///     (<c>name = receiver</c> / <c>.M(a);</c>) rather than below the <c>=</c>, by the argument, the column the value
+    ///     would end at below without it (<paramref name="bare" />, its <c>;</c> included), the name the head assigns and
+    ///     the receiver (#446, SK-DIV-0211 rounds 9 and 10). Otherwise the <c>=</c> breaks, and the value moves below
+    ///     whole, chopped or broken at its dot there. #528's held-call table moved the dot for any argument up to a line of
+    ///     83 or so.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Round 10 (#446, SK-DIV-0211): one integer inequality, not two fitted lines.
+    ///     <c>38·argument − receiver + 57·max(0, width − 5 − bare) ≤ max(428 − 7·name, 14·name − 34)</c>. Round 9's
+    ///     rising edge (a column and a half of argument per column of bare line) and its cap (a line falling with the name)
+    ///     were the two halves of it, each fitted to within a column, and g22's 183 newly wrong cells sat on them.
+    ///     <list type="bullet">
+    ///         <item>
+    ///             The cap is three widths and nothing else: the argument, the receiver and the name. An exact integer
+    ///             search over the indent, the type and the method gives each a coefficient of 0.
+    ///         </item>
+    ///         <item>
+    ///             Short of a bare line ending at <c>width − 5</c> the bound falls 57 per column, which is 38 · 3/2: the
+    ///             rising edge round 9 read as a slope of 1.5.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ The name's term is a V. It falls 7 a column to a name of 22 and rises 14 a column past it: a name of
+    ///             28 caps like one of 10, one of 38 at 14. Round 9's "falls with the name" had no name past 30.
+    ///         </item>
+    ///         <item>
+    ///             ⚠ The "special" cells this round first set aside are the same rule. A <c>(</c> two or three columns
+    ///             over, a first line ending at 115 to 120, a value one column over below (<c>=</c> / <c>r</c> /
+    ///             <c>.M(a);</c>) and heads of ten and eleven columns all need nothing of their own.
+    ///         </item>
+    ///     </list>
+    ///     54 180 of 54 180 cells of seven grids: g21, g22, g24 and g25 from round 9, and g26 to g28 written this round with
+    ///     names of 1 to 46, receivers of 3 to 97, methods of 4 to 44 and indents of 8 to 24. A head under twelve
+    ///     columns through the <c>=</c> is not this rule (<see cref="NarrowHeadTakesTheDot" />).
+    /// </remarks>
+    bool HeldDotTakesTheLine(int argument, int bare, int name, int receiver) =>
+        38 * argument - receiver + 57 * Math.Max(0, width - 5 - bare) <= Math.Max(428 - 7 * name, 14 * name - 34);
+
+    /// <summary>
+    ///     Whether a held one-argument call behind a head under twelve columns keeps the <c>=</c> and breaks at its dot:
+    ///     its <c>(</c> (<paramref name="paren" />, 1-based) two or more columns past the margin beside the <c>=</c>, and
+    ///     its receiver ending inside it (<paramref name="receiverEnd" />) (#446, SK-DIV-0211 round 9).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> on 10 356 cells: <c>var</c>, assignment and typed heads of 4 to 11
+    ///     columns, indents 8 and 16, the bare line below at 104 to 128 and the argument from 3 to 70. Every head through
+    ///     the <c>=</c> under twelve takes the dot at every argument measured, where #528's rule broke the <c>=</c> and
+    ///     chopped below; a head of twelve or thirteen takes it only to an argument of about a dozen, as the wide heads do
+    ///     (<see cref="HeldDotTakesTheLine" />). One column over is #528's own rule (<see cref="OneOverMovesTheDot" />).
+    ///     ⚠ Round 10 (2026-11-14, measured, not wired): "every argument" holds to about 70 only. Swept from 40 to 100 a
+    ///     column at a time (g29), a head of six to nine columns before its <c>=</c> keeps the dot to an argument of about
+    ///     91, 82, 75 and 69, and past it the <c>=</c> breaks and the argument chops below. ⚠ Round 11 wired it, on this
+    ///     path and the typed head's: <see cref="NarrowHeadDotCap" />. Round 10's table "changed nothing" because it only
+    ///     withheld the early return, and the fall-through kept the <c>=</c> anyway; the cap has to break it.
+    /// </remarks>
+    bool NarrowHeadTakesTheDot(int paren, int receiverEnd) => paren >= width + 2 && receiverEnd <= width;
+
+    /// <summary>
+    ///     Whether a narrow head's held one-argument call keeps its dot (<see cref="NarrowHeadTakesTheDot" />) at its
+    ///     argument's width: <c>38·argument − receiver + 7·name + 57·max(0, width − 5 − bare)</c>, the wide heads' left-hand
+    ///     side, at most a bound of the head before its <c>=</c> (<paramref name="head" />): 3 427, 3 095, 2 829 and 2 610
+    ///     for heads of six to nine columns, none up to five (#446, SK-DIV-0211 round 11). Past it the <c>=</c> breaks and
+    ///     the call chops or breaks at its dot below.
+    /// </summary>
+    /// <remarks>
+    ///     Measured with <c>Testing ask</c> on round 10's g29 (arguments of 40 to 100 a column at a time, heads of 4 to 9,
+    ///     receivers of 76 to 104, methods of 4 and 16, indents 8 and 16): the left-hand side is the wide heads' dot rule
+    ///     (<see cref="HeldDotTakesTheLine" />) with its bare line far right, and the bound is exact on every row. A head
+    ///     of six or less kept the dot at every argument whose dot line fitted (to 100).
+    /// </remarks>
+    bool NarrowHeadDotCap(in GroupFacts facts, int head, int continuation) {
+        var bound = head switch {
+            <= 5 => int.MaxValue,
+            6 => 3427,
+            7 => 3095,
+            8 => 2829,
+            _ => 2610,
+        };
+        var name = facts.EqualsName > 0 ? facts.EqualsName : head;
+        var bare = continuation + facts.HeldValueWidth - HeldArgument(facts);
+        return 38L * HeldArgument(facts) - facts.HeldValueReceiver + 7 * name + 57 * Math.Max(0, width - 5 - bare)
+            <= bound;
+    }
+
+    static bool HeldOnReceiverLimitApplies(in GroupFacts facts) =>
+        facts is { HeldValueManyArgs: false, HeldValueGeneric: false, HeldValueName: > 0, HeldValueHead: > 0 }
+        && facts.HeldValueTypedHead >= 12;
+
+    /// <summary>
+    ///     Whether the <c>=</c> breaks before a held one-argument call behind a head under twelve columns through the
+    ///     <c>=</c>, its <c>(</c> fitting beside it (#446, SK-DIV-0211 rounds 8 and 9): while the argument is at most the
+    ///     smaller of two lines in the callee <c>r.M</c>, the statement's indent, the head and its part before the name.
+    ///     <paramref name="head" /> is the statement through the <c>=</c>; <paramref name="name" /> the name it assigns.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Measured 2026-11-13 with <c>Testing ask</c> on 5 115 cells: heads of 4 to 11, callees of 56 to 96, indents 8
+    ///     to 24, the argument a column at a time from 3 to 49. #528's <c>below ≤ width + 1</c> broke the <c>=</c> on 4 487
+    ///     cells the oracle chops beside it (master agreed on 460). Heads of seven or less broke it on no measured cell,
+    ///     which is #379's floor again. A head of eight to eleven breaks it only for a narrow argument, the same shape as
+    ///     the binary pattern's rule (<see cref="EqualsFloor.BreaksBeforeAPattern" />).
+    ///     ⚠ Round 9 (13 503 more cells: <c>var</c>, assignment and typed heads of 6 to 11 columns, callees of 70 to 106 a
+    ///     few columns apart): a typed local's narrow head is the same rule — <c>T… nn =</c> and <c>var nn =</c> of equal
+    ///     width break at nearly the same argument — and round 8's single line,
+    ///     <c>argument + 0.545·indent − 0.198·callee − 5.22·head &lt; −42.62</c>, missed the narrowest heads by up to
+    ///     nine columns: the head's slope steepens there. The callee's and the indent's slopes are the wide limit's
+    ///     rising lines' (<see cref="ReceiverListLimit" />). 154 of 155 boundaries.
+    ///     ⚠ Round 12 (#446, SK-DIV-0211): one integer form, the head a table rather than two lines,
+    ///     <c>258·argument ≤ c(head) + 47·callee − 143·indent − 32·type</c> with <c>c</c> −2 050, 35, 1 694, 3 044 and
+    ///     4 181 for five to nine columns before the <c>=</c>, none up to four. Round 9's two lines were fitted without a
+    ///     head of five (g19 and g23 measured four, six and up), and extrapolated there they broke
+    ///     <c>Tdo n = r(78).M(avcvip);</c> where the oracle chops; they also missed boundary rows of their own grids by a
+    ///     few hundredths of a column. g41 (6 890 cells: every type/name split of heads of four to eight, callees of 62 to
+    ///     110, methods of 6 and 18), g43 (23 242 cells: every callee from 61 to 111, which the older grids stepped by
+    ///     four, indents 8, 12 and 20), g42 (below) and round 9's g6, g19 and g23 give 2 282 boundary rows of heads of five
+    ///     to nine;
+    ///     the form is exact on all of them, and an LP finds no two lines in the head that are (best margin −0.375 of a
+    ///     column). ⚠ Cuts at scales 99 and 186, each fitted before the next grid, were a hundredth of a column off on seven
+    ///     odd-callee rows of g43 and two rows of g42; the LP's margin is 0.003 of a column, so the form is tight.
+    ///     ⚠ An argument that is a call answers as a plain one of the same width: g42, 15 744 cells side by side, 171 of
+    ///     171 boundary rows identical.
+    /// </remarks>
+    static bool NarrowHeadBreaks(int argument, int indent, int callee, int head, int name) {
+        var before = head - 2;
+        var type = Math.Max(0, before - name);
+        int? bound = before switch {
+            <= 4 => null,
+            5 => -2050,
+            6 => 35,
+            7 => 1694,
+            8 => 3044,
+            _ => 4181,
+        };
+        return bound is { } c && 258 * argument <= c + 47 * callee - 143 * indent - 32 * type;
     }
 
     /// <summary>
