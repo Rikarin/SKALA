@@ -301,6 +301,18 @@ public sealed class FuzzRegressionTests {
     // both signs (#518), read the pins as unbounded in the element's draft and moved `(77044` down. A conditional's
     // pinned sign now drafts as a space, as any kept break does, and the oracle keeps `…, (77044` either way.
     [InlineData(14753277088141197568UL)]
+    // Found 2026-11-13 (fails on a2a6de72 too): `Dictionary<…> v21 = new CancellationToken($"value {(value is null ? 0
+    // : 1)} and {state.Length}");`. The planner's widths spaced an interpolated string's braces against its text and
+    // its parentheses, which the output never does, so the 54-column argument read past the one-argument boundary
+    // and chopped; pass two, the argument on a line of its own and no longer a measured callee, broke the `=` — the
+    // oracle's answer from the flat source. Widths inside a string now take the builder's respacing.
+    [InlineData(1052827977788418967UL)]
+    // Found 2026-11-13 (fails on a2a6de72 too): `when (new ValueTask<bool>(…, name59: ref Cast_w…<byte, object>(),
+    // …))`. The colon's point yielded to the overflowing type argument list (#490) although the list's own `<` was
+    // past the margin, so pass one filled after it at 125 columns; pass two read that break as the author's, lost the
+    // flat width the floor compares, and broke after the `ref`. The yield now needs the `<` to fit, as the oracle's
+    // does: it breaks after the colon or the keyword from the `<` at 122 on.
+    [InlineData(354857589735471722UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(

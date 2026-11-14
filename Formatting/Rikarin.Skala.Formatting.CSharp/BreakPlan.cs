@@ -5943,10 +5943,23 @@ public sealed class BreakPlan {
                 YieldsToOverflowingTypeArguments: ColonFloorOf(argument, value) is var (floor, _) && floor >= 0,
                 ColonFloor: ColonFloorOf(argument, value).Floor,
                 ColonFloorSlope: ColonFloorOf(argument, value).Slope,
-                ColonEdgeFloor: ColonEdgeFloorOf(argument, value)
+                ColonEdgeFloor: ColonEdgeFloorOf(argument, value),
+                ColonTypeOpen: ColonFloorOf(argument, value).Floor >= 0 ? ColonTypeOpenOf(value) : 0
             )
         );
     }
+
+    /// <summary>See <see cref="GroupFacts.ColonTypeOpen" />: the value's width through its type arguments' <c>&lt;</c>.</summary>
+    int ColonTypeOpenOf(ExpressionSyntax value) =>
+        value switch {
+            InvocationExpressionSyntax { Expression: GenericNameSyntax name } => FormattedWidth(
+                FirstToken(value),
+                name.TypeArgumentList.LessThanToken
+            ),
+            InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name: GenericNameSyntax name } } =>
+                FormattedWidth(FirstToken(value), name.TypeArgumentList.LessThanToken),
+            _ => 0
+        };
 
     /// <summary>
     ///     The argument list width from which a named argument's colon breaks before a generic call whose
@@ -8051,7 +8064,10 @@ public sealed class BreakPlan {
     ///     <c>Review /* f */&gt;</c>: the rules' space, and each comment with one space before it.
     /// </remarks>
     int GapWidth(SyntaxToken previous, SyntaxToken token) {
-        var width = SpaceRules.Decide(previous, token, options) switch {
+        // ⚠ Inside an interpolated string, the space the builder's respacing writes (fuzz 1052827977788418967). See
+        // CSharpDocumentBuilder.GapInAnInterpolatedString.
+        var width = (CSharpDocumentBuilder.GapInAnInterpolatedString(previous, token, options)
+            ?? SpaceRules.Decide(previous, token, options)) switch {
             SpaceKind.Required => 1,
             SpaceKind.Forbidden => 0,
             _ => previous.HasTrailingTrivia || token.HasLeadingTrivia ? 1 : 0
