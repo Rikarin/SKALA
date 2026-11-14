@@ -1143,6 +1143,12 @@ public sealed class BreakPlan {
                 PlanTypeTest(isPattern, isPattern.IsKeyword, isPattern.Pattern);
                 return;
 
+            // ⚠ A property pattern written on one line after a one-argument call that is a sole lambda's whole body
+            // (#620 round five): a type-test group of its own, so that SK-DIV-0811's fill can join it.
+            case IsPatternExpressionSyntax isPattern when IsABracedTestOfASoleCall(isPattern):
+                PlanTypeTest(isPattern, isPattern.IsKeyword, isPattern.Pattern);
+                return;
+
             // ⚠ An `is` the author broke before or after, ahead of a pattern that can break: the `is` line
             // (or the pattern's) takes a level past the operand's own line, as a type test's does
             // (SK-DIV-0206, SK-DIV-0392). Two measurements meet here: group J's (`token.Kind()` / `is A` /
@@ -7655,6 +7661,11 @@ public sealed class BreakPlan {
                 test = isPattern;
                 break;
 
+            case IsPatternExpressionSyntax isPattern
+                when isPattern.Expression == call && IsABracedTestOfASoleCall(isPattern):
+                test = isPattern;
+                break;
+
             default:
                 return;
         }
@@ -7725,6 +7736,19 @@ public sealed class BreakPlan {
         var fill = testPlans[at].Id;
         testedCallGroups.Add(fill);
         FillPointOf(keyword);
+        // ⚠ A property pattern breaks before its `is`, or after it before a `not`, and never between its type and
+        // its braces' line: `… )` / `is IMethodSymbol { IsStatic: true }`, `… ) is` / `not { }` (#620 round five).
+        if (pattern is PatternSyntax braced && IsABracedPattern(braced)) {
+            if (braced is UnaryPatternSyntax) {
+                FillPointOf(FirstToken(pattern));
+            } else if (!(options.KeepsUserBreaksBetweenItems && BreaksBefore(FirstToken(pattern)))) {
+                // The type test's last-resort point after the keyword is not the oracle's: `… is` / `{ P: v }` never.
+                gaps[FirstToken(pattern).SpanStart] = new(GapRule.Flat, -1);
+            }
+
+            return;
+        }
+
         FillPointOf(FirstToken(pattern));
         switch (pattern) {
             case UnaryPatternSyntax unary:
@@ -7750,6 +7774,44 @@ public sealed class BreakPlan {
             MemberAccessExpressionSyntax { Name: var name } => name.Identifier.ValueText,
             _ => null
         };
+
+    /// <summary>
+    ///     A property pattern with braces, a type in front or none, or <c>not</c> over one: <c>T { P: v }</c>,
+    ///     <c>not { }</c>.
+    /// </summary>
+    internal static bool IsABracedPattern(PatternSyntax pattern) =>
+        pattern switch {
+            RecursivePatternSyntax {
+                PositionalPatternClause: null, PropertyPatternClause: not null, Designation: null
+            } => true,
+            UnaryPatternSyntax { Pattern: RecursivePatternSyntax inner } => IsABracedPattern(inner),
+            _ => false
+        };
+
+    /// <summary>
+    ///     <c>x =&gt; Head(arg) is T { P: v }</c> or <c>is not { }</c> written on one line, a sole lambda's whole body over a
+    ///     call of one argument (#620 round five).
+    /// </summary>
+    bool IsABracedTestOfASoleCall(IsPatternExpressionSyntax test) =>
+        options.PlaceSingleMethodArgumentLambdaOnSameLine
+        && IsABracedPattern(test.Pattern)
+        && test.Expression is InvocationExpressionSyntax {
+            ArgumentList.Arguments: [
+                {
+                    NameColon: null,
+                    RefKindKeyword.RawKind: 0,
+                    Expression: not (LambdaExpressionSyntax or AnonymousMethodExpressionSyntax)
+                }
+            ]
+        } call
+        // ⚠ Not behind a one-character call name, which SK-DIV-0811 leaves out: the oracle reads `H(…) is {` otherwise.
+        && CalleeName(call) is { Length: > 1 }
+        && IsTheBodyOfASoleLambda(test)
+        // ⚠ A break after the `is` before a `not` is this plan's own answer, and pass two reads it the same way.
+        && !HasLineBreakIn(test.Expression)
+        && !HasLineBreakIn(test.Pattern is UnaryPatternSyntax { Pattern: var negated } ? negated : test.Pattern)
+        && !BreaksBefore(test.IsKeyword)
+        && !(test.Pattern is not UnaryPatternSyntax && BreaksBefore(FirstToken(test.Pattern)));
 
     /// <summary>
     ///     A pattern that is one word or two after <c>is</c>: a type, a declaration, a constant, or <c>not</c> over a
@@ -10170,6 +10232,9 @@ public sealed class BreakPlan {
             SoleChainHead = FormattedWidth(body.GetFirstToken(), first.ArgumentList.CloseParenToken),
             SoleChainBody = FormattedWidth(body),
             SoleChainKept = HasLineBreakIn(body),
+            SoleChainReceiver = first.Expression is MemberAccessExpressionSyntax { OperatorToken: var dot }
+                ? FormattedWidth(body.GetFirstToken(), dot)
+                : 0,
             SoleCallLambda = FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
         };
     }

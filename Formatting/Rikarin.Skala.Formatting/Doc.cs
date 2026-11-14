@@ -322,7 +322,15 @@ public enum LineFlags {
     ///     a broken arrow and after a broken <c>=</c>, where <c>ab</c> / <c>.Name</c> breaks, and breaks it after
     ///     <c>var v = x</c>, where the name follows something on its line.
     /// </summary>
-    OneColumnReceiver = 65536
+    OneColumnReceiver = 65536,
+
+    /// <summary>
+    ///     ⚠ A fill point before the <c>is</c> of a property pattern (#620 round five): what follows it stays on the line
+    ///     through the pattern's <c>{</c> whenever that much fits, and the braces break; only when it does not does the
+    ///     point break — <c>… is IMethodSymbol {</c> / <c>IsStatic: true</c> / <c>}</c>, else <c>…)</c> /
+    ///     <c>is IMethodSymbol { IsStatic: true }</c>.
+    /// </summary>
+    HeadStaysWhenItFits = 131072
 }
 
 /// <summary>
@@ -2293,6 +2301,7 @@ public readonly record struct GroupFacts(
     int SoleChainHead = 0,
     int SoleChainBody = 0,
     bool SoleChainKept = false,
+    int SoleChainReceiver = 0,
     int TestedCallHead = 0,
     bool TestedCallSoleBody = false,
     int TestedCallTerminator = 0,

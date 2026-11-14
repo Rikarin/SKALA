@@ -2673,6 +2673,13 @@ public sealed class LayoutWriter {
             return true;
         }
 
+        // ⚠ A property pattern's `is` keeps its line through the `{` whenever that fits (#620 round five). See
+        // LineFlags.HeadStaysWhenItFits.
+        if ((flags & LineFlags.HeadStaysWhenItFits) != 0 && head < segment) {
+            headStays = Fits(column, head);
+            return headStays;
+        }
+
         // ⚠ A chain's call link keeps its head and chops its arguments unless, moved down, its line ends
         // well short of the margin (#484, SK-DIV-0129). See LineFlags.ChainCallLink.
         // ⚠ An argument list that is certain to break — the oracle's own chopped answer read back on pass

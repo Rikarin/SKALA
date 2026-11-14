@@ -15056,7 +15056,9 @@ member's dot inside it; a long prefix whose `=` the oracle breaks instead; and t
 
 - options: `skala_place_single_method_argument_lambda_on_same_line` (the rule reads only while it is on).
 - status: **fixed** for the shapes above (pinned by `SoleLambdaCallArrowIssue620Tests`; a sabotage run with the rule off
-  fails 5 of its 7); the residue above is **open**.
+  fails 5 of its 7); the residue above is **open**. ⚠ #620 round five corrected three of the round-two lines for two
+  arguments or more: the short-lead region (SK-DIV-0880), a link's weight there (three columns of lead, not 2.67) and
+  the arguments' line, which stops counting at 114 (SK-DIV-0881).
 
 **#620 round three (2026-11-13).** The chain whose first call fits beside the arrow is SK-DIV-0812's, past the line
 below; an argument wider than its line SK-DIV-0810's for `name!` and `x.Name`; the type test SK-DIV-0811's for one
@@ -15145,8 +15147,9 @@ on 4 612 cells with none wrong, and the 74 the naive yield broke were the cells 
 not only before the keyword: after a `not` and before a designation are points too, the three a fill.
 
 - options: none.
-- status: **resolved** for one argument and a pattern of one word or two (SK-DIV-0811); **open** for a pattern with
-  braces (`is not { }`, `is IMethodSymbol { IsStatic: true }`, where the oracle breaks before `is` and keeps the braces)
+- status: **resolved** for one argument and a pattern of one word or two (SK-DIV-0811); for a pattern with braces after
+  a one-argument call as a sole lambda's body, **resolved** in #620 round five (SK-DIV-0881: a type-test group of its
+  own, SK-DIV-0811's fill, before `is` only where the line through the `{` does not fit); **open** for braces elsewhere
   and for two arguments or more under an `=` the oracle breaks as well.
 
 ## SK-DIV-0810 — an argument wider than its line: a break before its `!`, none after a one-column name
@@ -15250,7 +15253,8 @@ oracle's own output; a sabotage run with the four rules off fails all seven.
 
 - options: `skala_place_single_method_argument_lambda_on_same_line`.
 - status: **fixed** past the line below; on the line below and for the `=` in front, see SK-DIV-0881 and SK-DIV-0880
-  (#620 round four).
+  (#620 round four); a first call that does not fit beside the arrow behind a receiver of 11 columns or fewer, with a
+  later call of two arguments or a lambda, breaks it (#620 round five, SK-DIV-0881).
 
 **#620 round four (2026-11-14).** ⚠ Refuted: round three's restriction of the line below to "a first call of up to 45
 columns followed by a call of two arguments or more" and its "11 newly wrong" without it — the same 7 085-cell grid
@@ -15296,6 +15300,27 @@ line breaks it. The same lambda starts behind `Uss(` (gm1, 9 717 cells) and behi
 
 - options: none (`skala_place_single_method_argument_lambda_on_same_line` gates the lambda).
 - status: **fixed** for `var` locals behind heads of 12 to 26 columns; **open** over a lone call of two arguments.
+
+**#620 round five (2026-11-14): q3's 8 and q4's 78 are fixed, and neither the head's width nor the `=` was the term.**
+⚠ Refuted: "the 31-column head is the outlier", and "the `var` `=` is the obvious candidate". Measured one column at a
+time with nothing else changed (`var <name> = context.Use(x => Helpers.Look…(a, b));`, heads of 21 to 40, names of 7 to
+15, two indents; then behind `Uss(` with lambdas of 4 to 24 columns, 24 912 cells), the oracle keeps the arrow behind
+heads up to 31 columns after `x =>` and follows round two's thousandth line from 32 on, whatever the statement: the term
+is round two's short-lead region, `6·(λ + h) ≤ 207`, which stopped one column of lead short. It reaches a lead of 35 for
+lambdas of up to 8 columns and 34 for every one up to 24, `16·(λ + h) + λ ≤ 568`; inside it the arrow stays while
+`100·a + 204·h + 110·λ ≤ 12 093` (round two's `a + 2·h + λ < 120` broke a column late behind lambdas of 10 or more).
+⚠ At a lead of exactly 35 behind a 9-column lambda the oracle keeps only arrows ending at 31–34 and 50–54 and breaks
+between and beyond — at two indents, three argument widths and five statements, q3's eight members included: no line
+separates it, and the bands are wired as measured (`Fitter.ShortLeadKeepsTheArrow`). With links a link weighs three
+columns of the lead, `λ + h + 3·L ≤ 36`, where 2.67 kept `x => recv.Use(a, b) is null` (q3's ninth, M999).
+
+| grid (members agreeing) | master | round four | now | newly wrong |
+|---|---:|---:|---:|---:|
+| q3 / q4 | 7 713 / 2 642 | 9 457 / 3 584 (8 / 78 newly wrong) | 9 465 / 3 662 | 0 / 0 |
+| w1–w6, w8 (24 912 cells: the head, the lambda and the arrow one column at a time) | 8 388 | 23 400 | 23 881 | 0 |
+| gm1 / gm2 (round four's) | 7 375 / 18 179 | 9 313 / 23 001 | 9 313 / 23 001 | 0 |
+
+- status: **fixed** (the `=` over a lone call of two arguments stays the older rules', none newly wrong).
 
 ## SK-DIV-0881 — a sole lambda's chain that fits on the line below: one more line short of column 112
 
@@ -15344,7 +15369,46 @@ four changes off fails all four.
 - options: `skala_place_single_method_argument_lambda_on_same_line`.
 - status: **fixed** for the shapes above; **open** for the residue above.
 
-## SK-DIV-0505 — one argument behind a head wider than fourteen: one boundary for every owner
+**#620 round five (2026-11-14).** Four changes, each measured one feature at a time and pinned by a cell of
+`SoleLambdaCallArrowIssue620Tests` (the oracle's own output; with the four off, 4 of the 4 new cells fail):
+
+- the short-lead region of a lone call of two arguments, SK-DIV-0880's blocker (q3's 8 and q4's 78 newly wrong, now 0);
+- a property pattern written on one line after a one-argument call that is a sole lambda's body (`… is IMethodSymbol
+  { IsStatic: true }`, `is { … }`, `is not { }`) is a type-test group, so SK-DIV-0811's fill joins it: the argument stays
+  whole, and the test breaks before its `is` — or after it before a `not` — only where the line through the pattern's `{`
+  does not fit; where it does, `is … {` stays and the braces break (`LineFlags.HeadStaysWhenItFits`). Never between the
+  type and its braces. Not behind a one-character call name (`H(…) is {`), which SK-DIV-0811 leaves out too;
+- a chain whose first call does not fit beside the arrow, with a later call SK-DIV-0760 does not read (two arguments or a
+  lambda), breaks its arrow behind a receiver of 11 columns or fewer through its dot — none, `this.`, `recv.`,
+  `Helpers.`, `this.cache.`: 793 of 793 cells (gc1, five receivers, three parameter lists, first calls of 30 to 75
+  columns, lambdas starting 12 to 63 in). Behind receivers of 20 columns or more the oracle keeps it at times, as for a
+  chain of properties, and the older rules decide (SK-DIV-0812);
+- SK-DIV-0760's line for two arguments or more stops reading the arguments' line at column 114, as the one-argument line
+  does: `_ => Head(a, b, c).Select(z => z.Value).ToArray().Value` breaks its arrow wherever the arguments end (a fresh
+  probe's member newly wrong against master, then k1, 1 060 cells, 966 → 1 060 agreeing). ⚠ Not 113: probe G's
+  36-column `is IMethodSymbol { … }` behind `x => Find(` keeps its arrow with the arguments ending at 114.
+
+Whole member text against `Testing ask`, against master `a2a6de725`; none unstable on a second pass anywhere, and no
+member newly wrong against round four on any grid or probe:
+
+| probe (2 700 members unless noted) | master | round four | now | newly wrong vs master |
+|---|---:|---:|---:|---:|
+| I / J | 2 105 / 2 118 | 2 674 / 2 673 | 2 685 / 2 680 | 0 / 0 |
+| A (1 800) / B / C / D (3 000) / E / F / G / H | 1 400 / 2 075 / 2 124 / 2 360 / 2 112 / 2 090 / 2 099 / 2 075 | 1 781 / 2 667 / 2 675 / 2 980 / 2 674 / 2 674 / 2 668 / 2 672 | 1 785 / 2 682 / 2 684 / 2 985 / 2 685 / 2 683 / 2 682 / 2 680 | 0 |
+| K, L, M, N (seeds 63107, 74219, 85331, 96443) | 2 125 / 2 116 / 2 072 / 2 115 | 2 675 / 2 676 / 2 668 / 2 673 | 2 687 / 2 688 / 2 684 / 2 684 | 0 |
+| **O / P (seeds 17093, 28511, written after the last change)** | 2 101 / 2 082 | 2 668 / 2 675 | **2 684 / 2 685** | **2 ⚠ / 0** |
+| r1–r4, r45–r48, r50 and every grid of rounds three and four | — | — | unchanged or better | 0 |
+
+⚠ O's two are round two's and round four's lines, not this round's (round four's tree writes both the same):
+`(x, y) => this.LookupTheDeclaration(a, b) is IMethodSymbol { IsStatic: true }`, a lead of 35 with links where the
+thousandth line breaks the arrow the oracle keeps; and a 160-column property chain behind `symbol =>` that SK-DIV-0762's
+line keeps where the oracle breaks it.
+
+**Still open, about one member in 170 on each fresh probe (I 15, J 20, O 16, P 15):** a call of two arguments or more
+under a type test (testmulti, 3 to 7 a probe) — with braces the oracle breaks the arrow and keeps the call whole or breaks
+inside the braces, where Skala keeps the arrow and chops; a lone call of two or more whose `=` the oracle breaks or whose
+line is over by its `;` (multi, 1 to 5); chains behind a long receiver whose dot the oracle breaks with the arrow kept
+(zerolinks, 1 to 4); and single members of the other classes. — one argument behind a head wider than fourteen: one boundary for every owner
 
 This closes the open halves of SK-DIV-0501 (group A, typed locals) and SK-DIV-0530 (group D, `var` locals). Both had
 measured the same thing separately, and neither rule was wired. Group A's fit was

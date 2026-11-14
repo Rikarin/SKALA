@@ -2059,8 +2059,20 @@ public sealed class Fitter {
         var body = facts.SoleChainBody;
         var head = facts.SoleChainHead;
         var below = lineStart + indentWidth + body;
-        if (width != 120 || m.Column + 1 + body <= width || m.Column + 1 + head > width) {
+        if (width != 120 || m.Column + 1 + body <= width) {
             return null;
+        }
+
+        // ⚠ A first call that does not fit beside the arrow, with a later call SK-DIV-0760 does not read (two arguments or
+        // more, or a lambda), behind a receiver of eleven columns or fewer through its dot
+        // — none, `this.`, `recv.`, `Helpers.`, `this.cache.` — breaks the arrow wherever the lambda starts (#620 round
+        // five): 793 cells of five receivers, three parameter lists, first calls of 30 to 75 columns and lambdas
+        // starting 12 to 63 columns in, every one broken. Behind a receiver of twenty columns or more the oracle keeps
+        // it at times, as it does a chain of properties, and the older rules decide.
+        if (m.Column + 1 + head > width) {
+            return facts.SoleCallHead == 0 && facts.SoleChainReceiver <= 11 && m.Column - lineStart >= 12
+                ? ResolvedMode.Broken
+                : null;
         }
 
         // ⚠ Round three kept the line below to a first call of up to 45 columns followed by a call of two arguments or
@@ -2255,6 +2267,44 @@ public sealed class Fitter {
         return band >= 11162 ? ResolvedMode.Flat : band <= 11122 ? ResolvedMode.Broken : null;
     }
 
+    /// <summary>
+    ///     Whether a sole lambda's arrow over a call of two arguments or more stays behind a short head, lambda and
+    ///     links, <paramref name="lead" /> the lambda through <c>=&gt;</c> and the head through <c>(</c> (#620,
+    ///     SK-DIV-0760, SK-DIV-0880).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Round five (2026-11-14), with no links, measured one column at a time on 24 912 cells (lambdas of 4 to 24
+    ///     columns, heads of 9 to 40, arrows ending at 20 to 101, behind <c>Uss(</c> and <c>var name = context.Use(</c>):
+    ///     the short-lead region reaches a lead of 35 for every lambda up to 8 columns and of 34 for every one up to 24,
+    ///     <c>16·lead + λ ≤ 568</c>, where round two's <c>6·lead ≤ 207</c> stopped at 34 — the 31-column
+    ///     <c>Helpers.LookupTheDeclarationOf(</c> behind <c>x =&gt;</c> is lead 35, and q4's 78 cells and q3's 7 newly
+    ///     wrong were that. Inside it the arrow stays while <c>100·a + 204·h + 110·λ ≤ 12 093</c> at a margin of 120,
+    ///     which round two's <c>a + 2·h + λ &lt; 120</c> missed by a column for lambdas of 10 columns or more.
+    ///     ⚠ At a lead of exactly 35 and a lambda of 9 the oracle keeps only arrows ending at 31–34 and 50–54 and
+    ///     breaks between, at two indents, three argument widths and five statements (q3's eight): no line separates
+    ///     it, and the bands are read as measured. With links a link weighs three columns of the lead, not round two's
+    ///     2.67.
+    /// </remarks>
+    bool ShortLeadKeepsTheArrow(in GroupFacts facts, in Measures m, int lead) {
+        var links = facts.SoleCallLinks;
+        var edge = 16 * lead + facts.SoleCallLambda;
+        if (links == 0 && width == 120 && edge == 569) {
+            // ⚠ A lead of 35 behind a 9-column lambda: two bands of the arrow's column, measured, not a line.
+            return m.Column <= 34 || m.Column is >= 50 and <= 54;
+        }
+
+        if (links == 0 && width == 120 && edge <= 568) {
+            return 100 * m.Column + 204 * facts.SoleCallHead + 110 * facts.SoleCallLambda <= 12093 || 4 * lead < 70;
+        }
+
+        // ⚠ With links, a link column weighs three of the lead, not 2.67: `recv.Use(a, b) is null` behind `x =>` (lead
+        // 13, links 8) breaks its arrow wherever it ends, and `Helpers.LookupTh(a, b).Name` (lead 21, links 5) keeps it.
+        var inside = links == 0 ? 6 * lead <= 207 : lead + 3 * links <= 36;
+        return inside
+            && (m.Column + 2 * facts.SoleCallHead + facts.SoleCallLambda + 3 * links < width
+                || 4 * lead + 5 * links < 70);
+    }
+
     bool BreaksTheSoleCallArrow(in GroupFacts facts, in Measures m, int lineStart) {
         // ⚠ A head that does not fit beside the arrow moves below whatever the rest (measured at arrows ending at
         // columns 56 to 120 behind every head and argument count).
@@ -2276,18 +2326,21 @@ public sealed class Fitter {
             // ⚠ Two arguments or more behind a short head, lambda and links: the arrow breaks only once it ends far
             // enough to the right, `a + 2·h + λ + 3·L ≥ 120` at a margin of 120, and not at all behind the shortest.
             var lead = facts.SoleCallLambda + facts.SoleCallHead;
-            if (6 * lead + 16 * facts.SoleCallLinks <= 207
-                && (m.Column + 2 * facts.SoleCallHead + facts.SoleCallLambda + 3 * facts.SoleCallLinks < width
-                    || 4 * lead + 5 * facts.SoleCallLinks < 70)) {
+            if (ShortLeadKeepsTheArrow(facts, m, lead)) {
                 return false;
             }
 
             // ⚠ At a thousandth of a column (round two): the lambda weighs a little less than the head, as for one
             // argument — 34 059 cells and probe members, every one of them a call of two arguments or more.
+            // ⚠ Round five: the arguments' line stops counting at column 114, as the one-argument line's does —
+            // `_ => Head(a, b, c).Select(z => z.Value).ToArray().Value` breaks its arrow wherever the arguments end, where
+            // the unbounded line kept it past 114 (a fresh probe's member, then 1 060 cells with links of 6 to 44
+            // columns, every one agreeing once it stops). ⚠ Not at 113: a 36-column `is IMethodSymbol { … }` behind
+            // `x => Find(` keeps its arrow with the arguments ending at 114 (probe G), where 37 columns of links break it.
             return 1000 * facts.SoleCallLinks
                 >= 603 * facts.SoleCallHead
                 + 576 * (facts.SoleCallLambda - 3)
-                + 1500 * (end - (width - 27))
+                + 1500 * (Math.Min(end, width - 6) - (width - 27))
                 + 1864;
         }
 

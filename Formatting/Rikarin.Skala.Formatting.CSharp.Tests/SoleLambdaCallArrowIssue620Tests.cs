@@ -923,4 +923,310 @@ public sealed class SoleLambdaCallArrowIssue620Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     A lone two-argument call behind a lead of 35 keeps its arrow; at a 9-column lambda two bands (SK-DIV-0880).
+    /// </summary>
+    [Fact]
+    public void AShortLeadOfThirtyFive_KeepsTheArrowAndTheBandsAtNine() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M574() {
+                    var symbolsOfIt = context.Use(x => Helpers.LookupTheDeclarationOf(bravocharlieDeltaechoValueFo, charlieDeltaechoValueFoxtrot));
+                }
+                object M248() {
+                    Usssssssssssssss((x, y) => Helpers.LookupTheDeclarat(deltaechoValueFoxtrotgolfNameH, echoValueFoxtrotgolfNameHoteli));
+                }
+                object M278() {
+                    Ussssssssssssssss((x, y) => Helpers.LookupTheDeclarat(echoValueFoxtrotgolfNameHoteli, foxtrotgolfNameHotelindiaSymbo));
+                }
+                object M844() {
+                    Usssssssssssssssssssssssssssssss((x, y) => Helpers.LookupTheDeclarat(julietalphaBravocharlieDeltaec, alphaBravocharlieDeltaechoValu));
+                }
+                object M1069() {
+                    Ussssssssssssssssssssssssssssssssssss((x, y) => Helpers.LookupTheDeclarat(echoValueFoxtrotgolfNameHoteli, foxtrotgolfNameHotelindiaSymbo));
+                }
+                object M1473() {
+                    Ussssssssssssssssssssssssssssssssssssssssssss(abcdefgh => Helpers.LookupTheDec(charlieDeltaechoValueFoxtrotgo, deltaechoValueFoxtrotgolfNameH));
+                }
+                object M1533() {
+                    Usssssssssssssssssssssssssssssssssssssssssssss(abcdefgh => Helpers.LookupTheDec(deltaechoValueFoxtrotgolfNameH, echoValueFoxtrotgolfNameHoteli));
+                }
+            }
+            """,
+            """
+            class C {
+                object M574() {
+                    var symbolsOfIt = context.Use(x => Helpers.LookupTheDeclarationOf(
+                            bravocharlieDeltaechoValueFo,
+                            charlieDeltaechoValueFoxtrot
+                        )
+                    );
+                }
+
+                object M248() {
+                    Usssssssssssssss((x, y) => Helpers.LookupTheDeclarat(
+                            deltaechoValueFoxtrotgolfNameH,
+                            echoValueFoxtrotgolfNameHoteli
+                        )
+                    );
+                }
+
+                object M278() {
+                    Ussssssssssssssss((x, y) =>
+                        Helpers.LookupTheDeclarat(echoValueFoxtrotgolfNameHoteli, foxtrotgolfNameHotelindiaSymbo)
+                    );
+                }
+
+                object M844() {
+                    Usssssssssssssssssssssssssssssss((x, y) => Helpers.LookupTheDeclarat(
+                            julietalphaBravocharlieDeltaec,
+                            alphaBravocharlieDeltaechoValu
+                        )
+                    );
+                }
+
+                object M1069() {
+                    Ussssssssssssssssssssssssssssssssssss((x, y) =>
+                        Helpers.LookupTheDeclarat(echoValueFoxtrotgolfNameHoteli, foxtrotgolfNameHotelindiaSymbo)
+                    );
+                }
+
+                object M1473() {
+                    Ussssssssssssssssssssssssssssssssssssssssssss(abcdefgh => Helpers.LookupTheDec(
+                            charlieDeltaechoValueFoxtrotgo,
+                            deltaechoValueFoxtrotgolfNameH
+                        )
+                    );
+                }
+
+                object M1533() {
+                    Usssssssssssssssssssssssssssssssssssssssssssss(abcdefgh =>
+                        Helpers.LookupTheDec(deltaechoValueFoxtrotgolfNameH, echoValueFoxtrotgolfNameHoteli)
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A one-argument call under a one-line property pattern breaks before its is, or inside its braces (SK-DIV-0763).
+    /// </summary>
+    [Fact]
+    public void ABracedTypeTest_BreaksBeforeItsIsOrInsideItsBraces() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M340() {
+                    var r = recv.Use(x => recv.Analyze(limaechoValuegolfNameoscarNovemberFoxtrotFoxtrotechoValuecharliemikealphaNovemberBravoosc) is IMethodSymbol { IsStatic: true });
+                }
+                object M205() {
+                    return items.Select(node => Read(oscarkilomikeechoValuegolfNameNovemberHotelFoxtrotNovembergolfNameHotelPapaNovember) is { IsStatic: true });
+                }
+                object M916() {
+                    if (c0) { bool ok = nodes.All(x => Helpers.Head<INamedTypeSymbol>(indiaSymbolFoxtrotBravogolfNameNovemberPapaHotelDeltaechoValuePapa) is not { }); }
+                }
+                object M16() {
+                    if (c0) { if (c1) { var r = recv.Use((x, y) => Helpers.LookupTheDeclaration(alphaJulietNovemberkilooscarLimaJulietcharlieJulietHotelindia) is IMethodSymbol { IsStatic: true }); } }
+                }
+                object M547() {
+                    _ = Enumerate(static x => this.cache.GetTheSymbolOf(GetRoot(kilomikeDeltaPapagolfNameLimakiloDeltacharlieHotelJulietLimaJulietin)) is not { });
+                }
+            }
+            """,
+            """
+            class C {
+                object M340() {
+                    var r = recv.Use(x =>
+                        recv.Analyze(limaechoValuegolfNameoscarNovemberFoxtrotFoxtrotechoValuecharliemikealphaNovemberBravoosc)
+                            is IMethodSymbol { IsStatic: true }
+                    );
+                }
+
+                object M205() {
+                    return items.Select(node =>
+                        Read(oscarkilomikeechoValuegolfNameNovemberHotelFoxtrotNovembergolfNameHotelPapaNovember) is {
+                            IsStatic: true
+                        }
+                    );
+                }
+
+                object M916() {
+                    if (c0) {
+                        bool ok = nodes.All(x =>
+                            Helpers.Head<INamedTypeSymbol>(indiaSymbolFoxtrotBravogolfNameNovemberPapaHotelDeltaechoValuePapa) is
+                                not { }
+                        );
+                    }
+                }
+
+                object M16() {
+                    if (c0) {
+                        if (c1) {
+                            var r = recv.Use((x, y) =>
+                                Helpers.LookupTheDeclaration(alphaJulietNovemberkilooscarLimaJulietcharlieJulietHotelindia)
+                                    is IMethodSymbol { IsStatic: true }
+                            );
+                        }
+                    }
+                }
+
+                object M547() {
+                    _ = Enumerate(static x =>
+                        this.cache.GetTheSymbolOf(GetRoot(kilomikeDeltaPapagolfNameLimakiloDeltacharlieHotelJulietLimaJulietin)) is
+                            not { }
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A chain whose first call fits nowhere beside the arrow breaks it behind a short receiver (SK-DIV-0812).
+    /// </summary>
+    [Fact]
+    public void AChainWhoseFirstCallDoesNotFitBesideTheArrow_BreaksItBehindAShortReceiver() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M770() {
+                    return items.Select(static (x, y) => this.cache.Use<int>(julietJulietNovemberNovemberBravoBravokiloFoxtrotgolfNamemikegolfNameB).Analyze(GetRoot(alphaDeltaalphaDeltag), (int)bravoJulietLimaNovemberHotel).Select(y => y.Name));
+                }
+                object M1391() {
+                    if (c0) { var r = recv.Use(static (x, y) => Helpers.Bind<INamedTypeSymbol>(GetRoot(indiaSymbolgolfNamePapaHoteloscarPa)).With(julietosca, echoValuei).Single()); }
+                }
+                object M923() {
+                    if (c0) { if (c1) { if (c2) { var r = recv.Use(static (x, y) => this.model.LookupTheDeclaration(oscarBravoechoValuekiloBravoFoxtrotc).Select(novembe, brav, echoVa)); } } }
+                }
+                object M1130() {
+                    if (c0) { var symbols = context.Compilation.Use(static x => this.Open(mikeLimakiloPapaalphaechoValueechoValueDeltakiloFoxt).Analyze(x.Indiasymbolpapaecho, novemberindiaSymbo, indiaSymbol.Value)); }
+                }
+                object M2273() {
+                    if (c0) { if (c1) { if (c2) { bool ok = nodes.All(static (x, y) => recv.Use(x.Mikealphagolfnamekilojulietjulietkilocharliehotelgolf).Merge(limamikeindiaSymbolmik!, papaNovembergolfNameind.Value)); } } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M770() {
+                    return items.Select(static (x, y) =>
+                        this.cache.Use<int>(julietJulietNovemberNovemberBravoBravokiloFoxtrotgolfNamemikegolfNameB)
+                            .Analyze(GetRoot(alphaDeltaalphaDeltag), (int)bravoJulietLimaNovemberHotel)
+                            .Select(y => y.Name)
+                    );
+                }
+
+                object M1391() {
+                    if (c0) {
+                        var r = recv.Use(static (x, y) =>
+                            Helpers.Bind<INamedTypeSymbol>(GetRoot(indiaSymbolgolfNamePapaHoteloscarPa))
+                                .With(julietosca, echoValuei)
+                                .Single()
+                        );
+                    }
+                }
+
+                object M923() {
+                    if (c0) {
+                        if (c1) {
+                            if (c2) {
+                                var r = recv.Use(static (x, y) =>
+                                    this.model.LookupTheDeclaration(oscarBravoechoValuekiloBravoFoxtrotc)
+                                        .Select(novembe, brav, echoVa)
+                                );
+                            }
+                        }
+                    }
+                }
+
+                object M1130() {
+                    if (c0) {
+                        var symbols = context.Compilation.Use(static x =>
+                            this.Open(mikeLimakiloPapaalphaechoValueechoValueDeltakiloFoxt)
+                                .Analyze(x.Indiasymbolpapaecho, novemberindiaSymbo, indiaSymbol.Value)
+                        );
+                    }
+                }
+
+                object M2273() {
+                    if (c0) {
+                        if (c1) {
+                            if (c2) {
+                                bool ok = nodes.All(static (x, y) =>
+                                    recv.Use(x.Mikealphagolfnamekilojulietjulietkilocharliehotelgolf)
+                                        .Merge(limamikeindiaSymbolmik!, papaNovembergolfNameind.Value)
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     Wide links: the arguments' line stops at 113, and is null breaks behind a short lead (SK-DIV-0760).
+    /// </summary>
+    [Fact]
+    public void ALoneCallWithWideLinks_BreaksTheArrowWhereverItsArgumentsEnd() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M610() {
+                    if (c0) { _ = Enumerate(_ => Head(indiaSymbolJulietalphaBravochar, julietalphaBravocharlieDeltaech, alphaBravocharlieDeltaechoValueF).Select(z => z.Value).ToArray().Value); }
+                }
+                object M614() {
+                    if (c0) { _ = Enumerate(_ => Head(charlieDeltaechoValueFoxtrotgolf, deltaechoValueFoxtrotgolfNameHot, echoValueFoxtrotgolfNameHotelindia).Select(z => z.Value).ToArray().Value); }
+                }
+                object M1455() {
+                    Ussssssssssssssssssssssssssssssssssssssssss(x => recv.Use(charlieDeltaechoValueFoxtr, deltaechoValueFoxtrotgolfN) is null);
+                }
+                object M1568() {
+                    Usssssssssssssssssssssssssssssssssssssssssss(x => recv.Use(deltaechoValueFoxtrotgolfN, echoValueFoxtrotgolfNameHo) is null);
+                }
+            }
+            """,
+            """
+            class C {
+                object M610() {
+                    if (c0) {
+                        _ = Enumerate(_ =>
+                            Head(indiaSymbolJulietalphaBravochar, julietalphaBravocharlieDeltaech, alphaBravocharlieDeltaechoValueF)
+                                .Select(z => z.Value)
+                                .ToArray()
+                                .Value
+                        );
+                    }
+                }
+
+                object M614() {
+                    if (c0) {
+                        _ = Enumerate(_ =>
+                            Head(
+                                    charlieDeltaechoValueFoxtrotgolf,
+                                    deltaechoValueFoxtrotgolfNameHot,
+                                    echoValueFoxtrotgolfNameHotelindia
+                                )
+                                .Select(z => z.Value)
+                                .ToArray()
+                                .Value
+                        );
+                    }
+                }
+
+                object M1455() {
+                    Ussssssssssssssssssssssssssssssssssssssssss(x =>
+                        recv.Use(charlieDeltaechoValueFoxtr, deltaechoValueFoxtrotgolfN) is null
+                    );
+                }
+
+                object M1568() {
+                    Usssssssssssssssssssssssssssssssssssssssssss(x =>
+                        recv.Use(deltaechoValueFoxtrotgolfN, echoValueFoxtrotgolfNameHo) is null
+                    );
+                }
+            }
+            """
+        );
 }
