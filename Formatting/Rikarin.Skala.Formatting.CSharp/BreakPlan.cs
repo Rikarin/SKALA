@@ -7145,7 +7145,12 @@ public sealed class BreakPlan {
                         } conditionCall
                     }
                         ? FormattedWidth(conditionCall.GetFirstToken(), conditionCall.ArgumentList.OpenParenToken)
-                        : 0,
+                        : conditionHead > 0
+                            && value is ConditionalExpressionSyntax {
+                                Condition: BaseObjectCreationExpressionSyntax conditionCreation
+                            }
+                            ? FormattedWidth(conditionCreation.GetFirstToken(), FirstPointOf(conditionCreation))
+                            : 0,
                     ValueHeadArguments: conditionHead > 0
                     && value is ConditionalExpressionSyntax {
                         Condition: InvocationExpressionSyntax {
@@ -8797,6 +8802,23 @@ public sealed class BreakPlan {
     }
 
     /// <summary>
+    ///     The first token an object creation can end its line at: the <c>(</c> of an argument list with arguments, else
+    ///     the initializer's <c>{</c>, else its last token. A conditional's <c>=</c> breaks when it lands past the margin
+    ///     beside the <c>=</c>, as a call's <c>(</c> does (#596; fuzz 10634966521450362568).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Without it, <c>int v172 = new (…)() { P173 = 0xead } ? a : b</c> with the <c>{</c> at 121 to 125 kept its
+    ///     <c>=</c> under the twelve-column head floor and chopped the initializer; pass two, finding the condition
+    ///     broken (<see cref="HasLooseBreak" />), left #553's rule and broke the <c>=</c>. Measured 2026-11-14 with
+    ///     <c>Testing ask</c>: the oracle breaks the <c>=</c> for each of those five <c>{</c> columns and for an empty
+    ///     <c>()</c> ending at 123 without an initializer, and keeps it, chopping, while the point fits.
+    /// </remarks>
+    static SyntaxToken FirstPointOf(BaseObjectCreationExpressionSyntax creation) =>
+        creation.ArgumentList is { Arguments.Count: > 0 } arguments ? arguments.OpenParenToken
+        : creation.Initializer is { } initializer ? initializer.OpenBraceToken
+        : creation.GetLastToken();
+
+    /// <summary>
     ///     The leftmost operand of a combinator chain: what stands before its first <c>or</c> or <c>and</c>.
     /// </summary>
     static PatternSyntax FirstAlternativeOf(PatternSyntax pattern) {
@@ -9979,7 +10001,12 @@ public sealed class BreakPlan {
                 new(
                     widthLift,
                     GroupMode.Flat,
-                    new(Continues: true, LiftsIfArrowBreaks: true, LiftsThroughInnerBreaks: arm.WhenClause is not null),
+                    new(
+                        Continues: true,
+                        LiftsIfArrowBreaks: true,
+                        LiftsThroughInnerBreaks: arm.WhenClause is not null,
+                        LeavesPatternListsUnlifted: !liftsBraces
+                    ),
                     true,
                     false
                 )

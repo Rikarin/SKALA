@@ -1286,6 +1286,12 @@ public sealed class Document {
 ///     and a `.Member` two levels past the arm, where under a broken chain those lines continue the
 ///     ordinary way (#418).
 /// </param>
+/// <param name="LeavesPatternListsUnlifted">
+///     ⚠ A <see cref="LiftsIfArrowBreaks" /> group opened for the arm's <c>when</c> clause rather than for braces or
+///     brackets in its pattern: broken, it lifts no list in the pattern (<see cref="IndentFlags.ArmPattern" />), as
+///     the kept arrow's break that pass two reads back lifts none (fuzz 2309143029249313673). The oracle puts a
+///     positional clause's broken <c>)</c> one level past the arm under either break.
+/// </param>
 /// <param name="PatternHead">
 ///     ⚠ A local's <c>=</c> before <c>operand is A or B</c>: the head's width through the <c>=</c>. With
 ///     <see cref="PatternWidth" /> it decides the <c>=</c> by <see cref="EqualsFloor.BreaksBeforeAPattern" />
@@ -2061,7 +2067,9 @@ public sealed class Document {
 /// </param>
 /// <param name="ValueHeadCallee">
 ///     ⚠ With <see cref="ValueHeadWidth" />, a condition that is a call on a name: the width from the name through
-///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596).
+///     its <c>(</c>. The <c>=</c> breaks whenever that <c>(</c> would land past the margin beside it (#596). An object
+///     creation's is the width through its first point instead — the <c>(</c> of a non-empty argument list, else the
+///     initializer's <c>{</c> (fuzz 10634966521450362568).
 /// </param>
 /// <param name="PositionalHead">
 ///     ⚠ A switch arm's body group behind a positional pattern with no <c>when</c> (#559, SK-DIV-0443): the head
@@ -2283,6 +2291,7 @@ public readonly record struct GroupFacts(
     int ArmHead = 0,
     int ArmBody = 0,
     bool LiftsThroughInnerBreaks = false,
+    bool LeavesPatternListsUnlifted = false,
     int PatternHead = 0,
     int PatternWidth = 0,
     int HeadSlack = 0,

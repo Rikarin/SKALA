@@ -318,6 +318,29 @@ public sealed class FuzzRegressionTests {
     // flat width the floor compares, and broke after the `ref`. The yield now needs the `<` to fit, as the oracle's
     // does: it breaks after the colon or the keyword from the `<` at 122 on.
     [InlineData(354857589735471722UL)]
+    // Found 2026-11-14 (fails on a2a6de72 too): `int v172 = new ((…) First, (…) Second)() { P173 = 0xead } ? … : (…)`
+    // with the initializer's `{` past the margin. Behind a head under twelve columns #553's rule kept the `=` and
+    // chopped the initializer; pass two, the condition broken, left that rule and broke the `=`. An object creation's
+    // first point — its `(` with arguments, else its `{` — past the margin now breaks the `=` as a call's `(` does
+    // (#596), the oracle's answer on both passes.
+    [InlineData(10634966521450362568UL)]
+    // Found 2026-11-14 (fails on a2a6de72 too): `using var u18 = (IReadOnlyDictionary<…>)((Dictionary<…>)"""` / … /
+    // `""");` at 123 columns. The `=`'s tail stops at the inner cast's last resort, but the walk read that cast's group
+    // as unbounded before reaching the point — for the raw string behind it — so pass one kept the `=` and broke before
+    // the `"""`; pass two, that break required, ended the tail there, found it fitting below and broke the `=`.
+    [InlineData(15648357818547915787UL)]
+    // Reported 2026-11-14 as failing on a2a6de72, and it does: `set {` / `var v5 = (Guid)($"at {items[0]}" + … || (…));`
+    // came back `set { var v5 =` / `(Guid)(…); }` on pass one and opened the block on pass two. Clean on master since
+    // 9f524d8ba (the 1052827977788418967 fix above), bisected: the planner spaced the interpolated string's text and
+    // brackets, so the `=`'s ParenCloseEnd rule (#598) read the cast's `)` on column 121 where the writer puts it on
+    // 116 and broke, while the block, measured as written, stayed on one line at 119. Pinned so it does not return.
+    [InlineData(14580176773931760767UL)]
+    // Found 2026-11-14 (fails on a2a6de72 too): `(Guid First, StringBuilder Second` / `) typed71 when (… && … & …) =>
+    // "…",` in an arm whose arrow breaks for width. The width lift lifted the positional clause's own level, so pass one
+    // put the `)` two levels past the arm and chopped the condition; pass two, the arrow's break kept, let the arm's
+    // group pay the level, the clause spending none, and put the `)` one level past. An arm pattern's list is no longer
+    // lifted by the arrow's width lift, the oracle's `)` under either break.
+    [InlineData(2309143029249313673UL)]
     public void ReportedGeneratedSeeds_HaveNoViolations(ulong seed) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All());
         var (violations, _) = Fuzzer.Execute(
