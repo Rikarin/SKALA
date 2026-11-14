@@ -986,6 +986,22 @@ public sealed class Fitter {
                         return ResolvedMode.Broken;
                     }
 
+                    // ⚠ Beside a sole lambda's kept arrow over a broken type test, a one-argument call with links after
+                    // it moves below its receiver by a line of its own (#618 round eight). The arrow is decided on entry
+                    // at the body, before this group, so its mode is read here. See GroupFacts.HeldCallTestArrow.
+                    // ⚠ Not below a broken arrow: there the same shape of line leaves members apart up to 3.6 columns
+                    // from it on fresh probes, and #528's table still decides (SK-DIV-0520 round eight).
+                    if (facts is { HeldCall: 1, HeldCallTestArrow: >= 0 and var testArrow, HeldCallLambda: false }
+                        && facts.HeldCallLambdaRest > 0
+                        && resolved[testArrow]
+                        && modes[testArrow] == ResolvedMode.Flat
+                        && tail - facts.HeldCallHead - 1 > 0
+                        && Fits(m.Column, receiver)
+                        && !Fits(m.Column, m.FlatWidth)
+                        && HeldCallMovesBesideAKeptArrow(facts, m.Column, lineStart, receiver, tail) is { } moves) {
+                        return moves ? ResolvedMode.Broken : ResolvedMode.Flat;
+                    }
+
                     var line = m.ContinuationColumn + tail;
                     // ⚠ A lambda call whose line overflows by its `)` alone, behind a head and receiver of 16
                     // columns or fewer, stays and puts the `)` on a line of its own (SK-DIV-0420's lone `)`):
@@ -1287,7 +1303,8 @@ public sealed class Fitter {
                         facts.LambdaOperandFirst,
                         end,
                         facts.LambdaOperandPatternLeft,
-                        lineStart + 12
+                        lineStart + 12,
+                        lineStart + 3 + m.FlatWidth
                     )
                         ? ResolvedMode.Broken
                         : ResolvedMode.Flat;
@@ -2993,25 +3010,82 @@ public sealed class Fitter {
                 return true;
             }
 
-            var overflow = Math.Min(arrowEnd + 1 + operand - width, 12);
+            // ⚠ Round six: a property chain keeps or breaks its arrow by where the kept arrow's fill would end its first
+            // line, one line for every head (SK-DIV-0520). See KeptFillLineEnd.
+            // A chain that fits a level in with ten columns to spare breaks the arrow as well, and with nine it weighs
+            // sixty points toward breaking it.
+            if (facts.LambdaTestProperties && facts.LambdaTestDots is { Length: > 0 } dots) {
+                return below <= width - 10
+                    || 47 * head
+                    - 13 * parameters
+                    + 9 * lineStart
+                    - KeptFillLineEnd(dots, arrowEnd)
+                    + (below == width - 9 ? 50 : 0)
+                    >= 54;
+            }
+
             var first = facts.LambdaTestFirstCall;
-            var (score, margin) = later
-                ? (21 * head + 4 * lineStart - 7 * parameters - first - 2 * overflow + 22, 6)
-                : facts.LambdaTestLinks
-                    ? (10 * head + lineStart - 3 * parameters - first + 67, 11)
-                    : facts.LambdaTestProperties
-                        ? (14 * head + 3 * lineStart - 4 * parameters - overflow + (fitsBelow ? 1 : 0) - 39, 6)
-                        : facts.LambdaTestCallHead == -1 && facts.LambdaTestArgument == 0
-                            ? first == operand
-                                ? (9 * head + 2 * lineStart - 3 * parameters - 3 * overflow + 23, 11)
-                                : (15 * head + 3 * lineStart - 4 * parameters - operand - first + 106, 8)
-                            : facts.LambdaTestCallHead == -1 && facts.LambdaTestArgument > 0
-                                ? (5 * head + 2 * lineStart - operand + 64, 3)
-                                : (0, int.MaxValue);
+
+            // ⚠ A first call of two or more with links after it, held beside the arrow, by the same column — where the
+            // call's `)` ends the kept line — at about twice the weight: 21·c − 5·p + 4·i − e ≥ −33, and with ten or nine
+            // columns to spare a level in, fifty or ten points toward breaking.
+            if (facts.LambdaTestLinks && !later && held > 0) {
+                return 21 * head
+                    - 5 * parameters
+                    + 4 * lineStart
+                    - (arrowEnd + 1 + held)
+                    + (below == width - 10 ? 50 : below == width - 9 ? 10 : 0)
+                    >= -33;
+            }
+
+            // ⚠ And a property run ending in a call of no arguments (`x.Alpha.Beta.Build()`) by the same column, behind
+            // a threshold ninety-four points lower: it breaks its arrow far more readily, and wherever it fits a level in
+            // with seven columns to spare.
+            if (facts is { LambdaTestCallHead: -1, LambdaTestArgument: 0, LambdaTestDots: { Length: > 0 } runDots }
+                && first == operand) {
+                return below <= width - 7
+                    || 38 * head
+                    - 10 * parameters
+                    + 7 * lineStart
+                    - KeptFillLineEnd(runDots, arrowEnd)
+                    + (fitsBelow ? 6 : 0)
+                    >= -36;
+            }
+
+            // ⚠ Round seven: a later call is one line for every head, once the first call through its `)` counts in full
+            // only up to 24 columns: past that a column of it weighs a twenty-first as much. Round five's line, with the
+            // overflow and the first call at one weight, left the narrow heads (`X(`, `Do(`, `Use(`, `Find(`) to the
+            // rounds before it, and 54 members of round six's fit breaking where those kept. None of 10 090 later-call
+            // members of forty-one probes apart (SK-DIV-0520 round seven).
+            if (later) {
+                return 1080 * head
+                    - 328 * parameters
+                    + 189 * lineStart
+                    - 24 * first
+                    - 498 * Math.Min(first, 24)
+                    >= -10584;
+            }
+
+            var overflow = Math.Min(arrowEnd + 1 + operand - width, 12);
+            var (score, margin) = facts.LambdaTestLinks
+                ? (10 * head + lineStart - 3 * parameters - first + 67, 11)
+                : facts.LambdaTestProperties
+                    ? (0, int.MaxValue)
+                    : facts.LambdaTestCallHead == -1 && facts.LambdaTestArgument == 0
+                        ? first == operand
+                            ? (9 * head + 2 * lineStart - 3 * parameters - 3 * overflow + 23, 11)
+                            : (15 * head + 3 * lineStart - 4 * parameters - operand - first + 106, 8)
+                        : facts.LambdaTestCallHead == -1 && facts.LambdaTestArgument > 0
+                            ? (5 * head + 2 * lineStart - operand + 64, 3)
+                            : (0, int.MaxValue);
             return margin == int.MaxValue ? null
                 : score >= margin ? true
                 : score < -margin ? false
                 : null;
+        }
+
+        if (facts.LambdaTestCallHead > 0) {
+            return KeptLineBreaksOverACallOfTwo(facts, head, parameters, lineStart);
         }
 
         if (facts.LambdaTestCallHead != -1 || facts.LambdaTestArgument <= 0 || facts.LambdaTestLinks) {
@@ -3028,11 +3102,175 @@ public sealed class Fitter {
             + (parameters >= 10 ? 1 : 0)
             + (parameters >= 17 ? 1 : 0);
         var argumentEnd = lineStart + 8 + facts.LambdaTestArgument;
-        var distance = spread - Math.Min(9, 7 * argumentEnd - 790 + (fitsBelow ? 0 : 1));
-        return argumentEnd >= 114 || distance >= 0 ? distance >= 0
-            : distance < -2 ? false
-            : null;
+
+        // ⚠ Round eight: short of column 114 this is the call of two's line (KeptLineBreaksOverACallOfTwo) at its own
+        // constant — the head and the properties after the call at two thirds of a column of the argument, the
+        // parameters and the call's head at not quite two fifths: 0 of 8 190 members of forty-four probes apart, 43
+        // points between the nearest keep and the nearest break. ⚠ Rounds five to seven's `5·(c + t) − 3·(p + h)`
+        // against `7·e − 790` was that line rounded, and its margin, round seven's column 110 and its point for an
+        // operand that does not fit a level in were the rounding: two members of a fresh probe broke at e = 110 and
+        // 111 a point under round seven's line.
+        if (argumentEnd < 114) {
+            return 1000 * (head + tail)
+                - 576 * parameters
+                - 605 * facts.LambdaTestArgumentHead
+                - 1500 * (lineStart + facts.LambdaTestArgument)
+                >= -157215;
+        }
+
+        // From column 114 the line stops rising: the arrow breaks where the spread reaches 8 or 9, one more where the
+        // operand does not fit a level in.
+        return spread - Math.Min(9, 7 * argumentEnd - 790 + (fitsBelow ? 0 : 1)) >= 0;
     }
+
+    /// <summary>
+    ///     Where the first line of a property chain filled beside a kept arrow ending at <paramref name="arrowEnd" />
+    ///     would end: before the last dot that fits, or the first where none does (#618, SK-DIV-0520 round six).
+    /// </summary>
+    /// <remarks>
+    ///     ⚠ Round four's and five's lines for a property chain read the head, the line's start and the parameters, and
+    ///     left members apart a column of head either side of the line at random. Head-width grids with the chain's width
+    ///     the only thing changed (1 408 members) showed what decides inside that band: the oracle keeps the arrow where
+    ///     the kept fill's first line comes near the margin and breaks it where that line would leave a gap, at one
+    ///     threshold, <c>47·c − 13·p + 9·i − e ≥ 54</c> with <c>e</c> this column, fifty points more where the chain fits a
+    ///     level in with nine columns to spare and always where it does with ten: 3 of 5 585 members apart, of every head.
+    ///     ⚠ The same column decides a property run ending in a call of no arguments, at <c>38·c − 10·p + 7·i − e ≥ −36</c>
+    ///     (seven columns to spare always breaking), and a first call with links held beside the arrow, where it is the
+    ///     call's <c>)</c>, at <c>21·c − 5·p + 4·i − e ≥ −33</c>. It does not decide a later call: 51 members there stay
+    ///     on round five's lines.
+    /// </remarks>
+    int KeptFillLineEnd(int[] dots, int arrowEnd) {
+        var end = arrowEnd + 1 + dots[0];
+        foreach (var dot in dots) {
+            if (arrowEnd + 1 + dot <= width) {
+                end = arrowEnd + 1 + dot;
+            }
+        }
+
+        return end;
+    }
+
+    /// <summary>
+    ///     Round six of #618 (SK-DIV-0520): whether a sole lambda's arrow breaks over a broken type test whose operand's
+    ///     first call takes two or more arguments and does not fit beside the arrow — <c>Use(x =&gt; Get(a, b, c)</c>, with
+    ///     links after it or none.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         With <c>c</c> the head through the outer call's <c>(</c>, <c>p</c> the parameters, <c>h</c> the call's head
+    ///         through its <c>(</c>, <c>a</c> its arguments, <c>r</c> the links after its <c>)</c> and <c>i</c> the line's
+    ///         start. The kept arrow chops the arguments; the broken one moves the call a level in. ⚠ The links weigh as
+    ///         the head before the lambda does and the call's head as the parameters do — the spread
+    ///         <c>5·(c + r) − 3·(p + h)</c> of round three's one-argument rule — and against it stands where the arguments
+    ///         would end, <c>i + a</c>. Per column of <c>i + a</c> the members separate at one threshold each, rising seven
+    ///         and a half points a column and capped at 165: the arrow breaks where
+    ///         <c>83·c + 84·r − 49·p − 51·h − 126·(i + a) ≥ −10581</c> or the spread reaches 165, for the call of two or
+    ///         more with nothing after it and for the one with links after it alike, whether or not the call fits a level
+    ///         in. None of 7 752 members of twenty-four probes apart; the rounder <c>41·(c + r) − 24·p − 25·h</c> with
+    ///         <c>62·(i + a)</c> left two a few points off.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Round five read "not monotonic in where the call ends" as no line at all. The axis was wrong, not the
+    ///         class: where the call ends a level in, <c>i + 4 + h + a</c>, mixes the call's head into it, and the head
+    ///         belongs with the parameters.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Round seven: swept one width at a time around the member round six left across its line, the head and the
+    ///         links weigh exactly two thirds of a column of the arguments, and the parameters and the call's head very
+    ///         nearly two fifths, the parameters a little less. The line is now
+    ///         <c>1000·(c + r) − 576·p − 605·h − 1500·(i + a) ≥ −125679</c>, a column lower behind an arrow ending at 65 or
+    ///         later. What is left is a tie-break on the lattice of those fractions that no width carries.
+    ///     </para>
+    /// </remarks>
+    static bool? KeptLineBreaksOverACallOfTwo(in GroupFacts facts, int head, int parameters, int lineStart) {
+        if (head + parameters < 9) {
+            return false;
+        }
+
+        var callHead = facts.LambdaTestCallHead;
+        var operand = facts.LambdaTestCall;
+        var arguments = facts.LambdaTestLinks ? facts.LambdaTestArgument : operand - callHead - 1;
+        var links = operand - callHead - arguments - 1;
+        if (5 * (head + links) - 3 * (parameters + callHead) >= 165) {
+            return true;
+        }
+
+        // ⚠ Round seven: the head and the links weigh exactly two thirds of a column of the arguments each, and the
+        // parameters and the call's head not quite two fifths, the parameters a little less than the head. Round six's
+        // 83 against 84 put the head a hundredth of a column short a column, and xP M1296 three points across.
+        // ⚠ Behind an arrow ending at column 65 or later the line falls a column of arguments further (a 2 038-member
+        // grid of heads and parameters to 30 columns): every member there breaks down to 127 098.
+        var arrowEnd = lineStart + head + parameters + 3;
+        var distance = 1000 * (head + links)
+            - 576 * parameters
+            - 605 * callHead
+            - 1500 * (lineStart + arguments)
+            - (arrowEnd >= 65 ? -127098 : -125679);
+
+        // ⚠ Round eight, a measured deferral: within sixteen points (a hundredth of a column) on the breaking side the
+        // oracle keeps some arrows by a tie-break no width carries (SK-DIV-0520 round seven), and there the rounds before
+        // decide, as on master. Every member any probe or grid put newly wrong sits from 0 to 15 points past the line.
+        return distance is >= 0 and < LatticeTieBand ? null : distance >= 0;
+    }
+
+    /// <summary>
+    ///     How far past <see cref="KeptLineBreaksOverACallOfTwo" />'s line, in its points (1 500 to a column of the
+    ///     arguments), the earlier rounds still decide (#618 round eight, SK-DIV-0520).
+    /// </summary>
+    internal const int LatticeTieBand = 16;
+
+    /// <summary>
+    ///     Round eight of #618 (SK-DIV-0520): whether a held first call of one argument with links after it moves below
+    ///     its receiver beside a sole lambda's kept arrow over a broken type test — <c>x =&gt; this.cache</c> /
+    ///     <c>.Read(a…)</c> / <c>.Value</c> — or stays to chop its argument, <c>x =&gt; this.cache.Read(</c> / <c>a…</c> /
+    ///     <c>)</c> / <c>.Value</c>; <see langword="null" /> within a band of the line, where #528's table still decides.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         With <c>i</c> the line's start, <c>e</c> where the arrow ends, <c>r</c> the receiver, <c>h</c> the call's
+    ///         head through its <c>(</c>, <c>a</c> its argument and <c>t</c> the links after its <c>)</c>. The call moves
+    ///         where <c>−1500·(i + a) − 590·h + 1000·t − 180·e − 20·i − 30·r ≥ −145640</c>: the links weigh two thirds of
+    ///         a column of the argument and the call's head two fifths, as in the call of two's line
+    ///         (<see cref="KeptLineBreaksOverACallOfTwo" />). Measured with <c>Testing ask</c> on 648 one-argument members
+    ///         of two sweeps of where the moved call would end (96 to 120), every receiver kind, links of one to three
+    ///         and indents 8 to 20: none apart, 140 points between the nearest move and the nearest chop. A third sweep,
+    ///         written after it, put three members within 150 points across, so within 151 points the table decides; over
+    ///         the three (1 069 members) no other member is apart whose moved call ends short of the margin.
+    ///     </para>
+    ///     <para>
+    ///         ⚠ Refuted, round seven's "the oracle chops wherever the moved call would end at column 112 or later". With
+    ///         one link it chops from 109, with two from 113 and with three from 116 — the links are what moved it — and a
+    ///         call with no link after it, or with two arguments, chops at every column measured, as #528's table does.
+    ///         ⚠ And refuted, that the held decision is taken before the arrow's: the arrow group opens at the body's
+    ///         first token and resolves first, so its mode is there to read.
+    ///     </para>
+    /// </remarks>
+    bool? HeldCallMovesBesideAKeptArrow(in GroupFacts facts, int column, int lineStart, int receiver, int tail) {
+        var head = facts.HeldCallHead;
+        var argument = tail - head - 1;
+
+        // ⚠ Where the moved call would end at the margin itself the line does not hold: of eight such members on the
+        // moving side the oracle moved six and chopped two, one of them 1 990 points past the line. #528's table, which
+        // chops them all, decides there.
+        if (lineStart + 8 + tail >= width) {
+            return null;
+        }
+
+        var distance = -1500 * (lineStart + argument)
+            - 590 * head
+            + 1000 * facts.HeldCallLambdaRest
+            - 180 * (column - 1)
+            - 20 * lineStart
+            - 30 * receiver
+            + 145640;
+        return Math.Abs(distance) < HeldMoveBand ? null : distance >= 0;
+    }
+
+    /// <summary>
+    ///     How near <see cref="HeldCallMovesBesideAKeptArrow" />'s line, in its points (1 500 to a column of the
+    ///     argument), #528's table still decides (#618 round eight).
+    /// </summary>
+    internal const int HeldMoveBand = 151;
 
     /// <summary>
     ///     Whether the parameter behind a section starting at <paramref name="lineStart" /> overflows even a line of

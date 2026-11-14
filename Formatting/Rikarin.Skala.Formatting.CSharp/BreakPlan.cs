@@ -3723,6 +3723,9 @@ public sealed class BreakPlan {
                 HeldCallHead: callHead,
                 HeldCallRest: rest,
                 HeldCallOnAPath: IsAPathOfNames(((MemberAccessExpressionSyntax)link).Expression),
+                // ⚠ Beside a sole lambda's kept arrow over a broken type test the call moves by a line of its own (#618
+                // round eight); see GroupFacts.HeldCallTestArrow.
+                HeldCallTestArrow: TestArrowOver(root),
                 // ⚠ Only a lambda over an operand chain or a binary pattern, written on one line, as measured: over
                 // a call the oracle holds `source.Select(a => Foo(` and chops (ChainFirstCallArgumentsIssue418Tests).
                 HeldCallLambda: call.ArgumentList.Arguments is [
@@ -3756,6 +3759,28 @@ public sealed class BreakPlan {
                     : 0
             )
         );
+    }
+
+    /// <summary>
+    ///     The arrow group of the sole lambda whose type test has <paramref name="operand" /> as its operand and is
+    ///     decided as one (<see cref="GroupFacts.LambdaTestCall" />), or −1 (#618 round eight,
+    ///     <see cref="GroupFacts.HeldCallTestArrow" />).
+    /// </summary>
+    int TestArrowOver(SyntaxNode operand) {
+        var test = operand.Parent;
+        var tested = test switch {
+            IsPatternExpressionSyntax pattern => pattern.Expression,
+            BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.IsExpression)
+                || binary.IsKind(SyntaxKind.AsExpression) => binary.Left,
+            _ => null,
+        };
+        return tested == operand
+            && test?.Parent is LambdaExpressionSyntax lambda
+            && lambda.ExpressionBody == test
+            && arrowGroups.TryGetValue(Key(lambda), out var arrow)
+            && byId[arrow].Facts.LambdaTestCall > 0
+                ? arrow
+                : -1;
     }
 
     /// <summary>
@@ -10762,6 +10787,13 @@ public sealed class BreakPlan {
                                 LambdaTestCallHead: -1,
                                 LambdaTestProperties: !testedOperand.DescendantNodesAndSelf()
                                     .Any(static node => node is InvocationExpressionSyntax),
+                                LambdaTestDots: testedOperand.DescendantNodesAndSelf()
+                                    .Any(static node => node is InvocationExpressionSyntax {
+                                            ArgumentList.Arguments.Count: > 0
+                                        }
+                                    )
+                                    ? null
+                                    : DotWidthsOf(testedOperand),
                                 LambdaTestArgument: OnlyCallOf(testedOperand) is { } only
                                     ? FormattedWidth(only.ArgumentList) - 2
                                     : 0,
@@ -11182,6 +11214,27 @@ public sealed class BreakPlan {
             || IsASoleLambdasBrokenTestedProperty(operand)
                 ? operand
                 : null;
+    }
+
+    /// <summary>
+    ///     The width of a chain up to each dot on its spine, nearest the receiver first — <c>[1, 7]</c> for
+    ///     <c>x.Alpha.Beta</c> and for <c>x.Alpha.Build()</c> (#618, <see cref="GroupFacts.LambdaTestDots" />).
+    /// </summary>
+    int[] DotWidthsOf(ExpressionSyntax chain) {
+        var widths = new List<int>();
+        for (var spine = chain; spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax;) {
+            if (spine is InvocationExpressionSyntax invocation) {
+                spine = invocation.Expression;
+                continue;
+            }
+
+            var access = (MemberAccessExpressionSyntax)spine;
+            widths.Add(FormattedWidth(chain.GetFirstToken(), access.OperatorToken.GetPreviousToken()));
+            spine = access.Expression;
+        }
+
+        widths.Reverse();
+        return [..widths];
     }
 
     /// <summary>

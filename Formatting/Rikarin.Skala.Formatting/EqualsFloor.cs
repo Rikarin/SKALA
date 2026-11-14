@@ -355,13 +355,17 @@ public static class EqualsFloor {
     ///     expressions, types of 3 to 40, lines of 118 to 200, either context, the remaining operands split at
     ///     random), where the chain's constants miss 540 and these 15.
     /// </param>
+    /// <param name="below">
+    ///     Where the body would end moved a level in, or zero where the caller does not say (#618 round six).
+    /// </param>
     public static bool BreaksTheOperandArrow(
         int arrow,
         int parameters,
         int first,
         int end,
         int patternLeft = 0,
-        int floor = 20
+        int floor = 20,
+        int below = 0
     ) {
         // ⚠ The cap rises 0.55 a column per column of parameter text and 0.6 per column of first operand, up to
         // where the ceiling stops counting it (#586, group B); round 2's max(85, 85.5 + 0.25·(params − 36)) held
@@ -380,6 +384,15 @@ public static class EqualsFloor {
             );
             var patternLine = (27.0 * end + 9 * parameters - 2832) / 30
                 - Math.Max(0, 10 + patternLeft - 0.375 * capped);
+
+            // ⚠ Where the line's own column falls short of the floor (a held call's lambda a level or two in, #619's
+            // shape) an arrow short of the ceiling stays wherever the body, moved a level in, would leave three columns
+            // or fewer to the margin: `.SkipWhile(x => x is A` / `or B`. With four or more the oracle breaks it, in
+            // every such statement of #619's probes (#618 round six, SK-DIV-0520).
+            if (below > 0 && patternLine < floor && arrow < patternCeiling && below >= 117) {
+                return false;
+            }
+
             return arrow >= Math.Max(floor, Math.Min(patternCeiling, patternLine));
         }
 
