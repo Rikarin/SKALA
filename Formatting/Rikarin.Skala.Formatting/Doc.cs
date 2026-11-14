@@ -2168,6 +2168,20 @@ public sealed class Document {
 ///     ⚠ <see cref="ParenMember" />'s shape behind a head of exactly six columns through the <c>=</c>, <c>name =</c>,
 ///     single or doubled (#598, round 13). See <c>Fitter.SixColumnEqualsBreaks</c>.
 /// </param>
+/// <param name="LoneCallLambda">
+///     ⚠ The argument list of a lone call of two arguments or more that is the whole body of a sole lambda argument
+///     written on one line, the outer call's <c>)</c> followed by its <c>;</c> (<c>Use(x =&gt; Head(a, b));</c>): the
+///     lambda through its <c>=&gt;</c>, zero otherwise. Where only that <c>;</c> runs past the margin, the oracle chops
+///     this list or moves the outer <c>)</c> down, by where the lambda starts and its lead (#620 round six,
+///     SK-DIV-0982). See <c>Fitter.LoneCallChops</c>.
+/// </param>
+/// <param name="LoneCallHead">With <see cref="LoneCallLambda" />: the call's head through its <c>(</c>.</param>
+/// <param name="SoleChainSegments">
+///     With <see cref="SoleChainHead" />: the chain's segments between its dots, the first one through its root (with
+///     <c>this.</c> or <c>base.</c> and the name after it as one), each as wide as it is written on one line. Read where
+///     the first call does not fit beside the arrow behind a receiver of twelve columns or more, which the oracle
+///     decides as it does a chain of properties (#620 round six, SK-DIV-0983).
+/// </param>
 /// <param name="CastMember">
 ///     ⚠ The gap after a cast's <c>)</c> before a parenthesised operator with one member after it, the whole value of a
 ///     <c>return</c> or an assignment, simple or compound (#598, SK-DIV-0871): the value's widths, with
@@ -2501,7 +2515,10 @@ public readonly record struct GroupFacts(
     ParenMemberValue SixParenMember = default,
     int ArmParenBody = 0,
     bool ArmParenOpens = false,
-    bool WhenFirstPlain = false);
+    bool WhenFirstPlain = false,
+    int LoneCallLambda = 0,
+    int LoneCallHead = 0,
+    int[]? SoleChainSegments = null);
 
 /// <summary>
 ///     What a local's or a plain assignment's <c>=</c> knows of a value that is one parenthesis around a binary operator

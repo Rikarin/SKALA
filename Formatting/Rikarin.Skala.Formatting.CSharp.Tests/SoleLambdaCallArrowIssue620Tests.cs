@@ -1229,4 +1229,428 @@ public sealed class SoleLambdaCallArrowIssue620Tests {
             }
             """
         );
+
+    /// <summary>
+    ///     A one-line type test over a call of two arguments or more that fits beside the arrow, the test not, breaks the
+    ///     arrow (SK-DIV-0984).
+    /// </summary>
+    [Fact]
+    public void ATypeTestOverACallThatFitsBesideTheArrow_BreaksIt() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M719() {
+                    TryFind(x => Analyze(x.Mikecharlieindiasymb, novemberalphaLimacharlieBrav, golfNameNovemberoscaros.Value) is IMethodSymbol { IsStatic: true });
+                }
+                object M251() {
+                    if (c0) { if (c1) { r = Each((x, y) => model.Find(julietalphaNovem, mikeHotelcharli.Value, novemberPapaoscarBravogol!) is IMethodSymbol { IsStatic: true }); } }
+                }
+                object M2474() {
+                    Use((x, y) => recv.Use(papaJulietPapaechoVal, GetRoot(kilooscarcharlieindiaSy), alphaLimaPapacharliekiloF!) is IMethodSymbol { IsStatic: true });
+                }
+            }
+            """,
+            """
+            class C {
+                object M719() {
+                    TryFind(x =>
+                        Analyze(
+                            x.Mikecharlieindiasymb,
+                            novemberalphaLimacharlieBrav,
+                            golfNameNovemberoscaros.Value
+                        ) is IMethodSymbol { IsStatic: true }
+                    );
+                }
+
+                object M251() {
+                    if (c0) {
+                        if (c1) {
+                            r = Each((x, y) =>
+                                model.Find(julietalphaNovem, mikeHotelcharli.Value, novemberPapaoscarBravogol!) is IMethodSymbol {
+                                    IsStatic: true
+                                }
+                            );
+                        }
+                    }
+                }
+
+                object M2474() {
+                    Use((x, y) =>
+                        recv.Use(
+                            papaJulietPapaechoVal,
+                            GetRoot(kilooscarcharlieindiaSy),
+                            alphaLimaPapacharliekiloF!
+                        ) is IMethodSymbol { IsStatic: true }
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     An arrow ending at 60 to 74 is the measured lines', the thousandth line with its far-right term (SK-DIV-0980).
+    /// </summary>
+    [Fact]
+    public void AnArrowEndingFarRight_IsTheMeasuredLinesWithTheFarRightTerm() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M1862() {
+                    if (c0) { var symbols = context.Compilation.Use(static x => base.Head(x.Novemberdeltagolfnamegolfnamefo, novemberoscarkiloalphaNove, indiaSymbolcharlieHo) is SyntaxNode node); }
+                }
+                object M548() {
+                    if (c0) { var symbols = context.Compilation.Use(static x => model.Normalize(hotelmikeHotelkiloBravomikeBravoNovember!, "papacharlieFoxtrotechoValueJulietDeltago") is SyntaxNode node); }
+                }
+                object M832() {
+                    var symbols = context.Compilation.Use(static (x, y) => this.CharlieHotelalphaBravoJuliet(echoValuekiloLimakilocharlieindi, oscarmikeDeltaNovemberNovembe));
+                }
+                object M833() {
+                    var symbols = context.Compilation.Use(static (x, y) => model.OscarBravoFoxtrotDeltaoscar(hotelalphakiloechoValueNovember, foxtrotHotelLimamikeJulietNovem));
+                }
+                object M834() {
+                    var symbols = context.Compilation.Use(static (x, y) => model.HoteloscarindiaSymbolFoxtro(bravokilogolfNamecharlieJulietin, echoValueJulietNovemberLimaPapa));
+                }
+            }
+            """,
+            """
+            class C {
+                object M1862() {
+                    if (c0) {
+                        var symbols = context.Compilation.Use(static x => base.Head(
+                                x.Novemberdeltagolfnamegolfnamefo,
+                                novemberoscarkiloalphaNove,
+                                indiaSymbolcharlieHo
+                            ) is SyntaxNode node
+                        );
+                    }
+                }
+
+                object M548() {
+                    if (c0) {
+                        var symbols = context.Compilation.Use(static x => model.Normalize(
+                                hotelmikeHotelkiloBravomikeBravoNovember!,
+                                "papacharlieFoxtrotechoValueJulietDeltago"
+                            ) is SyntaxNode node
+                        );
+                    }
+                }
+
+                object M832() {
+                    var symbols = context.Compilation.Use(static (x, y) =>
+                        this.CharlieHotelalphaBravoJuliet(echoValuekiloLimakilocharlieindi, oscarmikeDeltaNovemberNovembe)
+                    );
+                }
+
+                object M833() {
+                    var symbols = context.Compilation.Use(static (x, y) =>
+                        model.OscarBravoFoxtrotDeltaoscar(hotelalphakiloechoValueNovember, foxtrotHotelLimamikeJulietNovem)
+                    );
+                }
+
+                object M834() {
+                    var symbols = context.Compilation.Use(static (x, y) => model.HoteloscarindiaSymbolFoxtro(
+                            bravokilogolfNamecharlieJulietin,
+                            echoValueJulietNovemberLimaPapa
+                        )
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     On the thousandth line's own boundary the arrow stays at columns 30 to 34 and 50 to 54 and breaks between
+    ///     (SK-DIV-0981).
+    /// </summary>
+    [Fact]
+    public void TheLinesOwnBoundary_BreaksTheTieByTheArrowsColumn() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M269() {
+                    if (c0) { r = Each((x, y) => this.LookupTheDeclaration(limamikeNovemberPapaechoValuealphaindiaSym, kiloFoxtrotmikeJulietHotelmikecharlieLi) is IMethodSymbol { IsStatic: true }); }
+                }
+                object M106() {
+                    Usesssssssss((a, b) => DeltaFoxtrotalphaindiaSym(hotelechoValueDeltaLimakiloLimaoscarDe, charlieNovemberHotelalphakiloDeltaFoxtr) is INamedTypeSymbol { });
+                }
+                object M286() {
+                    Usesssssssssssssssssss((a, b) => this.cache.EchoValueindia(charlieFoxtrotgolfNameBravoHotelBravo, oscaralphaoscargolfNameDeltaPapaoscarDel) is INamedTypeSymbol { });
+                }
+            }
+            """,
+            """
+            class C {
+                object M269() {
+                    if (c0) {
+                        r = Each((x, y) => this.LookupTheDeclaration(
+                                limamikeNovemberPapaechoValuealphaindiaSym,
+                                kiloFoxtrotmikeJulietHotelmikecharlieLi
+                            ) is IMethodSymbol { IsStatic: true }
+                        );
+                    }
+                }
+
+                object M106() {
+                    Usesssssssss((a, b) => DeltaFoxtrotalphaindiaSym(
+                            hotelechoValueDeltaLimakiloLimaoscarDe,
+                            charlieNovemberHotelalphakiloDeltaFoxtr
+                        ) is INamedTypeSymbol { }
+                    );
+                }
+
+                object M286() {
+                    Usesssssssssssssssssss((a, b) =>
+                        this.cache.EchoValueindia(
+                            charlieFoxtrotgolfNameBravoHotelBravo,
+                            oscaralphaoscargolfNameDeltaPapaoscarDel
+                        ) is INamedTypeSymbol { }
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     With links the short-lead region is 11·λ + 10·h + 30·L ≤ 370 (SK-DIV-0981).
+    /// </summary>
+    [Fact]
+    public void AShortLeadWithLinks_WeighsTheLambdaATenthMore() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M362() {
+                    var symbols = context.Compilation.Use(static x => recv.Nove(golfNameFoxtrotoscarindiaSymbolgolf, julietLimaindiaSymbolechoValueHote).Name);
+                }
+                object M363() {
+                    var symbols = context.Compilation.Use(static x => Bravokilo(bravoFoxtrotJulietalphacharliem, foxtrotJulietmikeBravoindiaSymbolBravoP).Name);
+                }
+                object M364() {
+                    var symbols = context.Compilation.Use(static x => GolfNamec(charliemikeoscaroscaralphaalphaNov, echoValuemikeoscarPapaFoxtrotechoValu).Name);
+                }
+                object M335() {
+                    var symbols = context.Compilation.Use((a, b) => Limamikegol(hotelHotelFoxtrotNovemberechoVal, julietalphaLimaindiaSymbolcharliegolf).Name);
+                }
+                object M336() {
+                    var symbols = context.Compilation.Use((a, b) => recv.Kilomi(limaNovemberDeltaBravokilooscarFoxt, foxtrotJulietalphaalphakilokiloDelt).Name);
+                }
+            }
+            """,
+            """
+            class C {
+                object M362() {
+                    var symbols = context.Compilation.Use(static x =>
+                        recv.Nove(golfNameFoxtrotoscarindiaSymbolgolf, julietLimaindiaSymbolechoValueHote).Name
+                    );
+                }
+
+                object M363() {
+                    var symbols = context.Compilation.Use(static x =>
+                        Bravokilo(bravoFoxtrotJulietalphacharliem, foxtrotJulietmikeBravoindiaSymbolBravoP).Name
+                    );
+                }
+
+                object M364() {
+                    var symbols = context.Compilation.Use(static x => GolfNamec(
+                            charliemikeoscaroscaralphaalphaNov,
+                            echoValuemikeoscarPapaFoxtrotechoValu
+                        )
+                        .Name
+                    );
+                }
+
+                object M335() {
+                    var symbols = context.Compilation.Use((a, b) => Limamikegol(
+                            hotelHotelFoxtrotNovemberechoVal,
+                            julietalphaLimaindiaSymbolcharliegolf
+                        )
+                        .Name
+                    );
+                }
+
+                object M336() {
+                    var symbols = context.Compilation.Use((a, b) => recv.Kilomi(
+                            limaNovemberDeltaBravokilooscarFoxt,
+                            foxtrotJulietalphaalphakilokiloDelt
+                        )
+                        .Name
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A lone call whose line is over only by the ; after the outer ) chops by where the lambda starts and its lead
+    ///     (SK-DIV-0982).
+    /// </summary>
+    [Fact]
+    public void ALoneCallOverOnlyItsSemicolon_ChopsOrMovesTheParenthesisDown() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M297() {
+                    if (c0) { return items.Select(static x => model.Head(charliePapaPap.Value, (int)alphaPapamikeLima, (int)limaPapaindi)); }
+                }
+                object M333() {
+                    _ = Enumerate(_ => this.GetTheSymbolOf(GetRoot(limaJulietNovembermik), alphaFoxtrotgolfNameNovemberoscarmikePa));
+                }
+                object M669() {
+                    Usessssss((a, b) => this.cache.Alphacharlie(alphagolfNameJulietalphaJulietL, mikeLimaoscarLimaDeltagolfNamePap));
+                }
+                object M670() {
+                    Usesssssss((a, b) => model.AlphaoscarPapaPap(kiloNovemberindiaSymbolNovemberalp, papaoscarPapamikegolfNameBrav));
+                }
+            }
+            """,
+            """
+            class C {
+                object M297() {
+                    if (c0) {
+                        return items.Select(static x => model.Head(
+                                charliePapaPap.Value,
+                                (int)alphaPapamikeLima,
+                                (int)limaPapaindi
+                            )
+                        );
+                    }
+                }
+
+                object M333() {
+                    _ = Enumerate(_ => this.GetTheSymbolOf(
+                            GetRoot(limaJulietNovembermik),
+                            alphaFoxtrotgolfNameNovemberoscarmikePa
+                        )
+                    );
+                }
+
+                object M669() {
+                    Usessssss((a, b) => this.cache.Alphacharlie(
+                            alphagolfNameJulietalphaJulietL,
+                            mikeLimaoscarLimaDeltagolfNamePap
+                        )
+                    );
+                }
+
+                object M670() {
+                    Usesssssss((a, b) => model.AlphaoscarPapaPap(kiloNovemberindiaSymbolNovemberalp, papaoscarPapamikegolfNameBrav)
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A chain whose first call does not fit beside the arrow behind a receiver of 12 columns or more is decided as a
+    ///     chain of properties (SK-DIV-0983).
+    /// </summary>
+    [Fact]
+    public void AChainBehindALongReceiver_IsDecidedAsAChainOfProperties() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M589() {
+                    if (c0) { _ = Enumerate(static x => novemberJulietLimaalphaindiaSymbolmikeLimaFoxtrotoscarLimaFoxtrotP.ComputeTheValueFor().Name.ToString()); }
+                }
+                object M1165() {
+                    if (c0) { if (c1) { if (c2) { Use(node => limaLimaFoxtrotBravoHotelJulietkiloFoxtrotcharliePapacharliekiloechoValuee.model.Resolve().First().Name.Kind); } } }
+                }
+                object M22() {
+                    if (c0) { this.Apply((a, b) => oscarJulietLimaechoValueHotelNovemberFoxtrotgolfNamemikeFoxtrotechoValueLimaFox.Open(a, b).Count); }
+                }
+                object M97() {
+                    r = Each(static (x, y) => indiaSymbolgolfNamecharlieindiaSymbolPapacharliecharlieoscarNovemberDeltaJulietoscarmi.Open(a, b).Where(y => y.IsValid).ToArray().Where(y => y.IsValid).ToArray());
+                }
+            }
+            """,
+            """
+            class C {
+                object M589() {
+                    if (c0) {
+                        _ = Enumerate(static x => novemberJulietLimaalphaindiaSymbolmikeLimaFoxtrotoscarLimaFoxtrotP
+                            .ComputeTheValueFor()
+                            .Name.ToString()
+                        );
+                    }
+                }
+
+                object M1165() {
+                    if (c0) {
+                        if (c1) {
+                            if (c2) {
+                                Use(node => limaLimaFoxtrotBravoHotelJulietkiloFoxtrotcharliePapacharliekiloechoValuee.model
+                                    .Resolve()
+                                    .First()
+                                    .Name.Kind
+                                );
+                            }
+                        }
+                    }
+                }
+
+                object M22() {
+                    if (c0) {
+                        this.Apply((a, b) => oscarJulietLimaechoValueHotelNovemberFoxtrotgolfNamemikeFoxtrotechoValueLimaFox
+                            .Open(a, b)
+                            .Count
+                        );
+                    }
+                }
+
+                object M97() {
+                    r = Each(static (x, y) => indiaSymbolgolfNamecharlieindiaSymbolPapacharliecharlieoscarNovemberDeltaJulietoscarmi
+                        .Open(a, b)
+                        .Where(y => y.IsValid)
+                        .ToArray()
+                        .Where(y => y.IsValid)
+                        .ToArray()
+                    );
+                }
+            }
+            """
+        );
+
+    /// <summary>
+    ///     A chain of properties that fits nowhere breaks its arrow by 102·s − 180·p − 13·f ≥ 716 (SK-DIV-0985).
+    /// </summary>
+    [Fact]
+    public void APropertyChainThatFitsNowhere_ByTheRefittedLine() =>
+        Oracle.Agrees(
+            """
+            class C {
+                object M798() {
+                    if (c0) { if (c1) { this.Apply(symbol => symbol.Novembe.Mikejulietos.Alphakil.Julietnovemberg.Novem.Limafo.Charlie.Mikenovemberind.Hote.Echovaluedeltan.Papaindiasy.Novem.Charlieindiasymbo.Alphaf.Hotelno.Kilomike); } }
+                }
+                object M1329() {
+                    if (c0) { if (c1) { if (c2) { var r = recv.Use(static (x, y) => this.model.Oscarindiasymbol.Julietm.Novembergolfna.Echo.Indiasymbolosc.Kilo.Deltahotelgolfname.Bravocharliepapam.Foxtrotbravoechova); } } }
+                }
+            }
+            """,
+            """
+            class C {
+                object M798() {
+                    if (c0) {
+                        if (c1) {
+                            this.Apply(symbol =>
+                                symbol.Novembe.Mikejulietos.Alphakil.Julietnovemberg.Novem.Limafo.Charlie.Mikenovemberind.Hote
+                                    .Echovaluedeltan.Papaindiasy.Novem.Charlieindiasymbo.Alphaf.Hotelno.Kilomike
+                            );
+                        }
+                    }
+                }
+
+                object M1329() {
+                    if (c0) {
+                        if (c1) {
+                            if (c2) {
+                                var r = recv.Use(static (x, y) =>
+                                    this.model.Oscarindiasymbol.Julietm.Novembergolfna.Echo.Indiasymbolosc.Kilo.Deltahotelgolfname
+                                        .Bravocharliepapam.Foxtrotbravoechova
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+            """
+        );
 }

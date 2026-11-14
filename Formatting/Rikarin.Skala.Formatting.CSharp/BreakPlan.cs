@@ -1819,11 +1819,15 @@ public sealed class BreakPlan {
             node,
             group,
             chopsAlways || overCap || forced ? GroupMode.Break : GroupMode.Preserve,
-            new(
-                broken,
-                joins && !overCap,
-                true,
-                HidesFlatWidthWhenBroken: true
+            WithTheLoneCall(
+                node,
+                soleLambda,
+                new(
+                    broken,
+                    joins && !overCap,
+                    true,
+                    HidesFlatWidthWhenBroken: true
+                )
             ),
             // ⚠ The list's node starts *at* its opening parenthesis, so a break point registered on
             // that parenthesis is written before the group is opened and the writer, finding the
@@ -2041,6 +2045,32 @@ public sealed class BreakPlan {
             }
         );
     }
+
+    /// <summary>
+    ///     <paramref name="facts" /> with <see cref="GroupFacts.LoneCallLambda" /> and
+    ///     <see cref="GroupFacts.LoneCallHead" /> set where the list is the arguments of a lone call of two or more that is
+    ///     the whole body of a sole lambda argument written on one line, the outer call's <c>)</c> followed by its
+    ///     <c>;</c> (#620 round six, SK-DIV-0982).
+    /// </summary>
+    GroupFacts WithTheLoneCall(SyntaxNode node, bool soleLambda, GroupFacts facts) =>
+        !soleLambda
+        && node is ArgumentListSyntax {
+            Arguments.Count: >= 2,
+            Parent: InvocationExpressionSyntax {
+                Parent: LambdaExpressionSyntax {
+                    Parent: ArgumentSyntax { Parent: ArgumentListSyntax { Arguments.Count: 1 } outer }
+                } lambda
+            } body
+        }
+        && lambda.ExpressionBody == body
+        && outer.CloseParenToken.GetNextToken().IsKind(SyntaxKind.SemicolonToken)
+        && SoleCallOf(body) == body
+        && !HasLineBreakIn(lambda)
+            ? facts with {
+                LoneCallLambda = FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken),
+                LoneCallHead = FormattedWidth(body.GetFirstToken(), body.ArgumentList.OpenParenToken)
+            }
+            : facts;
 
     /// <summary>
     ///     <c>skala_wrap_extends_list_style = chop_if_long</c>: a long base list puts one base type per line.
@@ -10483,8 +10513,46 @@ public sealed class BreakPlan {
             SoleChainReceiver = first.Expression is MemberAccessExpressionSyntax { OperatorToken: var dot }
                 ? FormattedWidth(body.GetFirstToken(), dot)
                 : 0,
+            SoleChainSegments = SegmentsOfAChain(body),
             SoleCallLambda = FormattedWidth(lambda.GetFirstToken(), lambda.ArrowToken)
         };
+    }
+
+    /// <summary>
+    ///     A chain's segments between the dots on its spine, as wide as each is written on one line, with a root of
+    ///     <c>this</c> or <c>base</c> joined to the name after it (#620 round six, SK-DIV-0983). See
+    ///     <see cref="GroupFacts.SoleChainSegments" />.
+    /// </summary>
+    int[] SegmentsOfAChain(ExpressionSyntax body) {
+        var dots = new List<SyntaxToken>();
+        for (var spine = body; spine is MemberAccessExpressionSyntax or InvocationExpressionSyntax;) {
+            if (spine is MemberAccessExpressionSyntax access) {
+                dots.Add(access.OperatorToken);
+                spine = access.Expression;
+            } else {
+                spine = ((InvocationExpressionSyntax)spine).Expression;
+            }
+        }
+
+        dots.Reverse();
+        var start = body.GetFirstToken();
+        var segments = new List<int>();
+        var before = 0;
+        foreach (var dot in dots) {
+            var through = FormattedWidth(start, dot.GetPreviousToken());
+            segments.Add(through - before);
+            before = through + 1;
+        }
+
+        segments.Add(FormattedWidth(start, body.GetLastToken()) - before);
+        if (start.IsKind(SyntaxKind.ThisKeyword) || start.IsKind(SyntaxKind.BaseKeyword)) {
+            if (segments.Count > 1) {
+                segments[1] += segments[0] + 1;
+                segments.RemoveAt(0);
+            }
+        }
+
+        return [..segments];
     }
 
     /// <summary>
