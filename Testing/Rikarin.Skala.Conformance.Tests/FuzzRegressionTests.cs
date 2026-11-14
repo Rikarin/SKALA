@@ -537,6 +537,12 @@ public sealed class FuzzRegressionTests {
     // and chopped the argument; pass two, the argument chopped, was no held call and broke the `=` by the ordering rule.
     // Pass two now asks the limit again behind a `var` or an assignment (#446 round 13, Fitter.UntypedChopStays).
     [InlineData(6543097749365391771UL, "real/vixen/Core/Vixen.Navigation/Baking/PolyMeshDetail.cs")]
+    // A regression of #576 round 14 (first bad 99955968b, a2a6de72 clean): `{ P25: not null } when Materialise…(…) => (from
+    // item in items` / `where "s" select item` / `),` with the author's break before the body's `)`. Round 14's point
+    // after a parenthesised query's `(` gave the query a level of its own: pass one, the arrow broken for width, put the
+    // `)` a level past the clauses' line start; pass two, reading the arrow's break as kept, a level back. The point is no
+    // longer planned over a `)` the author broke before.
+    [InlineData(17745013003563663514UL, "constructs/breaks/arm-when-condition-below.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(
