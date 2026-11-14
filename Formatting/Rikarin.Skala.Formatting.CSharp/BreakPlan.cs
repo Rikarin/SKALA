@@ -3241,10 +3241,13 @@ public sealed class BreakPlan {
                     PrefersOuterBreak: true,
                     SkipsOuterTail: true,
                     OneOverValue: oneOver,
-                    OneOverParen: oneOver > 0
-                    && value is InvocationExpressionSyntax { ArgumentList.Arguments.Count: >= 2 } held
+                    // ⚠ And one argument on a receiver call: its gap breaks only while the `(` lands far enough right,
+                    // as two arguments' does, by a bound of its own (#446 round 13). See GroupFacts.OneOverParen.
+                    OneOverParen: oneOver > 0 && IsAReceiverCall(value) && value is InvocationExpressionSyntax held
                         ? name.Span.Length + 3 + CalleeOf(held) + 1
-                        : 0
+                        : 0,
+                    OneOverSingle: oneOver > 0
+                    && value is InvocationExpressionSyntax { ArgumentList.Arguments.Count: 1 }
                 ),
                 true,
                 true
@@ -5824,7 +5827,14 @@ public sealed class BreakPlan {
                 PatternDotName = qualified.Right.Span.Length,
                 PatternDotQualifier = qualified.Left.Span.Length,
                 PatternDotOperand = FormattedWidth(((BinaryExpressionSyntax)node).Left),
-                PatternDotHead = PatternDotHeadOf(node)
+                PatternDotHead = PatternDotHeadOf(node),
+                PatternDotReceiver = ((BinaryExpressionSyntax)node).Left is MemberAccessExpressionSyntax member
+                    && TypeTestTail(member) > 0
+                        ? FormattedWidth(member.Expression)
+                        : 0,
+                PatternDotStatementHead = node.Parent is YieldStatementSyntax yield
+                    ? FormattedWidth(yield.YieldKeyword, yield.ReturnOrBreakKeyword) + 1
+                    : 7
             }
             : facts;
 
@@ -7102,7 +7112,10 @@ public sealed class BreakPlan {
         var heldBinary = heldMember is not null
             ? ParenthesisedOperatorOf(heldMember.Expression)
             : null;
-        var choppedHeld = heldKind == 1 && heldCall is null ? ChoppedHeldCallOf(value) : null;
+        // ⚠ And behind a `var` or an assignment of twelve columns or more (#446 round 13): pass two of a one-argument
+        // chop the list limit kept beside the `=` asks the limit again, as a typed local's does. See
+        // GroupFacts.HeldChoppedWidth.
+        var choppedHeld = heldKind is 1 or 3 && heldCall is null ? ChoppedHeldCallOf(value) : null;
         var heldCallee = (heldCall ?? choppedHeld)?.Expression as MemberAccessExpressionSyntax ?? heldProperty;
         var targetKept = false;
         // ⚠ A block comment after the `=` sits on the target's line beside it, ahead of the value (fuzz 7310017 on
@@ -7379,10 +7392,10 @@ public sealed class BreakPlan {
                     && owner == EqualsOwner.TypedLocal
                         ? EqualsNameOf(node, owner, value)
                         : 0,
-                    HeldChoppedHead: choppedHeld is not null && heldKind == 1
+                    HeldChoppedHead: choppedHeld is not null
                         ? FormattedWidth(value.GetFirstToken(), choppedHeld.ArgumentList.OpenParenToken)
                         : 0,
-                    HeldChoppedWidth: choppedHeld is not null && heldKind == 1
+                    HeldChoppedWidth: choppedHeld is not null
                         ? FlatSourceWidth(value)
                         + WidthThroughSemicolon(value)
                         + TrailingCommentWidth(value.GetLastToken().GetNextToken())

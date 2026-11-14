@@ -10112,6 +10112,21 @@ wrong, every cell stable. Pinned by `HeldLimitExactIssue446Tests.YieldReturn_*`.
 - ⚠ status (round 9): **resolved** for the `x` layout and for `yield return`'s ties (#446 item 1). **Open**: `is N.T` under
   `x`, and the break after `yield return`.
 
+⚠ **Round 13 (2026-11-14): `is N.T` under `x` is #621's form read on the dot's line.** Swept with `Testing ask` (xq1,
+11 222 cells: `return` at indents 8 to 32 and `yield return` at 8 and 24, receivers of 1, 8 and 20, qualifiers of 1 to 8,
+names of 1 to 24, the dot's line one level in ending at 121 to 140, every operand past the margin by itself). The oracle
+writes one of two layouts. Either the `x` layout as round 9 wired it (right in every such cell), or `return r` /
+`.P… is N` / `.T;`, both lines one level in. It takes the second exactly when that dot line ends two or more columns past
+the margin, `.P… is N` fits there, and `2·k − 8·t − 6·indent − 11·q ≤ 94`, `k` the column `is` ends at on that line:
+3 566 of 3 566 cells where `… is N` fits, `return` and `yield return` alike. That is SK-DIV-0540's bound of 61 moved 33
+and measured from the dot's line (`Fitter.ThePatternDotTakesTheLineBelow`, `GroupFacts.PatternDotReceiver`). The
+pattern's dot point breaks; the operand's fill breaks one level in; the type test's own group and the keyword's band stay
+flat. xq1 8 386 → 11 222 of 11 222; a **fresh probe written after it** (xr1, seed 13301: 4 000 random cells, indents 8 to
+40, qualifiers 1 to 10, names 1 to 28, receivers 1 to 40, both heads) 2 293 → 4 000 of 4 000. None newly wrong, every
+cell stable. Pinned by `HeldExactIssue446Tests.PatternDot_*`.
+
+- ⚠ status: **resolved** (#446 item 1): `is N.T` under `x`, the last open row of this entry.
+
 ## SK-DIV-0211 — which break an `=` takes against the construct inside it: measured, not wired
 
 #444's second and sixth shapes are one question — when the oracle breaks after an `=` rather than inside
@@ -10796,6 +10811,78 @@ round 7's one-column bound 2, round 9's narrow lines 3, round 11's gate lines 2.
   that places their cells needs a variable not found; the call argument at the limit is the lead), the one-column
   type/name gap, SK-DIV-0210's `is N.T` under `x`, the name line's `=` after a type/name break, and a narrow head's `(`
   exactly one column over with a wide argument (fg1's three cells, wrong on master too).
+
+⚠ **Round 13 (2026-11-14): both bands are gone, the limit is exact at scale 1 140, and four of the five open classes
+are wired.** Measured with `Testing ask` on twelve new grids and ten fresh probes (b1–b4, gt1–gt2, xq1, n1–n2, o1,
+nl1–nl2, or1–or4, xr1, nr1, fz11–fz13, fg2, f3b, f3c), every rule confirmed on a probe generated after it.
+
+- ⚠ **Refuted: "a call argument reads 1/209 of a column wider".** b1 sets nine argument kinds beside the plain list in
+  1 500 configurations within 14/209 of a column of the limit (`x.Y(z)`, `Y(z)`, `x.Y()`, `x.Y(z, w)`, `x.Y`, a string,
+  a generic name, a call before or after a name): every kind answers as the plain list does, in every configuration.
+  Round 12's six call cells at a margin of 0 were configurations where its planar lines were off.
+- ⚠ **Refuted: "no planar form of this shape is exact".** b1 put 85 of 1 500 configurations on the wrong side of round
+  11's lines, between −9 and +2 of its units, so round 12's ±2 band could not have held them: on b1 its rules were 109
+  cells newly wrong and 21 cells took two passes. Each line is planar to within the data; round 11's were each a few
+  hundredths off, and its LP tied both pairs to one integer scale. An LP over the 5 612 keys within 40/209 of the
+  boundary finds the shape again with a positive margin, and its coefficients are rationals of 60 · 19:
+  `1140·(list + indent) ≤ max(86262 − 459·callee − 159·s − 19·name − 420·max(0, name − 22),
+  41473 + 208·callee + 508·s + 228·name + 420·min(0, name − 22))`, 24 000 higher for one argument
+  (`Fitter.ReceiverListLimit`). The falling side is pinned: with these slopes its 2 694 keys allow the intercept only
+  86 262, and each slope, the V and the offset a unit either way allows none. The rising side allows 41 472 to 41 475.
+  It decides every one of 184 541 keys of rounds 8–12 and b1–b2 but one, seven columns inside the limit, that another
+  rule decides. `InsideTheListBand` is deleted.
+- **The typed gate is one line a side with the same V at 22** (`Fitter.TypedGateBreaks`): breaks while
+  `99·p ≤ 523·callee + 535·name + 262·min(0, name − 22) − 13240` or `75·p > 11512 − 124·callee − 127·name −
+  62·min(0, name − 22)`. Short of a name of 22 the right side is round 12's first right line exactly. gt1 (4 868 cells,
+  every callee of 8 to 64 by every name of 1 to 30, the `(` swept across both of round 12's boundaries) found six of its
+  points 0.04 to 0.07 of a column wrong, two past its band. 67 827 gate points, none wrong. `TypedGateNear` is deleted.
+- **Pass two of a one-argument chop behind `var` or an assignment** asks the limit again (`Fitter.UntypedChopStays`,
+  `BreakPlan`'s chopped held call now planned for those heads too): b1's 21 cells that took two passes, none now.
+- **A narrow head's `(` exactly one column over** (`Fitter.NarrowHeadOneOverKeeps`): the dot takes the line while
+  `38·argument − receiver + 7·name ≤ 349 + 200·(6 − head)·(9 − head)`, the head through its `=`, and the `=` breaks past
+  it — 349, 1 149 and 2 349 for heads of six, five and four, none reached at three, every argument at seven. n1 and n2
+  (8 835 cells, assignment heads of 3 to 7 and typed heads of 5 and 6, the argument a column at a time). Before, #528's
+  rule kept the `=` behind every head of six or less (55 of g24's cells and fg1's three) and a typed head of five broke
+  it at every argument. A head of four breaks it too, though its value starts a column past the continuation, where the
+  short-head rule had always kept it.
+- **The name's own line after a type/name break** is an assignment's at that line's indent (`Fitter.NameLineBreaks`):
+  the list limit with no type for a head of twelve or more, the narrow head's line under it. nl1 (3 670 cells): the
+  rules already wired answer every cell read that way. One argument had taken the typed local's rule with the whole type
+  in its head and broke the `=` in 1 118 cells the oracle keeps; two arguments were already right. Its pass two
+  (`Fitter.NameLineChopStays`) closed six cells that took two passes.
+- **The type/name gap one column over before a receiver call** (`Fitter.OneOverParenBreaks`): two or more arguments break
+  it while `288·paren − 179·indent + 8·type ≥ 23382`; round 8's `paren − 0.6·indent > 80.2` was a column off at indents 16
+  and 24, and at `8·paren − 5·indent = 640` the type decides. One argument, which round 8 broke at any `(`, chops below
+  `10·paren − 12·indent + type ≥ 437`. ⚠ **Not exact**: or3, written along it, shows chops and breaks overlapping by a
+  column or two of `(` at every indent, the type deciding inside the overlap with a slope that changes with the indent.
+  The bound is the conservative side (no measured break falls under it; 660 of 706 measured chops do). ⚠ Two cuts were
+  refuted by fresh probes before it (or1: a type of 58 with three arguments and indent 28; or2: one cell at indent 20),
+  and widening `BreaksItsNameOneOver` to a type of 23 and a name of 4, which every such cell at indent 8 breaks, made a
+  cell at indent 28 newly wrong, so the table stays as #583 measured it.
+
+| probe | cells | master | now | newly wrong |
+|---|---:|---:|---:|---:|
+| rounds 8–12's 65 grids and probes | 417 235 | 416 979 | 417 105 | 0 |
+| b1 (the band, nine argument kinds; literal cells dropped, which Skala cannot parse) | 15 845 | 14 527 | 15 845 | 0 |
+| b2 (the refit's boundary) | 11 761 | 11 085 | 11 761 | 0 |
+| gt1 (the gate's lines) | 4 868 | 4 851 | 4 868 | 0 |
+| n1, n2 (narrow heads one column over) | 8 835 | 6 519 | 8 835 | 0 |
+| o1 (the gap one column over) | 2 201 | 2 122 | 2 200 | 0 |
+| nl1 (the name line) | 3 670 | 2 552 | 3 670 | 0 |
+| **fresh after the limit and gate**: b3, gt2, fz11, fz12, fg2, f3b | 37 804 | 37 080 | 37 785 | 0 |
+| **fresh after every rule**: b4, nl2, nr1, fz13, f3c | 27 684 | 25 201 | 27 665 | 0 |
+| **fresh one-over probes** or1, or2, or3, or4 (or4 written after the final bound) | 16 000 | 14 556 | 15 882 | 0 |
+
+"master" is local master `85a2e0f3d` (rounds 9–12 merged): 546 151 of 561 125 cells, 56 of them unstable (b1's), against
+560 838 now, none unstable. Pinned by `HeldExactIssue446Tests` (27 oracle cells); switching each rule off fails 1 to 4 of
+them. `HeldBandIssue446Tests` passes unchanged without the bands.
+
+- ⚠ status: the list limit, the typed gate, the narrow head one column over and the name line are **exact on every
+  cell measured**, the bands **removed** (#446 item 2). **Open**: one argument's type/name gap one column over inside its
+  overlap (or3/or4's 60 + 55 cells and 15 of the older probes', all wrong on master too). Of the 287 cells of 561 125
+  still wrong, every one wrong on master too, the rest (157) are classes outside this issue's list: chiefly a held call
+  whose `(` lands past the margin beside the `=` with two or three arguments, which the oracle breaks at the `=` and
+  chops below where Skala breaks the dot (81, fz probes), and the reverse (23).
 
 ## SK-DIV-0212 — a list in a switch arm's `when` clause, after the arrow moved down: measured, not wired
 
@@ -15542,6 +15629,9 @@ overflows by itself and the dot's line one level in does not fit either, the `x`
 In 31 of those cells across two fresh probes the oracle keeps the dot one level in and breaks this entry's own dot
 instead, which is not modelled. A local's operand breaking at its own dot and qualified names of more than one dot
 were not measured this round.
+
+⚠ **#446 round 13:** those cells are wired — the same form on the dot's line one level in, its bound 94
+(SK-DIV-0210 round 13). A local's operand breaking at its own dot and longer qualified names stay unmeasured.
 
 - status: **resolved** within the measured shapes (#621).
 

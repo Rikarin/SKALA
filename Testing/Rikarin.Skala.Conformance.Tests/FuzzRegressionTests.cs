@@ -532,6 +532,11 @@ public sealed class FuzzRegressionTests {
     // the chain chopping below; pass two, the chain broken, no longer let the arrow win and broke the `=`. A
     // parenthesis-less lambda whose `=>` lands past the margin now breaks its `=` whatever owns it, as the oracle does.
     [InlineData(1396520641513665324UL, "constructs/wrapping/lambda-arrow-over-a-chain.cs")]
+    // Coordinator, 2026-11-14 (first bad #446's rounds 9-12 merge c1592d929, a2a6de725 clean): `var length_w… =
+    // MathF.Sqrt(((to.X - from.X) * …) + (…));` inside a for loop. Pass one kept the `=` by the one-argument list limit
+    // and chopped the argument; pass two, the argument chopped, was no held call and broke the `=` by the ordering rule.
+    // Pass two now asks the limit again behind a `var` or an assignment (#446 round 13, Fitter.UntypedChopStays).
+    [InlineData(6543097749365391771UL, "real/vixen/Core/Vixen.Navigation/Baking/PolyMeshDetail.cs")]
     public void ReportedMutateSeeds_HaveNoViolations(ulong seed, string origin) {
         var test = Fuzzer.Build(seed, FuzzMode.Both, Corpus.All(), origin);
         var (violations, _) = Fuzzer.Execute(

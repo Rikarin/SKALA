@@ -1243,8 +1243,12 @@ public sealed class Document {
 ///     ⚠ With <see cref="OneOverValue" /> before a call on a named receiver with two or more arguments: the width from the
 ///     name through the call's <c>(</c>. One column past the margin the type/name gap breaks only while
 ///     <c>paren − 0.6·indent &gt; 80.2</c>, the <c>(</c> 1-based; short of it the arguments chop beside the <c>=</c>
-///     (#446, SK-DIV-0211 round 8).
+///     (#446, SK-DIV-0211 round 8). ⚠ Round 13: <c>288·paren − 179·indent + 8·type ≥ 23382</c>, the type through
+///     its space; round 8's line put cells on the indents of 16 and 24 a column wrong. And with one argument too
+///     (<see cref="OneOverSingle" />): <c>10·paren − 12·indent + type ≥ 437</c>, not exact. See
+///     <c>Fitter.OneOverParenBreaks</c>.
 /// </param>
+/// <param name="OneOverSingle">With <see cref="OneOverParen" />: the call has one argument.</param>
 /// <param name="CalleeArgumentHead">
 ///     ⚠ With <see cref="CalleeArgument" />: the statement's head through the <c>=</c>, read from the syntax
 ///     (SK-DIV-0505). The fitter's own head starts at the group's marker, which for a deconstruction is the tuple's
@@ -2069,6 +2073,16 @@ public sealed class Document {
 ///     With <see cref="PatternDotName" />: this group is a local's <c>=</c> before the type test, whose operand starts
 ///     a space past the <c>=</c>; it stays flat when the pattern's dot takes the line.
 /// </param>
+/// <param name="PatternDotReceiver">
+///     ⚠ With <see cref="PatternDotName" />: the receiver's width when the operand is a returned type test's member
+///     access whose dot the fill can break (<c>return r.P… is N.T;</c>, #446 round 13), zero otherwise. Past the
+///     margin, where the <c>x</c> layout would put the dot two levels in, the oracle can keep it one level in and
+///     break the pattern's dot instead: <c>Fitter.ThePatternDotTakesTheLineBelow</c>.
+/// </param>
+/// <param name="PatternDotStatementHead">
+///     With <see cref="PatternDotReceiver" />: the statement's head through the space after it, 7 for <c>return</c>
+///     and 13 for <c>yield return</c>.
+/// </param>
 /// <param name="ModifierFillHead">
 ///     ⚠ A field's gap between its modifiers and a generic type (#540, SK-DIV-0127): the type's width through the
 ///     first comma of its argument list, where the oracle's fill on the modifiers' line breaks. With
@@ -2484,6 +2498,8 @@ public readonly record struct GroupFacts(
     bool PatternDotPoint = false,
     bool PatternDotEquals = false,
     int PatternDotHead = 0,
+    int PatternDotReceiver = 0,
+    int PatternDotStatementHead = 0,
     int ModifierFillHead = 0,
     int ModifierFillLastHead = 0,
     int ModifierFillType = 0,
@@ -2517,6 +2533,7 @@ public readonly record struct GroupFacts(
     bool HeldValueTargetKept = false,
     bool CalleeOnReceiver = false,
     int OneOverParen = 0,
+    bool OneOverSingle = false,
     int WholeList = -1,
     int BareParenOperand = 0,
     int BareParenCast = 0,
