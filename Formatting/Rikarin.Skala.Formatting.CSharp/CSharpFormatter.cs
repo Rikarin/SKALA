@@ -6,6 +6,7 @@ using Rikarin.Skala.Core.Diagnostics;
 using Rikarin.Skala.Options;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Runtime.ExceptionServices;
 
 namespace Rikarin.Skala.Formatting.CSharp;
 
@@ -144,6 +145,53 @@ public static class CSharpFormatter {
         string? crashRoot = null,
         IReadOnlyList<string>? preprocessorSymbols = null,
         bool xmlDoc = true
+    ) {
+        if (onDeepStack) {
+            return FormatOnThisStack(path, text, options, crashRoot, preprocessorSymbols, xmlDoc);
+        }
+
+        // ⚠ The document builder and the layout recurse once per level of syntax, and a stack overflow
+        // cannot be caught: the process dies with no SK9099 and no reproduction. A 1 MB main-thread stack
+        // held Skala's own `Caching/DiagnosticCache.cs` (52 nested levels) under Release and lost it
+        // under Debug once two formatter rounds each grew a frame, which is how Lint found it — so the
+        // headroom was never a property of the input, only of today's frame sizes. Every format runs on a
+        // thread with a stack sized for the deepest code a person writes, never the caller's.
+        var copy = options;
+        FormatResult? result = null;
+        ExceptionDispatchInfo? failure = null;
+        var thread = new Thread(
+            () => {
+                onDeepStack = true;
+                try {
+                    result = FormatOnThisStack(path, text, copy, crashRoot, preprocessorSymbols, xmlDoc);
+                } catch (Exception exception) {
+                    failure = ExceptionDispatchInfo.Capture(exception);
+                }
+            },
+            DeepStackBytes
+        );
+
+        thread.Start();
+        thread.Join();
+        failure?.Throw();
+        return result!;
+    }
+
+    /// <summary>
+    ///     The stack every format runs on: reserved, not committed, so its size costs address space only.
+    /// </summary>
+    const int DeepStackBytes = 256 * 1024 * 1024;
+
+    [ThreadStatic]
+    static bool onDeepStack;
+
+    static FormatResult FormatOnThisStack(
+        string path,
+        SourceText text,
+        in PhaseOneOptions options,
+        string? crashRoot,
+        IReadOnlyList<string>? preprocessorSymbols,
+        bool xmlDoc
     ) {
         var diagnostics = ImmutableArray.CreateBuilder<SkalaDiagnostic>();
 
